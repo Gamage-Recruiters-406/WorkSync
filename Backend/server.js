@@ -4,7 +4,9 @@ import dotenv from "dotenv";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
 import cors from "cors";
+import attendanceRoutes from "./routes/attendanceRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
+
 
 
 //configure env
@@ -20,6 +22,7 @@ app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))
 
+app.use("/api/v1/attendance", attendanceRoutes);
 //routes
 app.use("/api/v1/task", taskRoutes);
 
