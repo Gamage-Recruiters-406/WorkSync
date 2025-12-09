@@ -91,6 +91,13 @@ export async function getActiveAnnouncements(req, res) {
 
 // Update Announcement
 export async function updateAnnouncement(req, res) {
+
+  if (!IsAdmin) { // check user is admin or not
+    res.status(401).json({
+      message: "user not found please logging or use admin loging",
+    });
+    return;
+  }
   try {
     const  Aid  = req.params;
        console.log("recived id",Aid.id);
@@ -118,6 +125,14 @@ export async function updateAnnouncement(req, res) {
 
 // Delete Announcement
 export async function deleteAnnouncement(req, res) {
+
+  if (!IsAdmin) { // check user is admin or not
+    res.status(401).json({
+      message: "user not found please logging or use admin loging",
+    });
+    return;
+  }
+  
   try {
     const { id } = req.params;
 
