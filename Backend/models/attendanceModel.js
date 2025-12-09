@@ -3,11 +3,11 @@ import mongoose from "mongoose";
 const attendanceSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User", // This links to your users
+        ref: "User", 
         required: true
     },
     date: {
-        type: String, // Storing as 'YYYY-MM-DD' is simple for beginners
+        type: String, 
         required: true
     },
     status: {
