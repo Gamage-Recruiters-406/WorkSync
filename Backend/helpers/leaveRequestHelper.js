@@ -41,21 +41,21 @@ export const isRequester = (leaveRequestUserId, currentUserId) => {
   return leaveRequestUserId.toString() === currentUserId.toString();
 };
 
-export const isAdmin = (userRole) => {
-  return userRole === "admin";
-};
+// export const isAdmin = (userRole) => {
+//   return userRole === "admin";
+// };
 
-export const isRequesterOrAdmin = (
-  leaveRequestUserId,
-  currentUserId,
-  userRole
-) => {
-  return isRequester(leaveRequestUserId, currentUserId) || isAdmin(userRole);
-};
+// export const isRequesterOrAdmin = (
+//   leaveRequestUserId,
+//   currentUserId,
+//   userRole
+// ) => {
+//   return isRequester(leaveRequestUserId, currentUserId) || isAdmin(userRole);
+// };
 
 // Leave request status validation
 export const canDeleteLeaveRequest = (status) => {
-  const allowedStatuses = ["pending", "cancelled"];
+  const allowedStatuses = ["pending"];
   if (!allowedStatuses.includes(status)) {
     throw {
       status: 400,

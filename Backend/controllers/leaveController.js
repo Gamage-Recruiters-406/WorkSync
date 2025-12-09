@@ -5,8 +5,6 @@ import {
   checkUserExists,
   checkLeaveRequestExists,
   isRequester,
-  isAdmin,
-  isRequesterOrAdmin,
   canDeleteLeaveRequest,
   populateLeaveRequestDetails,
   handleControllerError,
@@ -63,7 +61,7 @@ export const deleteLeaveRequest = async (req, res) => {
 
     // Authorization check
     if (
-      !isRequesterOrAdmin(leaveRequest.requestedBy, req.userId, req.userRole)
+      !isRequester(leaveRequest.requestedBy, req.userId)
     ) {
       throw {
         status: 403,
