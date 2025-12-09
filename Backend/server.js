@@ -7,6 +7,8 @@ import cors from "cors";
 import taskRoutes from "./routes/taskRoutes.js";
 
 
+//import announcementRoutes from "./Route/announcement_route.js";
+
 //configure env
 dotenv.config();
 
@@ -19,15 +21,26 @@ const app = express();
 app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))
+app.use(express.json());
 
 //routes
-app.use("/api/v1/task", taskRoutes);
+
+
+
+import announcementRoutes from "./Route/announcement_route.js";
+
+app.use("/api/v1/announcement", announcementRoutes);
+
+
+//rest api
+
 
 app.get("/", (req, res) => {
     res.send({
         message: "Welcome to WorkSync"
     })
 })
+
 
 const PORT = process.env.PORT
 
