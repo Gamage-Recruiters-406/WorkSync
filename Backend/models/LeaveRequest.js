@@ -1,13 +1,7 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const leaveRequestSchema = new mongoose.Schema(
   {
-    leaveId: {
-      type: String,
-      required: true,
-      unique: true,
-      autogenerate: true,
-    },
     leaveType: {
       type: String,
       required: true,
@@ -45,4 +39,4 @@ const leaveRequestSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("LeaveRequest", leaveRequestSchema);
+export default mongoose.model("LeaveRequest", leaveRequestSchema);
