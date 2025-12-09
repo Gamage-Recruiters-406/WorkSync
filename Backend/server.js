@@ -5,6 +5,7 @@ import morgan from "morgan";
 import connectDB from "./config/db.js";
 import cors from "cors";
 import taskRoutes from "./routes/taskRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 
 //configure env
@@ -22,6 +23,7 @@ app.use(morgan('dev'))
 
 //routes
 app.use("/api/v1/task", taskRoutes);
+app.use("/api/v1/userAuth", userRoutes);
 
 app.get("/", (req, res) => {
     res.send({
