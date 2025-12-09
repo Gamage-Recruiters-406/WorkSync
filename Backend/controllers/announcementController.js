@@ -1,17 +1,29 @@
 import Announcement from "../models/Announcement.js";
 import { v4 as uuidv4 } from "uuid";
 
+//import { IsAddmin } from "../";
+
+let IsAdmin = false;
+
 // Create Announcement
 export async function createAnnouncement(req, res) {
  
+  if (!IsAdmin) { // check user is admin or not
+    res.status(401).json({
+      message: "user not found please logging or use admin loging",
+    });
+    return;
+  }
+
   try {
-    const { title, date, message } = req.body;
+    const { title, date, message, isActive } = req.body;
 
     const newAnnouncement = await Announcement.create({
       announcementId: uuidv4(),
       title,
       date,
       message,
+      isActive,
     });
 
     res.status(201).json({
