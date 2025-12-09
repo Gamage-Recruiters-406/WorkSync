@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 
 //import { IsAddmin } from "../";
 
-let IsAdmin = false;
+let IsAdmin = false; // this is tempory value. that function not implement at this time
 
 // Create Announcement
 export async function createAnnouncement(req, res) {
@@ -132,7 +132,7 @@ export async function deleteAnnouncement(req, res) {
     });
     return;
   }
-  
+
   try {
     const { id } = req.params;
 
