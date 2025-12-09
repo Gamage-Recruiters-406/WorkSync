@@ -1,4 +1,4 @@
-import Announcement from "../Models/Announcement.js";
+import Announcement from "../models/Announcement.js";
 import { v4 as uuidv4 } from "uuid";
 
 // Create Announcement

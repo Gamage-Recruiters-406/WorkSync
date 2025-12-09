@@ -4,8 +4,8 @@ import dotenv from "dotenv";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
 import cors from "cors";
+import announcementRoutes from "./routes/announcement_route.js";
 
-//import announcementRoutes from "./Route/announcement_route.js";
 
 //configure env
 dotenv.config();
@@ -18,17 +18,17 @@ const app = express();
 //middelwares
 app.use(cors())
 app.use(express())
-app.use(morgan('dev'))
 app.use(express.json());
+app.use(morgan('dev'))
+
 
 //routes
-import announcementRoutes from "./Route/announcement_route.js";
+
 
 app.use("/api/v1/announcement", announcementRoutes);
 
 
 //rest api
-
 app.get("/", (req, res) => {
     res.send({
         message: "Welcome to WorkSync"

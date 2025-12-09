@@ -6,7 +6,7 @@ import {
   getActiveAnnouncements,
   updateAnnouncement,
   deleteAnnouncement,
-} from "../Controller/announcementController.js";
+} from "../controllers/announcementController.js";
 
 const AnnouncementRouter = express.Router();
 
