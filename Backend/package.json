@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "server": "nodemon server.js"
+    "server": "nodemon server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "Gamage Recruiters",
@@ -20,6 +21,7 @@
     "morgan": "^1.10.1",
     "node": "^20.19.6",
     "nodemodule": "^0.3.0",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "uuid": "^13.0.0"
   }
 }

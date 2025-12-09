@@ -5,6 +5,8 @@ import morgan from "morgan";
 import connectDB from "./config/db.js";
 import cors from "cors";
 
+//import announcementRoutes from "./Route/announcement_route.js";
+
 //configure env
 dotenv.config();
 
@@ -17,17 +19,22 @@ const app = express();
 app.use(cors())
 app.use(express())
 app.use(morgan('dev'))
+app.use(express.json());
 
 //routes
+import announcementRoutes from "./Route/announcement_route.js";
 
+app.use("/api/v1/announcement", announcementRoutes);
 
 
 //rest api
+
 app.get("/", (req, res) => {
     res.send({
         message: "Welcome to WorkSync"
     })
 })
+
 
 const PORT = process.env.PORT
 
