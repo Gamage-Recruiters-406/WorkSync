@@ -1,12 +1,29 @@
 import LeaveRequest from "../models/LeaveRequest.js";
-import User from "../models/User.js";
+//import User from "../models/User.js";
+import {
+  validateUserIdFromToken,
+  checkUserExists,
+  checkLeaveRequestExists,
+  isRequester,
+  isAdmin,
+  isRequesterOrAdmin,
+  canDeleteLeaveRequest,
+  populateLeaveRequestDetails,
+  handleControllerError,
+  validateLeaveRequest
+} from "../helpers/leaveRequestHelper.js";
 
 // Create Leave Request
 export const createLeaveRequest = async (req, res) => {
   try {
     // Authentication and validation
     validateUserIdFromToken(req.userId);
-    await checkUserExists(req.userId, User);
+
+   // await checkUserExists(req.userId, User);
+
+   // Validation
+    await validateLeaveRequest(req.body);
+
 
     // Create leave request
     const leaveRequest = new LeaveRequest({
@@ -17,15 +34,16 @@ export const createLeaveRequest = async (req, res) => {
     await leaveRequest.save();
 
     // Populate and return
-    const populatedLeave = await populateLeaveRequestDetails(
-      leaveRequest._id,
-      LeaveRequest
-    );
+    // const populatedLeave = await populateLeaveRequestDetails(
+    //   leaveRequest._id,
+    //   LeaveRequest
+    // );
 
     res.status(201).json({
       success: true,
       message: "Leave request created successfully.",
-      data: populatedLeave,
+    //data: populatedLeave,
+      data: leaveRequest,
     });
   } catch (error) {
     handleControllerError(error, res);
@@ -66,96 +84,4 @@ export const deleteLeaveRequest = async (req, res) => {
   } catch (error) {
     handleControllerError(error, res);
   }
-};
-
-
-
-
-// Helper Functions
-
-// Authentication and authorization helpers
-export const validateUserIdFromToken = (userId) => {
-  if (!userId) {
-    throw {
-      status: 401,
-      message: "Authentication required. User ID not found in token."
-    };
-  }
-};
-
-export const checkUserExists = async (userId, User) => {
-  const userExists = await User.findById(userId);
-  if (!userExists) {
-    throw {
-      status: 404,
-      message: "User not found."
-    };
-  }
-  return userExists;
-};
-
-// Leave request validation helpers
-export const checkLeaveRequestExists = async (leaveRequestId, LeaveRequest) => {
-  const leaveRequest = await LeaveRequest.findById(leaveRequestId);
-  if (!leaveRequest) {
-    throw {
-      status: 404,
-      message: "Leave request not found."
-    };
-  }
-  return leaveRequest;
-};
-
-// Authorization check functions
-export const isRequester = (leaveRequestUserId, currentUserId) => {
-  return leaveRequestUserId.toString() === currentUserId.toString();
-};
-
-export const isAdmin = (userRole) => {
-  return userRole === "admin";
-};
-
-export const isRequesterOrAdmin = (leaveRequestUserId, currentUserId, userRole) => {
-  return isRequester(leaveRequestUserId, currentUserId) || isAdmin(userRole);
-};
-
-// Leave request status validation
-export const canDeleteLeaveRequest = (status) => {
-  const allowedStatuses = ["pending", "cancelled"];
-  if (!allowedStatuses.includes(status)) {
-    throw {
-      status: 400,
-      message: "Cannot delete leave request that has been approved or rejected."
-    };
-  }
-  return true;
-};
-
-// Population helper
-export const populateLeaveRequestDetails = async (leaveRequestId, LeaveRequest) => {
-  return await LeaveRequest.findById(leaveRequestId)
-    .populate("requestedBy", "username fullName email department")
-    .populate("approvedBy", "username fullName email");
-};
-
-// Error handler
-export const handleControllerError = (error, res) => {
-  console.error("Controller error:", error);
-  
-  if (error.name === "CastError") {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid ID format.",
-    });
-  }
-  
-  // Use custom thrown errors or generic
-  const status = error.status || 500;
-  const message = error.message || "Internal server error.";
-  
-  res.status(status).json({
-    success: false,
-    message,
-    error: process.env.NODE_ENV === "development" ? error.message : undefined,
-  });
 };
