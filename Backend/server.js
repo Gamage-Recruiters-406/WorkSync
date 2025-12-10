@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
 import cors from "cors";
+import leaveRoutes from "./routes/leaveRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -25,6 +26,7 @@ app.use(morgan('dev'))
 
 app.use("/api/v1/attendance", attendanceRoutes);
 //routes
+app.use("/api/v1/leave-request", leaveRoutes);
 app.use("/api/v1/task", taskRoutes);
 app.use("/api/v1/userAuth", userRoutes);
 
