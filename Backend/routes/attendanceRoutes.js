@@ -6,17 +6,17 @@ import {
 } from "../controllers/attendanceController.js";
 
 
-import { requiredSignIn, isAdmin } from "../middlewares/AuthMiddleware.js";
+import { requiredSignIn } from "../middlewares/AuthMiddleware.js";
 
 const router = express.Router();
 
-// ROUTE 1: CLOCK IN
+// CHECK IN TIME
 router.post("/clock-in", requiredSignIn, clockInController);
 
-// ROUTE 2: CLOCK OUT
+//  CHECK OUT TIME
 router.put("/clock-out", requiredSignIn, clockOutController);
 
-// ROUTE 3: GET ALL (User MUST be logged in AND be an Admin (Role 3) to see this.)
-router.get("/get-all", requiredSignIn, isAdmin, getAttendanceController);
+//  GET ALL RECODERS
+router.get("/get-all", requiredSignIn, getAttendanceController);
 
 export default router;
