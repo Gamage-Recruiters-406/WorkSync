@@ -8,6 +8,7 @@ import leaveRoutes from "./routes/leaveRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import departmentRoutes from "./routes/departmentRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import announcementRoutes from "./routes/announcement_route.js";
 import cookieParser from "cookie-parser";
@@ -31,6 +32,7 @@ app.use("/api/v1/attendance", attendanceRoutes);
 app.use("/api/v1/leave-request", leaveRoutes);
 app.use("/api/v1/task", taskRoutes);
 app.use("/api/v1/userAuth", userRoutes);
+app.use("/api/v1/department", departmentRoutes);
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 
