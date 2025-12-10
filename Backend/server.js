@@ -26,11 +26,15 @@ app.use(express.json())
 app.use(morgan('dev'))
 app.use(cookieParser());
 
+app.use("/api/v1/attendance", attendanceRoutes);
 //routes
+app.use("/api/v1/leave-request", leaveRoutes);
+app.use("/api/v1/task", taskRoutes);
+app.use("/api/v1/userAuth", userRoutes);
+app.use("/api/v1/projects", projectRoutes);
+app.use("/api/v1/announcement", announcementRoutes);
 
 
-
-//rest api
 app.get("/", (req, res) => {
     res.send({
         message: "Welcome to WorkSync"
@@ -42,4 +46,5 @@ const PORT = process.env.PORT
 //run listen
 app.listen(PORT, () => {
     console.log(`Server Running on ${process.env.DEV_MODE} mode`.bgCyan.white);
+    console.log(`Server is running on port ${PORT}`.bgCyan.white)
 })
