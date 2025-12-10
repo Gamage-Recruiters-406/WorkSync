@@ -9,6 +9,9 @@ import attendanceRoutes from "./routes/attendanceRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import departmentRoutes from "./routes/departmentRoutes.js";
+import projectRoutes from "./routes/projectRoutes.js";
+import announcementRoutes from "./routes/announcement_route.js";
+import cookieParser from "cookie-parser";
 
 //configure env
 dotenv.config();
@@ -22,13 +25,16 @@ const app = express();
 app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))
+app.use(cookieParser());
 
-app.use("/api/v1/attendance", attendanceRoutes);
 //routes
+app.use("/api/v1/attendance", attendanceRoutes);
 app.use("/api/v1/leave-request", leaveRoutes);
 app.use("/api/v1/task", taskRoutes);
 app.use("/api/v1/userAuth", userRoutes);
 app.use("/api/v1/department", departmentRoutes);
+app.use("/api/v1/projects", projectRoutes);
+app.use("/api/v1/announcement", announcementRoutes);
 
 
 app.get("/", (req, res) => {
