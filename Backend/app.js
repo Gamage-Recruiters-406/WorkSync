@@ -1,16 +1,11 @@
+// Backend/app.js
 import express from "express";
-import dotenv from "dotenv";
 import morgan from "morgan";
-import connectDB from "./config/db.js";
 import cors from "cors";
 import leaveRoutes from "./routes/leaveRoutes.js";
+import attendanceRoutes from "./routes/attendanceRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-
-// Configure environment
-dotenv.config();
-
-// Connect to database
-connectDB();
 
 // Create Express app
 const app = express();
@@ -20,17 +15,17 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
-// Routes (only what we need for testing)
+// Routes
+app.use("/api/v1/attendance", attendanceRoutes);
 app.use("/api/v1/leave-request", leaveRoutes);
+app.use("/api/v1/task", taskRoutes);
 app.use("/api/v1/userAuth", userRoutes);
 
-// Simple test route
+// Root route
 app.get("/", (req, res) => {
   res.send({
-    message: "WorkSync Test Server",
+    message: "Welcome to WorkSync API",
   });
 });
 
-// Export the app without starting the server
 export default app;
-

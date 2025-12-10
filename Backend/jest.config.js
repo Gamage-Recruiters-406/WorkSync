@@ -1,3 +1,4 @@
+// Backend/jest.config.js
 export default {
   testEnvironment: "node",
   testMatch: ["**/__tests__/**/*.test.js"],
@@ -5,9 +6,12 @@ export default {
   transform: {
     "^.+\\.js$": ["@swc/jest"],
   },
-  // Only use teardown, no setup needed
-  globalTeardown: "<rootDir>/jest.teardown.js",
+  setupFilesAfterEnv: ["<rootDir>/__tests__/jest.setup.js"],
+  maxWorkers: 1,
   forceExit: true,
   detectOpenHandles: true,
   verbose: true,
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
 };
