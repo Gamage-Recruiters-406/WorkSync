@@ -1,17 +1,28 @@
 import attendanceModel from "../models/attendanceModel.js";
 
-// Controller 1: Clock In (Create Attendance)
+//  Clock In (Create Attendance)
 export const clockInController = async (req, res) => {
     try {
-        const { userId, date, status } = req.body;
+        const { date, status } = req.body;
 
-        // Validation
-        if (!userId) {
-            return res.status(400).send({ message: "User ID is required" });
+        const userId = req.user.userid; 
+
+        if (!date) {
+            return res.status(400).send({ message: "Date is required" });
+        }
+
+        // DUPLICATE CHECK
+        const existingAttendance = await attendanceModel.findOne({ userId, date });
+
+        if (existingAttendance) {
+            return res.status(400).send({
+                success: false,
+                message: "You have already clocked in for this date."
+            });
         }
 
         const newAttendance = new attendanceModel({
-            userId,
+            userId,  
             date,
             status,
             inTime: new Date()
@@ -36,15 +47,16 @@ export const clockInController = async (req, res) => {
 };
 
 
-// Controller 2: CLOCK OUT CONTROLLER
+// CLOCK OUT CONTROLLER
 export const clockOutController = async (req, res) => {
     try {
-        const { userId, date } = req.body;
+        const { date } = req.body;
+        
+        const userId = req.user.userid;
 
-        // 1.Find the record for THIS user on THIS date
+        //  Find the record for THIS user on THIS date
         const attendance = await attendanceModel.findOne({ userId, date });
 
-        // Validation: If no record exists, they never clocked in!
         if (!attendance) {
             return res.status(404).send({
                 success: false,
@@ -52,7 +64,6 @@ export const clockOutController = async (req, res) => {
             });
         }
 
-        // Validation: If outTime is already set, they already clocked out!
         if (attendance.outTime) {
             return res.status(400).send({
                 success: false,
@@ -60,10 +71,8 @@ export const clockOutController = async (req, res) => {
             });
         }
 
-        // 2. Update the outTime to "NOW"
         attendance.outTime = new Date();
 
-        // 3. Save the update
         await attendance.save();
 
         res.status(200).send({
@@ -83,7 +92,7 @@ export const clockOutController = async (req, res) => {
 };
 
 
-// Controller 3: Get All Attendance (Read)
+// Get All Attendance (Admin only)
 export const getAttendanceController = async (req, res) => {
     try {
         const attendance = await attendanceModel.find({});
