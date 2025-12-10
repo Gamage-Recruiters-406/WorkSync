@@ -1,13 +1,20 @@
 import express from "express";
-import { clockInController, getAttendanceController } from "../controllers/attendanceController.js";
+import { 
+    clockInController,
+    clockOutController, 
+    getAttendanceController 
+    
+} from "../controllers/attendanceController.js";
 
-// router object
 const router = express.Router();
 
-// CREATE || CLOCK IN
+// POST: Create new attendance
 router.post("/clock-in", clockInController);
 
-// READ || GET ALL ATTENDANCE
+// PUT: Update attendance (Clock Out)
+router.put("/clock-out", clockOutController);
+
+// GET: Read all attendance
 router.get("/get-all", getAttendanceController);
 
 export default router;
