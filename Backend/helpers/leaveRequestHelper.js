@@ -1,7 +1,7 @@
 // leaveRequestHelper.js
 
 import LeaveRequest from "../models/LeaveRequest.js";
-//import User from "../models/User.js";
+import User from "../models/User.js";
 
 // Authentication and authorization helpers
 export const validateUserIdFromToken = (userId) => {

@@ -28,5 +28,18 @@
     "jest": "^30.2.0",
     "nodemon": "^3.1.11",
     "supertest": "^7.1.4"
+  },
+  "testExplorer": {
+    "commands": {
+      "allTests": "npx jest",
+      "testFile": "npx jest {filePath}",
+      "testCase": "npx jest {filePath} -t \"{testName}\""
+    },
+    "filePatterns": [
+      "**/*.test.{js,jsx,ts,tsx}",
+      "**/*.spec.{js,jsx,ts,tsx}",
+      "**/test/**/*.{js,jsx,ts,tsx}",
+      "**/__tests__/**/*.{js,jsx,ts,tsx}"
+    ]
   }
 }
