@@ -9,7 +9,7 @@ import attendanceRoutes from "./routes/attendanceRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
-
+import announcementRoutes from "./routes/announcement_route.js";
 
 
 //configure env
@@ -31,7 +31,7 @@ app.use("/api/v1/leave-request", leaveRoutes);
 app.use("/api/v1/task", taskRoutes);
 app.use("/api/v1/userAuth", userRoutes);
 app.use("/api/v1/projects", projectRoutes);
-
+app.use("/api/v1/announcement", announcementRoutes);
 
 
 app.get("/", (req, res) => {
