@@ -4,13 +4,12 @@ import dotenv from "dotenv";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
 import cors from "cors";
+import leaveRoutes from "./routes/leaveRoutes.js";
+import attendanceRoutes from "./routes/attendanceRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
-<<<<<<< Updated upstream
-=======
 import userRoutes from "./routes/userRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 
->>>>>>> Stashed changes
 
 
 //configure env
@@ -26,13 +25,14 @@ app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))
 
+app.use("/api/v1/attendance", attendanceRoutes);
 //routes
+app.use("/api/v1/leave-request", leaveRoutes);
 app.use("/api/v1/task", taskRoutes);
-<<<<<<< Updated upstream
-=======
 app.use("/api/v1/userAuth", userRoutes);
 app.use("/api/v1/projects", projectRoutes);
->>>>>>> Stashed changes
+
+
 
 app.get("/", (req, res) => {
     res.send({
