@@ -1,5 +1,5 @@
 import LeaveRequest from "../models/LeaveRequest.js";
-//import User from "../models/User.js";
+import User from "../models/User.js";
 import {
   validateUserIdFromToken,
   checkUserExists,
@@ -15,9 +15,9 @@ import {
 export const createLeaveRequest = async (req, res) => {
   try {
     // Authentication and validation
-    validateUserIdFromToken(req.userId);
+    validateUserIdFromToken(req.user?.userid);
 
-   // await checkUserExists(req.userId, User);
+    await checkUserExists(req.user?.userid);
 
    // Validation
     await validateLeaveRequest(req.body);
@@ -26,22 +26,21 @@ export const createLeaveRequest = async (req, res) => {
     // Create leave request
     const leaveRequest = new LeaveRequest({
       ...req.body,
-      requestedBy: req.userId, // Set from token
+      requestedBy: req.user?.userid // Get user ID from token
     });
 
     await leaveRequest.save();
 
     // Populate and return
-    // const populatedLeave = await populateLeaveRequestDetails(
-    //   leaveRequest._id,
-    //   LeaveRequest
-    // );
+    const populatedLeave = await populateLeaveRequestDetails(
+      leaveRequest._id,
+      LeaveRequest
+    );
 
     res.status(201).json({
       success: true,
       message: "Leave request created successfully.",
-    //data: populatedLeave,
-      data: leaveRequest,
+      data: populatedLeave,
     });
   } catch (error) {
     handleControllerError(error, res);
@@ -52,7 +51,7 @@ export const createLeaveRequest = async (req, res) => {
 export const deleteLeaveRequest = async (req, res) => {
   try {
     // Authentication
-    validateUserIdFromToken(req.userId);
+    validateUserIdFromToken(req.user?.userid);
 
     const { id } = req.params;
 
@@ -61,7 +60,7 @@ export const deleteLeaveRequest = async (req, res) => {
 
     // Authorization check
     if (
-      !isRequester(leaveRequest.requestedBy, req.userId)
+      !isRequester(leaveRequest.requestedBy, req.user?.userid)
     ) {
       throw {
         status: 403,

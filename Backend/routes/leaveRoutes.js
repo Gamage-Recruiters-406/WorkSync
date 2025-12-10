@@ -1,5 +1,5 @@
 import express from "express";
-//import { verifyToken } from "../middleware/auth.js";
+import {requiredSignIn} from "../middlewares/AuthMiddleware.js";
 import {
   createLeaveRequest,
   deleteLeaveRequest,
@@ -7,17 +7,10 @@ import {
 
 const router = express.Router();
 
-// All routes are protected with JWT
-//router.use(verifyToken);
+//All routes are protected with JWT
+router.use(requiredSignIn);
 
 router.use(express.json());
-
-router.use((req, res, next) => {
-  // Hardcode user data for testing
-  req.userId = "6612345678901234567890ab"; 
-  req.userRole = "employee"; 
-  next();
-});
 
 // POST /api/v1/leave-request/addLeave - Create new leave request
 router.post("/addLeave", createLeaveRequest);
