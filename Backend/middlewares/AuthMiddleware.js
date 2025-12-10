@@ -3,7 +3,7 @@ import JWT from "jsonwebtoken";
 // Protected routes using token
 export const requiredSignIn = async(req, res, next) => {
     try {
-        const token = req.headers.authorization;
+        const token = req.cookies.access_token;
         
         if (!token) {
             return res.status(401).json({ 
@@ -59,7 +59,7 @@ export const isAdmin = (req, res, next) => {
 
 // Middleware to check if user is Manager or Admin (role = 2 or 3)
 export const isManagerOrAdmin = (req, res, next) => {
-    if (req.user.role !== 2 && req.user.role !== 3) {
+    if (req.user.role !== 2 || req.user.role !== 3) {
         return res.status(403).json({ 
             success: false, 
             message: "Access denied. Manager or Admin role required." 
