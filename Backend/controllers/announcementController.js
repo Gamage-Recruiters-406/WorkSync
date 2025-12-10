@@ -1,9 +1,17 @@
 import Announcement from "../models/Announcement.js";
 import { v4 as uuidv4 } from "uuid";
+//import { isAdmin,isManager }from"../middlewares/AuthMiddleware.js";
+let isAdmin = false;
+let isManager = false;
 
 // Create Announcement
 export async function createAnnouncement(req, res) {
- 
+  
+  //user role validation
+  if (!isAdmin || !isManager)
+    return res.status(401).json({
+      message: "user not found please logging adminloging or manager loging",
+    });
   try {
     const { title, date, message } = req.body;
 
