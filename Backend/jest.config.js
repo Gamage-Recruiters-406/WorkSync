@@ -7,7 +7,7 @@ export default {
     "^.+\\.js$": ["@swc/jest"],
   },
   setupFilesAfterEnv: ["<rootDir>/__tests__/jest.setup.js"],
-  maxWorkers: 1,
+  maxWorkers: 1, // Run tests sequentially
   forceExit: true,
   detectOpenHandles: true,
   verbose: true,

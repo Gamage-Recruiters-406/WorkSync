@@ -6,8 +6,6 @@ let mongoServer;
 
 // Setup before all tests
 beforeAll(async () => {
-  console.log("🚀 Setting up MongoDB Memory Server...");
-
   // Set environment variables for testing
   process.env.JWT_SECRET = "asdasdhsdsdkvcidwu";
   process.env.DEV_MODE = "test";
@@ -20,14 +18,10 @@ beforeAll(async () => {
 
   const uri = mongoServer.getUri();
   await mongoose.connect(uri);
-
-  console.log("✅ MongoDB Memory Server connected");
 }, 30000);
 
 // Cleanup after all tests
 afterAll(async () => {
-  console.log("🧹 Cleaning up test database...");
-
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
   }
@@ -35,8 +29,6 @@ afterAll(async () => {
   if (mongoServer) {
     await mongoServer.stop();
   }
-
-  console.log("✅ Cleanup complete");
 }, 30000);
 
 // Clear data before each test
