@@ -5,6 +5,12 @@ import morgan from "morgan";
 import connectDB from "./config/db.js";
 import cors from "cors";
 import taskRoutes from "./routes/taskRoutes.js";
+<<<<<<< Updated upstream
+=======
+import userRoutes from "./routes/userRoutes.js";
+import projectRoutes from "./routes/projectRoutes.js";
+
+>>>>>>> Stashed changes
 
 
 //configure env
@@ -22,6 +28,11 @@ app.use(morgan('dev'))
 
 //routes
 app.use("/api/v1/task", taskRoutes);
+<<<<<<< Updated upstream
+=======
+app.use("/api/v1/userAuth", userRoutes);
+app.use("/api/v1/projects", projectRoutes);
+>>>>>>> Stashed changes
 
 app.get("/", (req, res) => {
     res.send({
