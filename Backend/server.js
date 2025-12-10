@@ -10,7 +10,7 @@ import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import announcementRoutes from "./routes/announcement_route.js";
-
+import cookieParser from "cookie-parser";
 
 //configure env
 dotenv.config();
@@ -24,6 +24,7 @@ const app = express();
 app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))
+app.use(cookieParser());
 
 app.use("/api/v1/attendance", attendanceRoutes);
 //routes
