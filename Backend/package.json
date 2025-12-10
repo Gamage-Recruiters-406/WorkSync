@@ -22,6 +22,11 @@
     "morgan": "^1.10.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "@jest/globals": "^30.2.0",
+    "@swc/core": "^1.15.3",
+    "@swc/jest": "^0.2.39",
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.11",
+    "supertest": "^7.1.4"
   }
 }
