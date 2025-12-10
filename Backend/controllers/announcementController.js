@@ -1,14 +1,15 @@
 import Announcement from "../models/Announcement.js";
 import { v4 as uuidv4 } from "uuid";
-//import { isAdmin,isManager }from"../middlewares/AuthMiddleware.js";
-let isAdmin = false;
-let isManager = false;
+import { isAdmin, isManager } from "../middlewares/AuthMiddleware.js";
+
+//let isAdmin = true;
+//let isManager = true;  //this is tempory value
 
 // Create Announcement
 export async function createAnnouncement(req, res) {
-  
+
   //user role validation
-  if (!isAdmin || !isManager)
+  if (!isManager(req) || !isAdmin(req))
     return res.status(401).json({
       message: "user not found please logging adminloging or manager loging",
     });
@@ -51,7 +52,7 @@ export async function getAnnouncementbyID(req, res) {
 
   try {
     const AId = req.params;
-    const announcement = await Announcement.findOne({announcementId: AId.id });
+    const announcement = await Announcement.findOne({ announcementId: AId.id });
 
     if (!announcement) {
       return res.status(404).json({
@@ -88,8 +89,8 @@ export async function getActiveAnnouncements(req, res) {
 // Update Announcement
 export async function updateAnnouncement(req, res) {
   try {
-    const  Aid  = req.params;
-       console.log("recived id",Aid.id);
+    const Aid = req.params;
+    console.log("recived id", Aid.id);
     const updated = await Announcement.findOneAndUpdate(
       { announcementId: Aid.id }, req.body,
       { new: true }
