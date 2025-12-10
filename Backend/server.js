@@ -4,34 +4,34 @@ import dotenv from "dotenv";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
 import cors from "cors";
+import projectTeamRoutes from "./routes/projectTeamRoutes.js";
 
-//configure env
+// Configure environment
 dotenv.config();
 
-//database config
+// Database config
 connectDB();
 
 const app = express();
 
-//middelwares
-app.use(cors())
-app.use(express.json())
-app.use(morgan('dev'))
+// Middlewares
+app.use(cors());
+app.use(express.json());
+app.use(morgan('dev'));
 
-//routes
+// Routes 
+app.use("/api/v1/project-team", projectTeamRoutes);
 
-
-
-//rest api
+// Test route
 app.get("/", (req, res) => {
     res.send({
         message: "Welcome to WorkSync"
-    })
-})
+    });
+});
 
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 8090;
 
-//run listen
+// Start server
 app.listen(PORT, () => {
     console.log(`Server Running on ${process.env.DEV_MODE} mode`.bgCyan.white);
-})
+});
