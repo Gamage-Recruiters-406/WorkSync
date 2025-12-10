@@ -52,7 +52,7 @@ export const TestUtils = {
       loginRes.body.accessToken;
 
     if (!token) {
-      console.error("No token found in response:", loginRes.body);
+     //console.error("No token found in response:", loginRes.body);
       throw new Error("No token found in login response");
     }
 

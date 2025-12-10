@@ -75,7 +75,7 @@ export const populateLeaveRequestDetails = async (leaveRequestId) => {
 
 // Error handler
 export const handleControllerError = (error, res) => {
-  console.error("Controller error:", error);
+  // console.error("Controller error:", error);
 
   if (error.name === "CastError") {
     return res.status(400).json({
