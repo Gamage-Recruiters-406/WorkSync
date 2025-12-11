@@ -8,12 +8,21 @@ import {
   deleteAnnouncement,
 } from "../controllers/announcementController.js";
 
+import { requiredSignIn, isAdmin, isManager } from "../middlewares/AuthMiddleware.js";
+   // OR isAdmin — depends on your rule
+  
+
+
 const AnnouncementRouter = express.Router();
 
-AnnouncementRouter.post("/createAnnouncement", createAnnouncement);
+
+//public routes
 AnnouncementRouter.get("/getAnnouncements", getAnnouncements);
 AnnouncementRouter.get("/getAnnouncement/:id", getAnnouncementbyID);
 AnnouncementRouter.get("/getActiveAnnouncements", getActiveAnnouncements);
+
+//protected routes
+AnnouncementRouter.post("/createAnnouncement",requiredSignIn,isManager,createAnnouncement );   
 AnnouncementRouter.put("/updateAnnouncement/:id", updateAnnouncement);
 AnnouncementRouter.delete("/deleteAnnouncement/:id", deleteAnnouncement);
 
