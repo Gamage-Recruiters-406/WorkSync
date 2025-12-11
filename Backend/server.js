@@ -24,12 +24,10 @@ const app = express();
 app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))
-
 app.use(cookieParser());
 
-app.use("/api/v1/userAuth", userRoutes);
-
 //routes
+app.use("/api/v1/userAuth", userRoutes);
 app.use("/api/v1/attendance", attendanceRoutes);
 app.use("/api/v1/leave-request", leaveRoutes);
 app.use("/api/v1/task", taskRoutes);
