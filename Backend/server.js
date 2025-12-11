@@ -14,6 +14,7 @@ import projectRoutes from "./routes/projectRoutes.js";
 import announcementRoutes from "./routes/announcement_route.js";
 import cookieParser from "cookie-parser";
 
+
 // Configure environment
 dotenv.config();
 
@@ -22,6 +23,7 @@ connectDB();
 
 const app = express();
 
+
 // Middlewares
 app.use(cors());
 app.use(express.json());
@@ -29,11 +31,13 @@ app.use(morgan('dev'));
 app.use(cookieParser());
 
 //routes
+app.use("/api/v1/userAuth", userRoutes);
 app.use("/api/v1/attendance", attendanceRoutes);
 app.use("/api/v1/leave-request", leaveRoutes);
 app.use("/api/v1/task", taskRoutes);
-app.use("/api/v1/userAuth", userRoutes);
+
 app.use("/api/v1/department", departmentRoutes);
+
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
