@@ -7,9 +7,9 @@ import {
   updateAnnouncement,
   deleteAnnouncement,
 } from "../controllers/announcementController.js";
-
-import { requiredSignIn, isAdmin, isManager } from "../middlewares/AuthMiddleware.js";
-   // OR isAdmin — depends on your rule
+// OR isAdmin — depends on your rule
+import { requiredSignIn, isManagerOrAdmin } from "../middlewares/AuthMiddleware.js";
+   
   
 
 
@@ -22,8 +22,8 @@ AnnouncementRouter.get("/getAnnouncement/:id", getAnnouncementbyID);
 AnnouncementRouter.get("/getActiveAnnouncements", getActiveAnnouncements);
 
 //protected routes
-AnnouncementRouter.post("/createAnnouncement",requiredSignIn,isManager,createAnnouncement );   
-AnnouncementRouter.put("/updateAnnouncement/:id", updateAnnouncement);
-AnnouncementRouter.delete("/deleteAnnouncement/:id", deleteAnnouncement);
+AnnouncementRouter.post("/createAnnouncement",requiredSignIn,isManagerOrAdmin,createAnnouncement );   
+AnnouncementRouter.put("/updateAnnouncement/:id", requiredSignIn,isManagerOrAdmin,updateAnnouncement);
+AnnouncementRouter.delete("/deleteAnnouncement/:id", requiredSignIn,isManagerOrAdmin,deleteAnnouncement);
 
 export default AnnouncementRouter;
