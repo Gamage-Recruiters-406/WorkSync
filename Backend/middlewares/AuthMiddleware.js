@@ -3,7 +3,7 @@ import JWT from "jsonwebtoken";
 // Protected routes using token
 export const requiredSignIn = async(req, res, next) => {
     try {
-        const token = req.headers.authorization;
+        const token = req.cookies.access_token;
         
         if (!token) {
             return res.status(401).json({ 
@@ -22,17 +22,6 @@ export const requiredSignIn = async(req, res, next) => {
             message: "Invalid or expired token" 
         });
     }
-};
-
-// Middleware to check if user is an Employee (role = 1)
-export const isEmployee = (req, res, next) => {
-    if (req.user.role !== 1) {
-        return res.status(403).json({ 
-            success: false, 
-            message: "Access denied. Employee role required." 
-        });
-    }
-    next();
 };
 
 // Middleware to check if user is a Manager (role = 2)
