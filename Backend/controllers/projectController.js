@@ -3,13 +3,13 @@ import Project from "../models/ProjectModel.js";
 // Create a new project
 export const createProjectController = async (req, res) => {
     try {
-        const { name, description, startDate, endDate, status } = req.body;
+        const { name, description, startDate, endDate, status, teamLeaderId } = req.body;
 
         // Basic required-field validation
-        if (!name || !description || !startDate) {
+        if (!name || !description || !startDate || !teamLeaderId) {
             return res.status(400).json({ 
                 success : false,
-                message: "Name, Description, and Start Date are required" 
+                message: "Name, Description, Start Date and Team Leader are required" 
             });
         }
 
@@ -43,6 +43,7 @@ export const createProjectController = async (req, res) => {
             endDate,
             status,
             createdBy,
+            teamLeader: teamLeaderId,
         });
 
         res.status(201).json({
