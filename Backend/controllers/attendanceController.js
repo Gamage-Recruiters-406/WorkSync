@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';    
 
 
-// 1. CLOCK IN
+// 1. START ATTENDANT 
 export const clockInController = async (req, res) => {
     try {
         const { date } = req.body; 
@@ -14,7 +14,6 @@ export const clockInController = async (req, res) => {
             return res.status(400).send({ message: "Date is required" });
         }
 
-        // DUPLICATE CHECK
         const existingAttendance = await attendanceModel.findOne({ userId, date });
 
         if (existingAttendance) {
@@ -46,21 +45,18 @@ export const clockInController = async (req, res) => {
 };
 
 
-
-// 2. CLOCK OUT
+// 2. END ATTENDANCE 
 export const clockOutController = async (req, res) => {
     try {
         const { date } = req.body;
-        const userId = req.user.userid;
+        const userId = req.user.userid; 
 
-        // Find the record for THIS user on THIS date
         const attendance = await attendanceModel.findOne({ userId, date });
 
         if (!attendance) {
             return res.status(404).send({ success: false, message: "Attendance record not found for today" });
         }
 
-        // DUPLICATE CHECK
         if (attendance.outTime) {
             return res.status(400).send({ success: false, message: "You have already Checked Out today" });
         }
@@ -81,8 +77,7 @@ export const clockOutController = async (req, res) => {
 };
 
 
-
-// 3. GET ALL ATTENDANCE (Attendance logs)
+// 3. GET ATTENDANT (Admin/Manager)
 export const getAttendanceController = async (req, res) => {
     try {
         const { role, userid } = req.user;
@@ -90,9 +85,7 @@ export const getAttendanceController = async (req, res) => {
 
         let query = {};
 
-        // Role Logic
         if (role === 3) { 
-             // Admin sees all
         } else if (role === 2) { 
             const employees = await User.find({ role: 1 }).select("_id");
             const allowedIds = employees.map(user => user._id);
@@ -102,7 +95,6 @@ export const getAttendanceController = async (req, res) => {
             query.userId = userid;
         }
 
-        // Date Logic
         const targetDate = date ? new Date(date) : new Date(); 
         if (viewType === 'month') {
             const yearMonth = targetDate.toISOString().slice(0, 7); 
@@ -119,13 +111,12 @@ export const getAttendanceController = async (req, res) => {
             query.date = targetDate.toISOString().split('T')[0];
         }
 
-        // Fetch Records
         const attendanceRecords = await attendanceModel.find(query)
             .populate('userId', 'name email role') 
             .sort({ date: -1 })
             .lean(); 
 
-        // Enrich individual records
+        // Enrich with Hours Calculation
         const enrichedAttendance = attendanceRecords.map(record => {
             let hours = 0;
             if (record.inTime && record.outTime) { 
@@ -149,64 +140,61 @@ export const getAttendanceController = async (req, res) => {
 };
 
 
-
-// 4. Attendance Corrections
-export const updateAttendanceController = async (req, res) => {
+// 4. GET SINGLE USER ATTENDANCE 
+export const getSingleUserAttendanceController = async (req, res) => {
     try {
-        const { attendanceId } = req.params; 
-        const { outTime, status } = req.body; 
+        const { id } = req.params; 
+        
+        const attendanceRecords = await attendanceModel.find({ userId: id })
+            .populate('userId', 'name email')
+            .sort({ date: -1 })
+            .lean();
 
-        // Find the Record
-        const attendance = await attendanceModel.findById(attendanceId);
-
-        if (!attendance) {
-            return res.status(404).send({ success: false, message: "Attendance record not found" });
+        if (!attendanceRecords || attendanceRecords.length === 0) {
+            return res.status(404).send({ success: false, message: "No records found for this user" });
         }
 
-        // Update Status
-        if (status) attendance.status = status;
-
-        // Update OutTime
-        if (outTime) {
-            const newOutTime = new Date(outTime);
-            
-            if (newOutTime < attendance.inTime) {
-                return res.status(400).send({ success: false, message: "Out Time cannot be before In Time!" });
+        // Calculate Hours for Single User 
+        const enrichedAttendance = attendanceRecords.map(record => {
+            let hours = 0;
+            if (record.inTime && record.outTime) { 
+                const start = new Date(record.inTime);
+                const end = new Date(record.outTime);
+                hours = (end - start) / (1000 * 60 * 60); 
             }
-            attendance.outTime = newOutTime;
-        }
+            return { ...record, hoursWorked: hours.toFixed(2) }; 
+        });
 
-        await attendance.save();
-
-        res.status(200).send({ success: true, message: "Attendance Updated Successfully", attendance });
+        res.status(200).send({
+            success: true,
+            count: enrichedAttendance.length,
+            attendance: enrichedAttendance
+        });
 
     } catch (error) {
         console.log(error);
-        res.status(500).send({ success: false, message: "Error updating attendance", error });
+        res.status(500).send({ success: false, message: "Error fetching user attendance", error });
     }
 };
 
 
-// 5. EXPORT HELPERS & CONTROLLERS
-// Helper function to build the query (REQUIRED for Exports)
+
+// 5. ATTENDANCE REPORT (Excel/PDF)
 const buildExportQuery = async (req) => {
     const { role, userid } = req.user;
     const { viewType, date } = req.query; 
-
     let query = {};
 
-    // Role Logic
-    if (role === 3) { 
-    } else if (role === 2) { 
+    if (role === 3) {
+    } else if (role === 2) {
         const employees = await User.find({ role: 1 }).select("_id");
         const allowedIds = employees.map(user => user._id);
         allowedIds.push(userid);
         query.userId = { $in: allowedIds };
-    } else { 
+    } else {
         query.userId = userid;
     }
 
-    // Date Logic
     const targetDate = date ? new Date(date) : new Date();
 
     if (viewType === 'month') {
@@ -223,23 +211,32 @@ const buildExportQuery = async (req) => {
     } else if (viewType === 'daily') {
         query.date = targetDate.toISOString().split('T')[0];
     }
-
     return query;
 };
 
-// EXPORT TO EXCEL (With Totals)
-export const exportAttendanceExcel = async (req, res) => {
+// Unified Export Controller 
+export const generateAttendanceReport = async (req, res) => {
+    try {
+        const { type } = req.query; // Check "pdf" or "excel"
+
+        if (type === 'pdf') {
+            return exportAttendancePDF(req, res);
+        } else {
+            return exportAttendanceExcel(req, res);
+        }
+    } catch (error) {
+         res.status(500).send({ message: "Error generating report" });
+    }
+};
+
+// Excel Function 
+const exportAttendanceExcel = async (req, res) => {
     try {
         const query = await buildExportQuery(req);
-        
-        const attendanceData = await attendanceModel.find(query)
-            .populate('userId', 'name email')
-            .sort({ date: -1 });
+        const attendanceData = await attendanceModel.find(query).populate('userId', 'name email').sort({ date: -1 });
 
-        // CALCULATE TOTALS 
         let totalHoursWorked = 0;
         let daysPresent = 0;
-
         attendanceData.forEach(record => {
             if (record.status === 'Present') daysPresent++;
             if (record.inTime && record.outTime) {
@@ -251,7 +248,6 @@ export const exportAttendanceExcel = async (req, res) => {
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Attendance Report');
-
         worksheet.columns = [
             { header: 'Date', key: 'date', width: 15 },
             { header: 'Employee Name', key: 'name', width: 25 },
@@ -277,43 +273,31 @@ export const exportAttendanceExcel = async (req, res) => {
             });
         });
 
-        // ADD SUMMARY ROWS 
         worksheet.addRow([]); 
         worksheet.addRow(['SUMMARY REPORT']);
         worksheet.addRow(['Total Days Present', daysPresent]);
         worksheet.addRow(['Total Hours Worked', totalHoursWorked.toFixed(2)]);
         
-        worksheet.getRow(worksheet.rowCount).font = { bold: true };
-        worksheet.getRow(worksheet.rowCount - 1).font = { bold: true };
-        worksheet.getRow(worksheet.rowCount - 2).font = { bold: true };
-
         const filename = `Attendance_Report_${req.query.viewType || 'All'}.xlsx`;
-
         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
 
         await workbook.xlsx.write(res);
         res.end();
-
     } catch (error) {
         console.log(error);
         res.status(500).send({ message: "Error exporting Excel", error });
     }
 };
 
-// EXPORT TO PDF (With Totals)
-export const exportAttendancePDF = async (req, res) => {
+// PDF Function 
+const exportAttendancePDF = async (req, res) => {
     try {
         const query = await buildExportQuery(req);
-        
-        const attendanceData = await attendanceModel.find(query)
-            .populate('userId', 'name email')
-            .sort({ date: -1 });
+        const attendanceData = await attendanceModel.find(query).populate('userId', 'name email').sort({ date: -1 });
 
-        // CALCULATE TOTALS 
         let totalHoursWorked = 0;
         let daysPresent = 0;
-
         attendanceData.forEach(record => {
             if (record.status === 'Present') daysPresent++;
             if (record.inTime && record.outTime) {
@@ -325,10 +309,8 @@ export const exportAttendancePDF = async (req, res) => {
 
         const doc = new PDFDocument();
         const filename = `Attendance_Report_${req.query.viewType || 'All'}.pdf`;
-
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
-
         doc.pipe(res);
 
         const title = `Attendance Report (${req.query.viewType || 'All Time'})`;
@@ -344,22 +326,43 @@ export const exportAttendancePDF = async (req, res) => {
             const inTimeDisplay = formatSLTime(record.inTime);
             const outTimeDisplay = formatSLTime(record.outTime);
             const userName = record.userId ? record.userId.name : "Unknown";
-
             const line = `${index + 1}. [${userName}] Date: ${record.date} | In: ${inTimeDisplay} | Out: ${outTimeDisplay}`;
             doc.fontSize(12).text(line);
             doc.moveDown(0.5);
         });
 
-        // PRINT TOTALS 
         doc.moveDown();
         doc.text("---------------------------------------------------");
         doc.fontSize(14).text(`Total Days Present: ${daysPresent}`);
         doc.fontSize(14).text(`Total Hours Worked: ${totalHoursWorked.toFixed(2)}`);
-
         doc.end();
-
     } catch (error) {
         console.log(error);
         res.status(500).send({ message: "Error exporting PDF", error });
+    }
+};
+
+
+// 6. UPDATE ATTENDANCE (Admin Fix )
+export const updateAttendanceController = async (req, res) => {
+    try {
+        const { attendanceId } = req.params;
+        const { outTime, status } = req.body;
+        const attendance = await attendanceModel.findById(attendanceId);
+
+        if (!attendance) return res.status(404).send({ success: false, message: "Attendance record not found" });
+
+        if (status) attendance.status = status;
+        if (outTime) {
+            const newOutTime = new Date(outTime);
+            if (newOutTime < attendance.inTime) return res.status(400).send({ success: false, message: "Out Time cannot be before In Time!" });
+            attendance.outTime = newOutTime;
+        }
+
+        await attendance.save();
+        res.status(200).send({ success: true, message: "Attendance Updated Successfully", attendance });
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false, message: "Error updating attendance", error });
     }
 };

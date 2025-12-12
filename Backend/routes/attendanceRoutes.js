@@ -3,32 +3,32 @@ import {
     clockInController, 
     clockOutController,
     getAttendanceController,
-    exportAttendanceExcel, 
-    exportAttendancePDF,
-    updateAttendanceController    
+    getSingleUserAttendanceController,
+    generateAttendanceReport,
+    updateAttendanceController
 } from "../controllers/attendanceController.js";
-
 
 import { requiredSignIn, isManagerOrAdmin } from "../middlewares/AuthMiddleware.js";
 
 const router = express.Router();
 
-// CHECK IN TIME
-router.post("/clock-in", requiredSignIn, clockInController);
+// Add attendance
+router.post("/startAttendent", requiredSignIn, clockInController);
 
-// CHECK OUT TIME
-router.put("/clock-out", requiredSignIn, clockOutController);
+// Get Attendance (admin) 
+router.get("/getAttendent", requiredSignIn, getAttendanceController);
 
-// GET ALL RECORDS (Attendance logs)
-router.get("/get-all", requiredSignIn, getAttendanceController);
+// Get single user attendance 
+router.get("/get-single-user-attendance/:id", requiredSignIn, isManagerOrAdmin, getSingleUserAttendanceController);
 
-// Attendance Corrections
+// 4. Check out attendance 
+router.patch("/EndAttendance/:id", requiredSignIn, clockOutController);
+
+// 5. Generate attendance report (GET)
+router.get("/attendanceReport", requiredSignIn, isManagerOrAdmin, generateAttendanceReport);
+
+
+// Manual Admin Update (Fix mistakes)
 router.put("/update/:attendanceId", requiredSignIn, isManagerOrAdmin, updateAttendanceController);
-
-// Download Excel Report
-router.get("/export/excel", requiredSignIn, isManagerOrAdmin, exportAttendanceExcel);
-
-// Download PDF Report
-router.get("/export/pdf", requiredSignIn, isManagerOrAdmin, exportAttendancePDF);
 
 export default router;
