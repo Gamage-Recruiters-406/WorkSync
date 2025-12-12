@@ -33,14 +33,6 @@ export const createProjectController = async (req, res) => {
             });
         }
 
-        // build attachments from uploaded files (if any)
-        const attachments = (req.files || []).map((file) => ({
-            data: file.buffer,
-            originalName: file.originalname,
-            fileType: file.mimetype,
-            fileSize: file.size,
-        }));
-
         // createdBy from JWT token (requiredSignIn put payload in req.user)
         const createdBy = req.user.userid;
 
@@ -51,7 +43,6 @@ export const createProjectController = async (req, res) => {
             endDate,
             status,
             createdBy,
-            attachments,
         });
 
         res.status(201).json({
