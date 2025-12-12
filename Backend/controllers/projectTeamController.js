@@ -1,11 +1,12 @@
 import ProjectTeam from "../models/ProjectTeam.js";
 import mongoose from "mongoose";
 
-// ADD MEMBER
+// ADD MEMBER TO PROJECT
 export const addMember = async (req, res) => {
     try {
         const { projectId, userId, assignedRole } = req.body;
 
+        // Validate required fields
         if (!projectId || !userId || !assignedRole) {
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -16,14 +17,16 @@ export const addMember = async (req, res) => {
             return res.status(400).json({ message: "User already added to this project" });
         }
 
-        // Set teamId (same for all members in same project)
-        const existingTeam = await ProjectTeam.findOne({ projectId });
-        const teamId = existingTeam ? existingTeam.teamId : new mongoose.Types.ObjectId().toString();
+        // Create new member
+        const newMember = new ProjectTeam({
+            projectId,
+            userId,
+            assignedRole
+        });
 
-        const newMember = new ProjectTeam({ projectId, userId, assignedRole, teamId });
         const saved = await newMember.save();
-
         res.status(201).json(saved);
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -61,22 +64,27 @@ export const updateMemberRole = async (req, res) => {
         }
 
         res.status(200).json(updated);
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-// REMOVE MEMBER
+// REMOVE MEMBER FROM PROJECT
 export const removeMember = async (req, res) => {
     try {
         const { id } = req.params;
+
         const deleted = await ProjectTeam.findByIdAndDelete(id);
 
         if (!deleted) {
             return res.status(404).json({ message: "Member not found" });
         }
 
-        res.status(200).json({ message: "Member removed successfully" });
+        res.status(200).json({
+            message: "Member removed successfully"
+        });
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -86,8 +94,10 @@ export const removeMember = async (req, res) => {
 export const getProjectsOfUser = async (req, res) => {
     try {
         const { uid } = req.params;
+
         const projects = await ProjectTeam.find({ userId: uid });
         res.status(200).json(projects);
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
