@@ -33,6 +33,14 @@ export const createProjectController = async (req, res) => {
             });
         }
 
+        // build attachments from uploaded files (if any)
+        const attachments = (req.files || []).map((file) => ({
+            data: file.buffer,
+            originalName: file.originalname,
+            fileType: file.mimetype,
+            fileSize: file.size,
+        }));
+
         // createdBy from JWT token (requiredSignIn put payload in req.user)
         const createdBy = req.user.userid;
 
@@ -43,6 +51,7 @@ export const createProjectController = async (req, res) => {
             endDate,
             status,
             createdBy,
+            attachments,
         });
 
         res.status(201).json({
@@ -55,6 +64,44 @@ export const createProjectController = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Error creating project",
+            error: error.message
+        });
+    }
+};
+
+
+// Delete a project
+export const deleteProjectController = async (req,res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "Project ID is required",
+            });
+        }
+
+        const project = await Project.findById(id);
+
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: "Project not found",
+            });
+        }
+
+        await Project.findByIdAndDelete(id);
+
+        return res.status(200).json({
+            success: true,
+            message: "Project deleted successfully",
+        });
+    } catch (error) {
+        console.error("Error deleting project:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error deleting project",
             error: error.message
         });
     }
