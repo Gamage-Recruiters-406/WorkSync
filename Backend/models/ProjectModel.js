@@ -27,18 +27,6 @@ const projectSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
-    attachments: [
-        {
-            data: Buffer,
-            originalName: String,
-            fileType: String,
-            fileSize: Number,
-            uploadedAt: {
-                type: Date,
-                default: Date.now
-            },
-        }
-    ]
 }, { timestamps: true });
 
 export default mongoose.model("Project", projectSchema);
