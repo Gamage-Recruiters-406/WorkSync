@@ -24,16 +24,60 @@ export async function createAnnouncement(req, res) {
   }
 }
 
-// Get All Announcements
-export async function getAnnouncements(req, res) {
+//Get All Announcements for manager
+export async function getManagerAnnouncements(req, res) { 
   try {
-    const announcements = await Announcement.find().sort({ createdAt: -1 });
+    const announcements = await Announcement.find({ audience: "Manager" }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
       data: announcements,
     });
   } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+//get announcement for employee
+export async function getEmployeeAnnouncements(req, res) { 
+  try {
+    const announcements = await Announcement.find({ audience: "Employee" }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: announcements,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+} 
+
+//get announcement for admin 
+export async function getAdminAnnouncements(req, res) { 
+  try {
+    const announcements = await Announcement.find({ audience: "Admin" }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: announcements,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+// Get All Announcements
+export async function getAllAnnouncements(req, res) {
+ 
+  try {
+      const announcements = await Announcement.find().sort({ createdAt: -1 });
+
+      res.status(200).json({
+        success: true,
+        data: announcements,
+      });
+    }
+
+   catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 }

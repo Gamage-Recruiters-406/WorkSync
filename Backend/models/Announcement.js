@@ -11,10 +11,15 @@ const announcementSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    date: {
+    startDate: {
       type: Date,
       required: true,
       default: Date.now,
+    },
+    endDate: {
+      type: Date,
+      required: false,
+      
     },
     message: {
       type: String,
@@ -23,6 +28,16 @@ const announcementSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    priority: {
+      type: String,
+      enum: ["Low", "Medium", "High"],
+      default: "Medium",
+    },
+    audience: {
+      type: String,
+      enum: ["Manager", "Admin", "Employee","All"],
+      default: "All",
     },
   },
   {
