@@ -3,13 +3,13 @@ import Project from "../models/ProjectModel.js";
 // Create a new project
 export const createProjectController = async (req, res) => {
     try {
-        const { name, description, startDate, endDate, status } = req.body;
+        const { name, description, startDate, endDate, status, teamLeaderId } = req.body;
 
         // Basic required-field validation
-        if (!name || !description || !startDate) {
+        if (!name || !description || !startDate || !teamLeaderId) {
             return res.status(400).json({ 
                 success : false,
-                message: "Name, Description, and Start Date are required" 
+                message: "Name, Description, Start Date and Team Leader are required" 
             });
         }
 
@@ -43,6 +43,7 @@ export const createProjectController = async (req, res) => {
             endDate,
             status,
             createdBy,
+            teamLeader: teamLeaderId,
         });
 
         res.status(201).json({
@@ -55,6 +56,44 @@ export const createProjectController = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Error creating project",
+            error: error.message
+        });
+    }
+};
+
+
+// Delete a project
+export const deleteProjectController = async (req,res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "Project ID is required",
+            });
+        }
+
+        const project = await Project.findById(id);
+
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: "Project not found",
+            });
+        }
+
+        await Project.findByIdAndDelete(id);
+
+        return res.status(200).json({
+            success: true,
+            message: "Project deleted successfully",
+        });
+    } catch (error) {
+        console.error("Error deleting project:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error deleting project",
             error: error.message
         });
     }

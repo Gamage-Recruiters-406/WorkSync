@@ -1,8 +1,9 @@
-import express from "express";
-import colors from 'colors';
+// Backend/server.js
+import colors from "colors";
 import dotenv from "dotenv";
-import morgan from "morgan";
 import connectDB from "./config/db.js";
+import app from "./app.js";
+
 import cors from "cors";
 import projectTeamRoutes from "./routes/projectTeamRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
@@ -35,9 +36,7 @@ app.use("/api/v1/userAuth", userRoutes);
 app.use("/api/v1/attendance", attendanceRoutes);
 app.use("/api/v1/leave-request", leaveRoutes);
 app.use("/api/v1/task", taskRoutes);
-
 app.use("/api/v1/department", departmentRoutes);
-
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);

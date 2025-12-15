@@ -1,5 +1,5 @@
 import express from 'express';
-import { createDepartment , deleteDepartment} from '../controllers/departmentController.js';
+import { createDepartment , deleteDepartment , changeDepartmentStatus} from '../controllers/departmentController.js';
 import { requiredSignIn,isAdmin } from '../middlewares/AuthMiddleware.js';
 const router = express.Router();
 
@@ -19,5 +19,10 @@ router.delete('/deleteDepartment/:id',requiredSignIn ,isAdmin, deleteDepartment)
 
 //without authentication and authorization
 // router.delete('/deleteDepartment/:id', deleteDepartment);
+
+// Change Department Status - PUT /api/v1/department/changeStatus/:id
+
+//with authentication and admin authorization
+router.put('/changeStatus/:id',requiredSignIn ,isAdmin, changeDepartmentStatus);
 
 export default router;
