@@ -1,6 +1,6 @@
 import express from 'express';
 import { createProjectController } from '../controllers/projectController.js';
-import { requiredSignIn, isManagerOrAdmin } from '../middlewares/authMiddleware.js';
+import { requiredSignIn, isManagerOrAdmin } from '../middlewares/AuthMiddleware.js';
 
 // router object
 const router = express.Router();
