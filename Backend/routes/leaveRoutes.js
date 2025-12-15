@@ -1,5 +1,5 @@
 import express from "express";
-import {requiredSignIn} from "../middlewares/AuthMiddleware.js";
+import {requiredSignIn, isManagerOrAdmin} from "../middlewares/AuthMiddleware.js";
 import {
   createLeaveRequest,
   deleteLeaveRequest,
