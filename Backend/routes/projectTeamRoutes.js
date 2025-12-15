@@ -31,10 +31,10 @@ router.get("/", (req, res) => {
 router.post("/addMember", requiredSignIn, isManagerOrAdmin, addMember);
 
 // Update member role (Manager/Admin ONLY)
-router.put("/updateMemberRole/:id", requiredSignIn, isManagerOrAdmin, updateMemberRole);
+router.put("/updateMemberRole", requiredSignIn, isManagerOrAdmin, updateMemberRole);
 
 // Remove member (Manager/Admin ONLY)
-router.delete("/removeMember/:id", requiredSignIn, isManagerOrAdmin, removeMember);
+router.delete("/removeMember", requiredSignIn, isManagerOrAdmin, removeMember);
 
 /* ---------------------------
  VIEW ROUTES (Employees allowed)
