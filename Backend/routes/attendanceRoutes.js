@@ -2,21 +2,33 @@ import express from "express";
 import { 
     clockInController, 
     clockOutController,
-    getAttendanceController     
+    getAttendanceController,
+    getSingleUserAttendanceController,
+    generateAttendanceReport,
+    updateAttendanceController
 } from "../controllers/attendanceController.js";
 
-
-import { requiredSignIn } from "../middlewares/AuthMiddleware.js";
+import { requiredSignIn, isManagerOrAdmin } from "../middlewares/AuthMiddleware.js";
 
 const router = express.Router();
 
-// CHECK IN TIME
-router.post("/clock-in", requiredSignIn, clockInController);
+// Add attendance
+router.post("/startAttendent", requiredSignIn, clockInController);
 
-//  CHECK OUT TIME
-router.put("/clock-out", requiredSignIn, clockOutController);
+// Get Attendance (admin) 
+router.get("/getAttendent", requiredSignIn, getAttendanceController);
 
-//  GET ALL RECODERS
-router.get("/get-all", requiredSignIn, getAttendanceController);
+// Get single user attendance 
+router.get("/get-single-user-attendance/:id", requiredSignIn, isManagerOrAdmin, getSingleUserAttendanceController);
+
+// 4. Check out attendance 
+router.patch("/EndAttendance/:id", requiredSignIn, clockOutController);
+
+// 5. Generate attendance report (GET)
+router.get("/attendanceReport", requiredSignIn, isManagerOrAdmin, generateAttendanceReport);
+
+
+// Manual Admin Update (Fix mistakes)
+router.put("/update/:attendanceId", requiredSignIn, isManagerOrAdmin, updateAttendanceController);
 
 export default router;
