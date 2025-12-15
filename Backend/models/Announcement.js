@@ -11,6 +11,11 @@ const announcementSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    message: {
+      type: String,
+      required: true,
+    },
+
     startDate: {
       type: Date,
       required: true,
@@ -19,16 +24,8 @@ const announcementSchema = new mongoose.Schema(
     endDate: {
       type: Date,
       required: false,
-      
     },
-    message: {
-      type: String,
-      required: true,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+
     priority: {
       type: String,
       enum: ["Low", "Medium", "High"],
@@ -39,6 +36,32 @@ const announcementSchema = new mongoose.Schema(
       enum: ["Manager", "Admin", "Employee","All"],
       default: "All",
     },
+
+    // Additional Options
+    isPinned: {
+       type: Boolean,
+       default: false },
+
+    notifyAll: {
+       type: Boolean,
+        default: false 
+      },
+
+    // likes
+    likes: [
+      { type: mongoose.Schema.Types.ObjectId,
+         ref: "User" }],
+    likesCount: {
+       type: Number,
+        default: 0 
+      },
+
+  
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
   },
   {
     timestamps: true,

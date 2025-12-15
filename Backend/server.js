@@ -11,7 +11,7 @@ import userRoutes from "./routes/userRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import announcementRoutes from "./routes/announcement_route.js";
 import cookieParser from "cookie-parser";
-import { requiredSignIn } from "./middlewares/AuthMiddleware.js";
+
 //configure env
 dotenv.config();
 
@@ -34,6 +34,7 @@ app.use("/api/v1/task", taskRoutes);
 
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
+
 
 
 app.get("/", (req, res) => {
