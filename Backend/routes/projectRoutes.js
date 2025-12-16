@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProjectController, updateProjectController, deleteProjectController } from '../controllers/projectController.js';
+import { createProjectController, getSingleProjectController, updateProjectController, deleteProjectController } from '../controllers/projectController.js';
 import { requiredSignIn, isManagerOrAdmin } from '../middlewares/AuthMiddleware.js';
 
 // router object
@@ -7,6 +7,9 @@ const router = express.Router();
 
 // CREATE PROJECT -> POST /api/v1/projects/createProject
 router.post("/createProject", requiredSignIn, isManagerOrAdmin, createProjectController);
+
+// GET SINGLE PROJECT -> GET /api/v1/projects/getProject/:id
+router.get("/getProject/:id", requiredSignIn, isManagerOrAdmin, getSingleProjectController);
 
 // UPDATE PROJECT -> PUT /api/v1/projects/updateProject/:id
 router.put("/updateProject/:id", requiredSignIn, isManagerOrAdmin, updateProjectController);

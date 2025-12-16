@@ -62,6 +62,47 @@ export const createProjectController = async (req, res) => {
 };
 
 
+// Get single project
+export const getSingleProjectController = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const project = await Project.findById(id)
+            .populate("createdBy", "name email")
+            .populate("teamLeader", "name email")
+            .lean();
+
+            if (!project) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Project not found",
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Project fetched successfully",
+                data: project
+            });
+    } catch (error) {
+        // Invalid ObjectId
+        if (error?.name === 'CastError') {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid project ID",
+            });
+        }
+
+        console.error("Error fetching project:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching project",
+            error: error.message
+        });
+    }
+};
+
+
 // Update a project
 export const updateProjectController = async (req, res) => {
     try {
