@@ -3,7 +3,7 @@ import Task from "../models/Task.js";
 // CREATE TASK
 export const createTask = async (req, res) => {
     try {
-        const { title, description, assignedTo, deadline, priority } = req.body;
+        const { title, description, assignedTo, deadline, priority ,milestone} = req.body;
 
         const task = await Task.create({
             title,
@@ -12,7 +12,8 @@ export const createTask = async (req, res) => {
             deadline,
             priority,
             // Force status to be "Pending" regardless of what was sent in the request
-            status: "Pending"
+            status: "Pending",
+            milestone 
         });
 
         res.status(201).json({
@@ -48,7 +49,7 @@ export const deleteTask = async (req, res) => {
 export const updateTask = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, assignedTo, deadline, priority ,status } = req.body;
+        const { title, description, assignedTo, deadline, priority ,status ,milestone} = req.body;
 
         // Find the task first
         const task = await Task.findById(id);
@@ -66,6 +67,7 @@ export const updateTask = async (req, res) => {
         if (deadline !== undefined) task.deadline = deadline;
         if (priority !== undefined) task.priority = priority;
         if (status !== undefined) task.status = status;
+        if (milestone !== undefined) task.milestone = milestone;
 
         if (assignedTo !== undefined) {
             if (Array.isArray(assignedTo)) {
