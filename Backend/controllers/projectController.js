@@ -103,6 +103,29 @@ export const getSingleProjectController = async (req, res) => {
 };
 
 
+// Get all projects
+export const getAllProjectsController = async (req, res) => {
+    try {
+        const projects = await Project.find()
+            .sort({ createdAt: -1 })
+            .populate("createdBy", "name email")
+            .populate("teamLeader", "name email");
+
+        return res.status(200).json({
+            success: true,
+            count: projects.length,
+            data: projects
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Error fetching projects",
+            error: error.message
+        });
+    }
+};
+
+
 // Update a project
 export const updateProjectController = async (req, res) => {
     try {
