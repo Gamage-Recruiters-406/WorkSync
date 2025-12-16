@@ -7,14 +7,23 @@ import {
   updateAnnouncement,
   deleteAnnouncement,
 } from "../controllers/announcementController.js";
+// OR isAdmin — depends on your rule
+import { requiredSignIn, isManagerOrAdmin } from "../middlewares/AuthMiddleware.js";
+   
+  
+
 
 const AnnouncementRouter = express.Router();
 
-AnnouncementRouter.post("/createAnnouncement", createAnnouncement);
+
+//public routes
 AnnouncementRouter.get("/getAnnouncements", getAnnouncements);
 AnnouncementRouter.get("/getAnnouncement/:id", getAnnouncementbyID);
 AnnouncementRouter.get("/getActiveAnnouncements", getActiveAnnouncements);
-AnnouncementRouter.put("/updateAnnouncement/:id", updateAnnouncement);
-AnnouncementRouter.delete("/deleteAnnouncement/:id", deleteAnnouncement);
+
+//protected routes
+AnnouncementRouter.post("/createAnnouncement",requiredSignIn,isManagerOrAdmin,createAnnouncement );   
+AnnouncementRouter.put("/updateAnnouncement/:id", requiredSignIn,isManagerOrAdmin,updateAnnouncement);
+AnnouncementRouter.delete("/deleteAnnouncement/:id", requiredSignIn,isManagerOrAdmin,deleteAnnouncement);
 
 export default AnnouncementRouter;
