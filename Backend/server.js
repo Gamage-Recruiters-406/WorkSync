@@ -18,6 +18,9 @@ import milestoneRoutes from "./routes/milestoneRoute.js";
 
 
 // Configure environment
+
+
+
 dotenv.config();
 
 // Database config
@@ -42,6 +45,7 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
 app.use("/api/v1/millestone", milestoneRoutes);
+
 
 
 app.get("/", (req, res) => {
