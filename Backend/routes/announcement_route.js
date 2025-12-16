@@ -16,7 +16,7 @@ import {
   getMyNotifications,
   markAsRead,
 } from "../controllers/announcementController.js";
-// OR isAdmin — depends on your rule
+
 import { requiredSignIn, isManagerOrAdmin,isEmployee } from "../middlewares/AuthMiddleware.js";
    
   
