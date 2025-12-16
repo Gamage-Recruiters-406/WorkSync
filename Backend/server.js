@@ -1,9 +1,9 @@
-// Backend/server.js
+import express from "express";
 import colors from "colors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
-import app from "./app.js";
-
+// import app from "./app.js";
+import morgan from "morgan";
 import cors from "cors";
 import projectTeamRoutes from "./routes/projectTeamRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";

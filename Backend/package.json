@@ -20,16 +20,10 @@
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "cookie-parser": "^1.4.7",
     "mongoose": "^9.0.1",
     "morgan": "^1.10.1",
-
     "pdfkit": "^0.17.2",
-    "uuid": "^13.0.0"
-  },
-  "devDependencies": {
-    "cookie-parser": "^1.4.7",
-    "nodemon": "^3.1.11"
-
     "multer": "^2.0.2",
     "uuid": "^13.0.0"
   },
@@ -54,8 +48,5 @@
       "**/test/**/*.{js,jsx,ts,tsx}",
       "**/__tests__/**/*.{js,jsx,ts,tsx}"
     ]
-    "nodemon": "^3.1.11",
-    "cookie-parser": "^1.4.7"
-
   }
 }
