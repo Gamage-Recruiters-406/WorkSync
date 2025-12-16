@@ -31,7 +31,6 @@ const AdminAttendance = () => {
       date: "2024-12-09",
       status: "Present",
       hours: "9h 0m",
-      system: "Windows 10",
     },
     {
       id: 2,
@@ -42,7 +41,6 @@ const AdminAttendance = () => {
       date: "2024-12-09",
       status: "Present",
       hours: "8h 45m",
-      system: "MacOS",
     },
     {
       id: 3,
@@ -53,7 +51,6 @@ const AdminAttendance = () => {
       date: "2024-12-09",
       status: "Late",
       hours: "9h 0m",
-      system: "Windows 11",
     },
     {
       id: 4,
@@ -64,7 +61,6 @@ const AdminAttendance = () => {
       date: "2024-12-09",
       status: "Working",
       hours: "-",
-      system: "MacOS",
     },
     {
       id: 5,
@@ -75,7 +71,6 @@ const AdminAttendance = () => {
       date: "2024-12-09",
       status: "Absent",
       hours: "-",
-      system: "-",
     },
   ];
 
@@ -343,9 +338,6 @@ const AdminAttendance = () => {
                           Hours
                         </th>
                         <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                          System
-                        </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                           Status
                         </th>
                       </tr>
@@ -373,9 +365,6 @@ const AdminAttendance = () => {
                           </td>
                           <td className="py-3 px-4 text-sm text-gray-800">
                             {log.hours}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">
-                            {log.system}
                           </td>
                           <td className="py-3 px-4">
                             <span
