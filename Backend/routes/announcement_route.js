@@ -11,6 +11,10 @@ import {
   getActiveAnnouncements,
   updateAnnouncement,
   deleteAnnouncement,
+
+  likeAnnouncement,
+  getMyNotifications,
+  markAsRead,
 } from "../controllers/announcementController.js";
 // OR isAdmin — depends on your rule
 import { requiredSignIn, isManagerOrAdmin,isEmployee } from "../middlewares/AuthMiddleware.js";
@@ -36,5 +40,19 @@ AnnouncementRouter.get("/getActiveAnnouncements", getActiveAnnouncements);
 AnnouncementRouter.post("/createAnnouncement",requiredSignIn,isManagerOrAdmin,createAnnouncement );   
 AnnouncementRouter.put("/updateAnnouncement/:id", requiredSignIn,isManagerOrAdmin,updateAnnouncement);
 AnnouncementRouter.delete("/deleteAnnouncement/:id", requiredSignIn,isManagerOrAdmin,deleteAnnouncement);
+
+
+
+//like announcement
+AnnouncementRouter.put("/like/:id", requiredSignIn, likeAnnouncement);
+
+//notification
+AnnouncementRouter.get("/my-notifications", requiredSignIn, getMyNotifications);
+AnnouncementRouter.put("/markAsRead/:id", requiredSignIn, markAsRead);
+
+
+
+
+
 
 export default AnnouncementRouter;
