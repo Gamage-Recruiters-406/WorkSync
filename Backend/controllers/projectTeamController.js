@@ -1,7 +1,7 @@
 import ProjectTeam from "../models/ProjectTeam.js";
 import mongoose from "mongoose";
 
-// ADD MEMBER
+//  ADD MEMBER
 export const addMember = async (req, res) => {
     try {
         const { projectId, userId, assignedRole } = req.body;
@@ -10,17 +10,13 @@ export const addMember = async (req, res) => {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        // Prevent duplicate member
+        // Prevent duplicate member in the same project
         const existingMember = await ProjectTeam.findOne({ projectId, userId });
         if (existingMember) {
             return res.status(400).json({ message: "User already added to this project" });
         }
 
-        // Set teamId (same for all members in same project)
-        const existingTeam = await ProjectTeam.findOne({ projectId });
-        const teamId = existingTeam ? existingTeam.teamId : new mongoose.Types.ObjectId().toString();
-
-        const newMember = new ProjectTeam({ projectId, userId, assignedRole, teamId });
+        const newMember = new ProjectTeam({ projectId, userId, assignedRole });
         const saved = await newMember.save();
 
         res.status(201).json(saved);
@@ -29,7 +25,7 @@ export const addMember = async (req, res) => {
     }
 };
 
-// GET ALL MEMBERS OF A PROJECT
+//  GET ALL MEMBERS OF A PROJECT 
 export const getMembers = async (req, res) => {
     try {
         const { pid } = req.params;
@@ -40,24 +36,23 @@ export const getMembers = async (req, res) => {
     }
 };
 
-// UPDATE MEMBER ROLE
+//  UPDATE MEMBER ROLE (by projectId + userId) 
 export const updateMemberRole = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { assignedRole } = req.body;
+        const { projectId, userId, assignedRole } = req.body;
 
-        if (!assignedRole) {
-            return res.status(400).json({ message: "assignedRole is required" });
+        if (!projectId || !userId || !assignedRole) {
+            return res.status(400).json({ message: "projectId, userId and assignedRole are required" });
         }
 
-        const updated = await ProjectTeam.findByIdAndUpdate(
-            id,
+        const updated = await ProjectTeam.findOneAndUpdate(
+            { projectId, userId },
             { assignedRole },
             { new: true }
         );
 
         if (!updated) {
-            return res.status(404).json({ message: "Member not found" });
+            return res.status(404).json({ message: "Member not found in this project" });
         }
 
         res.status(200).json(updated);
@@ -66,14 +61,19 @@ export const updateMemberRole = async (req, res) => {
     }
 };
 
-// REMOVE MEMBER
+//  REMOVE MEMBER (by projectId + userId)
 export const removeMember = async (req, res) => {
     try {
-        const { id } = req.params;
-        const deleted = await ProjectTeam.findByIdAndDelete(id);
+        const { projectId, userId } = req.body;
+
+        if (!projectId || !userId) {
+            return res.status(400).json({ message: "projectId and userId are required" });
+        }
+
+        const deleted = await ProjectTeam.findOneAndDelete({ projectId, userId });
 
         if (!deleted) {
-            return res.status(404).json({ message: "Member not found" });
+            return res.status(404).json({ message: "Member not found in this project" });
         }
 
         res.status(200).json({ message: "Member removed successfully" });

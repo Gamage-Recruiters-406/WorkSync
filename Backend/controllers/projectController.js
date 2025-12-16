@@ -3,13 +3,13 @@ import Project from "../models/ProjectModel.js";
 // Create a new project
 export const createProjectController = async (req, res) => {
     try {
-        const { name, description, startDate, endDate, status } = req.body;
+        const { name, description, startDate, endDate, status, teamLeaderId } = req.body;
 
         // Basic required-field validation
-        if (!name || !description || !startDate) {
+        if (!name || !description || !startDate || !teamLeaderId) {
             return res.status(400).json({ 
                 success : false,
-                message: "Name, Description, and Start Date are required" 
+                message: "Name, Description, Start Date and Team Leader are required" 
             });
         }
 
@@ -33,14 +33,6 @@ export const createProjectController = async (req, res) => {
             });
         }
 
-        // build attachments from uploaded files (if any)
-        const attachments = (req.files || []).map((file) => ({
-            data: file.buffer,
-            originalName: file.originalname,
-            fileType: file.mimetype,
-            fileSize: file.size,
-        }));
-
         // createdBy from JWT token (requiredSignIn put payload in req.user)
         const createdBy = req.user.userid;
 
@@ -51,7 +43,7 @@ export const createProjectController = async (req, res) => {
             endDate,
             status,
             createdBy,
-            attachments,
+            teamLeader: teamLeaderId,
         });
 
         res.status(201).json({
@@ -64,6 +56,137 @@ export const createProjectController = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Error creating project",
+            error: error.message
+        });
+    }
+};
+
+
+// Get single project
+export const getSingleProjectController = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const project = await Project.findById(id)
+            .populate("createdBy", "name email")
+            .populate("teamLeader", "name email")
+            .lean();
+
+            if (!project) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Project not found",
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Project fetched successfully",
+                data: project
+            });
+    } catch (error) {
+        // Invalid ObjectId
+        if (error?.name === 'CastError') {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid project ID",
+            });
+        }
+
+        console.error("Error fetching project:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching project",
+            error: error.message
+        });
+    }
+};
+
+
+// Get all projects
+export const getAllProjectsController = async (req, res) => {
+    try {
+        const projects = await Project.find()
+            .sort({ createdAt: -1 })
+            .populate("createdBy", "name email")
+            .populate("teamLeader", "name email");
+
+        return res.status(200).json({
+            success: true,
+            count: projects.length,
+            data: projects
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Error fetching projects",
+            error: error.message
+        });
+    }
+};
+
+
+// Update a project
+export const updateProjectController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description, startDate, endDate, status, teamLeaderId } = req.body;
+
+        const project = await Project.findById(id);
+
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: "Project not found",
+            });
+        }
+
+        // If name is updated -> block duplicates (case-insensitive), excluding current project
+        if (name && name.trim()) {
+            const existingProject = await Project.findOne({
+                _id: { $ne: id },
+                name: { $regex: `^${name.trim()}$`, $options: 'i' }
+            });
+
+            if (existingProject) {
+                return res.status(400).json({
+                    success: false,
+                    message: "A project with this name already exists"
+                });
+            }
+        }
+
+        // Date validation using "final values" (new value if provided, else existing value)
+        const finalStartDate = startDate ? new Date(startDate) : project.startDate;
+        const finalEndDate = endDate ? new Date(endDate) : project.endDate;
+
+        if (finalEndDate && finalStartDate && finalEndDate < finalStartDate) {
+            return res.status(400).json({
+                success: false,
+                message: "End date cannot be before start date."
+            });
+        }
+
+        // Apply updates
+        if (name !== undefined) project.name = name;
+        if (description !== undefined) project.description = description;
+        if (startDate !== undefined) project.startDate = startDate;
+        if (endDate !== undefined) project.endDate = endDate;
+        if (status !== undefined) project.status = status;
+        if (teamLeaderId !== undefined) project.teamLeader = teamLeaderId;
+
+        const updatedProject = await project.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Project updated successfully",
+            data: updatedProject
+        });
+    } catch (error) {
+        console.error("Error updating project:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error updating project",
             error: error.message
         });
     }

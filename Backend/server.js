@@ -1,8 +1,9 @@
 import express from "express";
-import colors from 'colors';
+import colors from "colors";
 import dotenv from "dotenv";
-import morgan from "morgan";
 import connectDB from "./config/db.js";
+// import app from "./app.js";
+import morgan from "morgan";
 import cors from "cors";
 import projectTeamRoutes from "./routes/projectTeamRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
@@ -13,6 +14,7 @@ import departmentRoutes from "./routes/departmentRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import announcementRoutes from "./routes/announcement_route.js";
 import cookieParser from "cookie-parser";
+import milestoneRoutes from "./routes/milestoneRoute.js";
 
 
 // Configure environment
@@ -35,12 +37,11 @@ app.use("/api/v1/userAuth", userRoutes);
 app.use("/api/v1/attendance", attendanceRoutes);
 app.use("/api/v1/leave-request", leaveRoutes);
 app.use("/api/v1/task", taskRoutes);
-
 app.use("/api/v1/department", departmentRoutes);
-
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
+app.use("/api/v1/millestone", milestoneRoutes);
 
 
 app.get("/", (req, res) => {
