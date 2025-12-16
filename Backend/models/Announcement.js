@@ -31,10 +31,26 @@ const announcementSchema = new mongoose.Schema(
       enum: ["Low", "Medium", "High"],
       default: "Medium",
     },
-    audience: {
-      type: String,
-      enum: ["Manager", "Admin", "Employee","All"],
-      default: "All",
+audience: {
+  type: Number,
+  enum: [0, 1, 2, 3], // 0 = All
+  default: 0,
+},
+
+
+    // likes
+    likes: [
+      { type: mongoose.Schema.Types.ObjectId,
+         ref: "Users" 
+        }],
+    likesCount: {
+       type: Number,
+        default: 0 
+      },
+
+    isActive: {
+      type: Boolean,
+      default: true,
     },
 
     // Additional Options
@@ -42,26 +58,12 @@ const announcementSchema = new mongoose.Schema(
        type: Boolean,
        default: false },
 
-    notifyAll: {
-       type: Boolean,
-        default: false 
+    //notifications
+    notifyRoles: {
+       type: [Number], // 1,2,3
+       enum: [1, 2, 3],
+       default: [],
       },
-
-    // likes
-    likes: [
-      { type: mongoose.Schema.Types.ObjectId,
-         ref: "User" }],
-    likesCount: {
-       type: Number,
-        default: 0 
-      },
-
-  
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-
   },
   {
     timestamps: true,
