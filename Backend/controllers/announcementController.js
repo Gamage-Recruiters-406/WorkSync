@@ -5,9 +5,18 @@ import Notification from "../models/Notification.js";
 
 // Create Announcement
 export async function createAnnouncement(req, res) {
- 
   try {
-    const {title, message, startDate, endDate, priority, audience, isPinned, notifyRoles} = req.body;
+    const {
+      title,
+      message,
+      startDate,
+      endDate,
+      priority,
+      audience,
+      isPinned,
+      notifyRoles,
+      neverExpire,
+    } = req.body;
 
     const newAnnouncement = await Announcement.create({
       announcementId: uuidv4(),
@@ -18,27 +27,26 @@ export async function createAnnouncement(req, res) {
       audience,
       isPinned,
       message,
-      notifyRoles,// ["1", "2","3"]
+      notifyRoles, // ["1", "2","3"]
+      neverExpire,
     });
 
-   // NOTIFICATION LOGIC
- if ( notifyRoles?.length > 0) {
-  const roles = notifyRoles?.map(Number);
+    // NOTIFICATION LOGIC
+    if (notifyRoles?.length > 0) {
+      const roles = notifyRoles?.map(Number);
 
-  const users = await User.find(
-    { role: { $in: roles } }
-  ).select("_id");
+      const users = await User.find({ role: { $in: roles } }).select("_id");
 
-  const notifications = users.map(user => ({
-    user: user._id,
-    title: "New Announcement",
-    message: title,
-    announcementId: newAnnouncement.announcementId,
-  }));
+      const notifications = users.map((user) => ({
+        user: user._id,
+        title: "New Announcement",
+        message: title,
+        announcementId: newAnnouncement.announcementId,
+      }));
 
-  await Notification.insertMany(notifications);
-}
-    
+      await Notification.insertMany(notifications);
+    }
+
     res.status(201).json({
       success: true,
       message: "Announcement created successfully",
@@ -50,9 +58,11 @@ export async function createAnnouncement(req, res) {
 }
 
 //Get All Announcements for manager
-export async function getManagerAnnouncements(req, res) { 
+export async function getManagerAnnouncements(req, res) {
   try {
-    const announcements = await Announcement.find({ audience: "Manager" }).sort({ createdAt: -1 });
+    const announcements = await Announcement.find({ audience: "Manager" }).sort(
+      { createdAt: -1 }
+    );
 
     res.status(200).json({
       success: true,
@@ -63,9 +73,11 @@ export async function getManagerAnnouncements(req, res) {
   }
 }
 //get announcement for employee
-export async function getEmployeeAnnouncements(req, res) { 
+export async function getEmployeeAnnouncements(req, res) {
   try {
-    const announcements = await Announcement.find({ audience: "Employee" }).sort({ createdAt: -1 });
+    const announcements = await Announcement.find({
+      audience: "Employee",
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -74,12 +86,14 @@ export async function getEmployeeAnnouncements(req, res) {
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
-} 
+}
 
-//get announcement for admin 
-export async function getAdminAnnouncements(req, res) { 
+//get announcement for admin
+export async function getAdminAnnouncements(req, res) {
   try {
-    const announcements = await Announcement.find({ audience: "Admin" }).sort({ createdAt: -1 });
+    const announcements = await Announcement.find({ audience: "Admin" }).sort({
+      createdAt: -1,
+    });
 
     res.status(200).json({
       success: true,
@@ -92,24 +106,20 @@ export async function getAdminAnnouncements(req, res) {
 
 // Get All Announcements
 export async function getAllAnnouncements(req, res) {
- 
   try {
-      const announcements = await Announcement.find().sort({ createdAt: -1 });
+    const announcements = await Announcement.find().sort({ createdAt: -1 });
 
-      res.status(200).json({
-        success: true,
-        data: announcements,
-      });
-    }
-
-   catch (error) {
+    res.status(200).json({
+      success: true,
+      data: announcements,
+    });
+  } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 }
 
 // Get Announcement by ID
 export async function getAnnouncementbyID(req, res) {
-
   try {
     const AId = req.params;
     const announcement = await Announcement.findOne({ announcementId: AId.id });
@@ -149,19 +159,38 @@ export async function getActiveAnnouncements(req, res) {
 // Update Announcement
 export async function updateAnnouncement(req, res) {
   try {
-    const Aid = req.params;
-    console.log("recived id", Aid.id);
-    const updated = await Announcement.findOneAndUpdate(
-      { announcementId: Aid.id }, req.body,
-      { new: true }
-    );
+    const { id } = req.params;
+    const updateData = req.body;
 
-    if (!updated) {
+    const announcement = await Announcement.findOne({ announcementId: id });
+    if (!announcement) {
       return res.status(404).json({
         success: false,
         message: "Announcement not found",
       });
     }
+
+    const isExpired =
+      announcement.endDate && new Date(announcement.endDate) < new Date();
+
+    const removingNeverExpire =
+      announcement.neverExpire === true && updateData.neverExpire === false;
+
+    //  instant delete rule
+    if (isExpired && removingNeverExpire) {
+      await deleteAnnouncementByAnnouncementId(id);
+
+      return res.status(200).json({
+        success: true,
+        message: "Announcement expired and deleted",
+      });
+    }
+
+    const updated = await Announcement.findOneAndUpdate(
+      { announcementId: id },
+      updateData,
+      { new: true }
+    );
 
     res.status(200).json({
       success: true,
@@ -169,7 +198,10 @@ export async function updateAnnouncement(req, res) {
       data: updated,
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 }
 
@@ -178,9 +210,7 @@ export async function deleteAnnouncement(req, res) {
   try {
     const { id } = req.params;
 
-    const deleted = await Announcement.findOneAndDelete({
-      announcementId: id,
-    });
+    const deleted = await deleteAnnouncementByAnnouncementId(id);
 
     if (!deleted) {
       return res.status(404).json({
@@ -197,7 +227,6 @@ export async function deleteAnnouncement(req, res) {
     res.status(500).json({ success: false, error: error.message });
   }
 }
-
 
 //like announcement
 export async function likeAnnouncement(req, res) {
@@ -224,9 +253,7 @@ export async function likeAnnouncement(req, res) {
     }
 
     //Clean bad data
-    announcement.likes = announcement.likes.filter(
-      (uid) => uid !== null
-    );
+    announcement.likes = announcement.likes.filter((uid) => uid !== null);
 
     const alreadyLiked = announcement.likes.some(
       (uid) => uid.toString() === userId.toString()
@@ -257,7 +284,6 @@ export async function likeAnnouncement(req, res) {
   }
 }
 
-
 //notification
 export async function getMyNotifications(req, res) {
   const notifications = await Notification.find({
@@ -271,16 +297,22 @@ export async function getMyNotifications(req, res) {
 }
 
 export async function markAsRead(req, res) {
- try{
-  const notification = await Notification.findById(req.params.id);
-  if(req.params.id == notification._id){
-  }
-  await Notification.findByIdAndUpdate(req.params.id, {
-    isRead: true,
-  });
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (req.params.id == notification._id) {
+    }
+    await Notification.findByIdAndUpdate(req.params.id, {
+      isRead: true,
+    });
 
-  res.status(200).json({ success: true });
- }catch(error){
-  res.status(500).json({ success: false, error: error.message });
- }
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+//auto delete announcement function
+//link with delete announcement and update announcement
+async function deleteAnnouncementByAnnouncementId(announcementId) {
+  return await Announcement.findOneAndDelete({ announcementId });
 }
