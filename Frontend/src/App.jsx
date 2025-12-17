@@ -1,11 +1,26 @@
-// import Sidebar from './components/Sidebar';
+import Login from './Pages/Login';
+import SignUp from './Pages/Singup';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
 
 function App() {
   return (
-    <div className="min-h-screen bg-[#E5E7EB] flex gap-6 px-6 py-8">
-      <Sidebar role="admin" activeItem="system-settings" />
-      <Sidebar role="employee" activeItem="dashboard" />
-    </div>
+    <Router>
+      <Routes>
+        {/* Default route - redirect to login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        
+        {/* Authentication routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        
+       
+        
+        
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </Router>
   );
 }
 
