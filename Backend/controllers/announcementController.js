@@ -29,6 +29,7 @@ export async function createAnnouncement(req, res) {
       message,
       notifyRoles, // ["1", "2","3"]
       neverExpire,
+      attachment: req.uploadedFile ? req.uploadedFile._id : null,
     });
 
     // NOTIFICATION LOGIC

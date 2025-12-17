@@ -19,6 +19,10 @@ import {
   requiredSignIn,
   isManagerOrAdmin,
 } from "../middlewares/AuthMiddleware.js";
+import {
+  uploadSingleFile,
+  handleFileUpload,
+} from "../middlewares/fileUploadMiddleware.js";
 
 const AnnouncementRouter = express.Router();
 
@@ -38,6 +42,8 @@ AnnouncementRouter.post(
   "/createAnnouncement",
   requiredSignIn,
   isManagerOrAdmin,
+  uploadSingleFile,
+  handleFileUpload,
   createAnnouncement
 );
 AnnouncementRouter.put(
