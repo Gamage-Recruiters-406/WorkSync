@@ -5,7 +5,10 @@ import {
     getAttendanceController,
     getSingleUserAttendanceController,
     generateAttendanceReport,
-    updateAttendanceController
+    updateAttendanceController,
+    requestCorrectionController,
+    getPendingCorrectionsController,
+    approveCorrectionController
 } from "../controllers/attendanceController.js";
 
 import { requiredSignIn, isManagerOrAdmin } from "../middlewares/AuthMiddleware.js";
@@ -21,14 +24,22 @@ router.get("/getAttendent", requiredSignIn, getAttendanceController);
 // Get single user attendance 
 router.get("/get-single-user-attendance/:id", requiredSignIn, isManagerOrAdmin, getSingleUserAttendanceController);
 
-// 4. Check out attendance 
+// Check out attendance 
 router.patch("/EndAttendance/:id", requiredSignIn, clockOutController);
 
-// 5. Generate attendance report (GET)
+// Generate attendance report 
 router.get("/attendanceReport", requiredSignIn, isManagerOrAdmin, generateAttendanceReport);
 
-
-// Manual Admin Update (Fix mistakes)
+// Manual Admin Update (Fix mistakes Admin Full Access)
 router.put("/update/:attendanceId", requiredSignIn, isManagerOrAdmin, updateAttendanceController);
+
+// Employee Request Correction 
+router.post("/request-correction", requiredSignIn, requestCorrectionController);
+
+// Admin Get Pending Requests 
+router.get("/pending-corrections", requiredSignIn, isManagerOrAdmin, getPendingCorrectionsController);
+
+// Admin Approve/Reject 
+router.post("/approve-correction", requiredSignIn, isManagerOrAdmin, approveCorrectionController);
 
 export default router;
