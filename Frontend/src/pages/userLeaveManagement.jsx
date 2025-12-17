@@ -179,62 +179,63 @@ export default function UserLeaveManagement() {
         <table className="w-full text-sm">
             <thead className="bg-[#087990] text-white">
             <tr>
-                <th className="py-3 px-2 text-left">Leave ID</th>
-                <th className="text-left">Employee</th>
-                <th className="text-left">Leave Type</th>
-                <th className="text-left">Start Date</th>
-                <th className="text-left">End Date</th>
-                <th className="text-left">Reason</th>
-                <th className="text-left">Status</th>
-                <th className="text-left">Approved By</th>
+                <th className="py-3 px-2 text-center border-r border-white">Leave ID</th>
+                <th className="text-center border-r border-white">Employee</th>
+                <th className="text-center border-r border-white">Leave Type</th>
+                <th className="text-center border-r border-white">Start Date</th>
+                <th className="text-center border-r border-white">End Date</th>
+                <th className="text-center border-r border-white">Reason</th>
+                <th className="text-center border-r border-white">Status</th>
+                <th className="text-center border-r border-white">Approved By</th>
             </tr>
             </thead>
-            <tbody className="divide-y">
-            <tr className="hover:bg-gray-50">
-                <td className="py-3 px-2">FR-LV-001</td>
-                <td>Kasun Perera</td>
-                <td>Casual</td>
-                <td>2025-02-10</td>
-                <td>2025-02-11</td>
-                <td>Personal errands</td>
-                <td>
-                <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs">
+            <tbody className="bg-[#E5E7EB] divide-y divide-x divide-white">
+              <tr className="hover:bg-gray-200">
+                <td className="py-3 px-2 text-center border-r border-white">FR-LV-001</td>
+                <td className="text-center border-r border-white">Kasun Perera</td>
+                <td className="text-center border-r border-white">Casual</td>
+                <td className="text-center border-r border-white">2025-02-10</td>
+                <td className="text-center border-r border-white">2025-02-11</td>
+                <td className="text-center border-r border-white">Personal errands</td>
+                <td className="text-center border-r border-white">
+                  <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs">
                     Pending
-                </span>
+                  </span>
                 </td>
-                <td>-</td>
-            </tr>
+                <td className="text-center border-r border-white">-</td>
+              </tr>
 
-            <tr className="hover:bg-gray-50">
-                <td className="py-3 px-2">FR-LV-002</td>
-                <td>Nimali Silva</td>
-                <td>Annual</td>
-                <td>2025-01-05</td>
-                <td>2025-01-10</td>
-                <td>Family vacation</td>
-                <td>
-                <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">
+              <tr className="hover:bg-gray-200">
+                <td className="py-3 px-2 text-center border-r border-white">FR-LV-002</td>
+                <td className="text-center border-r border-white">Nimali Silva</td>
+                <td className="text-center border-r border-white">Annual</td>
+                <td className="text-center border-r border-white">2025-01-05</td>
+                <td className="text-center border-r border-white">2025-01-10</td>
+                <td className="text-center border-r border-white">Family vacation</td>
+                <td className="text-center border-r border-white">
+                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">
                     Approved
-                </span>
+                  </span>
                 </td>
-                <td>Manager A</td>
-            </tr>
+                <td className="text-center border-r border-white">Manager A</td>
+              </tr>
 
-            <tr className="hover:bg-gray-50">
-                <td className="py-3 px-2">FR-LV-003</td>
-                <td>Chamod Fernando</td>
-                <td>Sick</td>
-                <td>2025-01-18</td>
-                <td>2025-01-19</td>
-                <td>Fever</td>
-                <td>
-                <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs">
+              <tr className="hover:bg-gray-200">
+                <td className="py-3 px-2 text-center border-r border-white">FR-LV-003</td>
+                <td className="text-center border-r border-white">Chamod Fernando</td>
+                <td className="text-center border-r border-white">Sick</td>
+                <td className="text-center border-r border-white">2025-01-18</td>
+                <td className="text-center border-r border-white">2025-01-19</td>
+                <td className="text-center border-r border-white">Fever</td>
+                <td className="text-center border-r border-white">
+                  <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs">
                     Rejected
-                </span>
+                  </span>
                 </td>
-                <td>Manager B</td>
-            </tr>
+                <td className="text-center border-r border-white">Manager B</td>
+              </tr>
             </tbody>
+
         </table>
     </div>
 
