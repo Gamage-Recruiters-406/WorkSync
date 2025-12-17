@@ -33,28 +33,7 @@ const ProjectDetails = () => {
     return <p className="text-center mt-10">Project not found</p>;
   }
 
-  // dummy data – replace with real project data (fetched by id)
-  // const project = {
-  //   id,
-  //   name: "Projects Name",
-  //   role: "UI/UX Designer",
-  //   status: "Active",
-  //   deadline: "15 March",
-  //   progress: 70,
-  //   tasks: { total: 5, inProgress: 3, pending: 2 },
-  //   milestonesAssigned: 2,
-  //   teamMembers: [
-  //     { id: 1, name: "Name 1", role: "Developer" },
-  //     { id: 2, name: "Name 2", role: "Developer" },
-  //     { id: 3, name: "Name 3", role: "Developer" },
-  //     { id: 4, name: "Name 4", role: "Developer" },
-  //   ],
-  //   recentActivity: [
-  //     "New milestone assigned to you",
-  //     "Deadline updated to 30 Feb 2025",
-  //     "John uploaded 'UI_Draft.png'",
-  //   ],
-  // };
+
 
   const goBack = () => navigate("/Projects"); // back to projects page
 
