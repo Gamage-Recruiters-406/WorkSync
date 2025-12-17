@@ -207,18 +207,35 @@ export async function updateAnnouncement(req, res) {
 }
 
 // Delete Announcement
+async function deleteAnnouncementByAnnouncementId(announcementId) {
+  return await Announcement.findOneAndDelete({ announcementId });
+}
+
 export async function deleteAnnouncement(req, res) {
-  try {
-    const { id } = req.params;
-
-    const deleted = await deleteAnnouncementByAnnouncementId(id);
-
-    if (!deleted) {
+  const { id } = req.params;
+    if(!id){
       return res.status(404).json({
         success: false,
-        message: "Announcement not found",
+        message: "announcement id is required",
       });
     }
+   
+  try {   
+     const deletedAnnouncement = await Announcement.findOne({ announcementId: id });
+   
+      if (!deletedAnnouncement) {
+        return res.status(404).json({
+          success: false,
+          message: "Announcement not found",
+        });
+      }
+      
+      const deletedNotificationsResult = await Notification.deleteMany({ announcementId: id });
+        
+       if (deletedNotificationsResult.deletedCount > 0) {
+      console.log(`Auto-deleted ${deletedNotificationsResult.deletedCount} related notifications`);
+    }
+      await deletedAnnouncement.deleteOne();
 
     res.status(200).json({
       success: true,
@@ -312,8 +329,5 @@ export async function markAsRead(req, res) {
   }
 }
 
-//auto delete announcement function
-//link with delete announcement and update announcement
-async function deleteAnnouncementByAnnouncementId(announcementId) {
-  return await Announcement.findOneAndDelete({ announcementId });
-}
+
+

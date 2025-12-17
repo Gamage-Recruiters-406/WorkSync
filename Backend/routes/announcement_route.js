@@ -2,6 +2,7 @@ import express from "express";
 import {
   createAnnouncement,
   getManagerAnnouncements,
+  
   getEmployeeAnnouncements,
   getAdminAnnouncements,
   getAllAnnouncements,
@@ -38,26 +39,9 @@ AnnouncementRouter.get("/getAnnouncement/:id", getAnnouncementbyID);
 AnnouncementRouter.get("/getActiveAnnouncements", getActiveAnnouncements);
 
 //protected routes
-AnnouncementRouter.post(
-  "/createAnnouncement",
-  requiredSignIn,
-  isManagerOrAdmin,
-  uploadSingleFile,
-  handleFileUpload,
-  createAnnouncement
-);
-AnnouncementRouter.put(
-  "/updateAnnouncement/:id",
-  requiredSignIn,
-  isManagerOrAdmin,
-  updateAnnouncement
-);
-AnnouncementRouter.delete(
-  "/deleteAnnouncement/:id",
-  requiredSignIn,
-  isManagerOrAdmin,
-  deleteAnnouncement
-);
+AnnouncementRouter.post(  "/createAnnouncement",requiredSignIn,isManagerOrAdmin,uploadSingleFile,handleFileUpload,createAnnouncement);
+AnnouncementRouter.put(  "/updateAnnouncement/:id", requiredSignIn,isManagerOrAdmin,updateAnnouncement);
+AnnouncementRouter.delete(  "/deleteAnnouncement/:id", requiredSignIn, isManagerOrAdmin, deleteAnnouncement);
 
 //like announcement
 AnnouncementRouter.put("/like/:id", requiredSignIn, likeAnnouncement);
