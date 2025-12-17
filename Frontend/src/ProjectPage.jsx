@@ -1,68 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import ProjectCard from "./components/ProjectCard";
 import TopBar from "./components/Topbar";
 
 
-// Dummy data for checking
-const dummyProjects = [
-  {
-    id: 1,
-    name: "Project Card",
-    role: "Developer",
-    milestonesDueSoon: 2,
-    tasksAssigned: 5,
-    progress: 70,
-    deadline: "20/01/2026",
-    status: "on-hold", // orange
-  },
-  {
-    id: 2,
-    name: "Project Card",
-    role: "Developer",
-    milestonesDueSoon: 2,
-    tasksAssigned: 5,
-    progress: 40,
-    deadline: "15/02/2026",
-    status: "on-hold",
-  },
-  {
-    id: 3,
-    name: "Project Card",
-    role: "Developer",
-    milestonesDueSoon: 2,
-    tasksAssigned: 5,
-    progress: 15,
-    deadline: "05/03/2026",
-    status: "on-hold",
-  },
-  {
-    id: 4,
-    name: "Project Card",
-    role: "Developer",
-    milestonesDueSoon: 2,
-    tasksAssigned: 5,
-    progress: 85,
-    deadline: "10/04/2026",
-    status: "active", 
-  },
-  {
-    id: 5,
-    name: "Project Card",
-    role: "Developer",
-    milestonesDueSoon: 2,
-    tasksAssigned: 5,
-    progress: 100,
-    deadline: "20/01/2026",
-    status: "completed", // orange
-  }
-];
-
 const ProjectsPage = () => {
     const currentUser = { name: "Jeyson" }; // example user
+    const [projects, setProjects] = useState([]);
     const [statusFilter, setStatusFilter] = useState("all");
     const [projectFilter, setProjectFilter] = useState("all");
+    const [loading, setLoading] = useState(true);
 
-    const filteredProjects = dummyProjects.filter((project) =>{
+    useEffect(()=>{
+      //Fetch projects
+      axios.get("http://localhost:8090/projects") // need to replace with API route
+      .then((res)=>{
+        setProjects(res.data);
+        setLoading(false);
+      })
+      .catch((err)=>{
+        console.error("Error fetching projects", err);
+        setLoading(false);
+      });
+    },[]);
+
+    const filteredProjects = projects.filter((project) =>{
         const statusMatch = statusFilter ==="all" || project.status === statusFilter;
         const projectMatch = projectFilter === "all" || projectFilter === "my-projects";
         return statusMatch && projectMatch;
@@ -107,7 +69,9 @@ const ProjectsPage = () => {
 
         {/* Display Project cards*/}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-16 max-w-3xl mx-auto">
-        {filteredProjects.length > 0 ? (
+        {loading ? (
+          <p className="text-center col-span-2">Loading projects...</p>
+        ): filteredProjects.length > 0 ? (
             filteredProjects.map((project) => (
                 <ProjectCard key={project.id} project={project} />
               ))
