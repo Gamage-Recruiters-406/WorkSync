@@ -1,9 +1,3 @@
-const palette = {
-  primary: '#087990',
-  surface: '#E5E7EB',
-  white: '#FFFFFF',
-};
-
 const sidebarContent = {
   admin: {
     title: 'WorkSync',
@@ -45,12 +39,9 @@ const sidebarContent = {
 
 function ItemIcon({ label }) {
   return (
-    <span
-      aria-hidden
-      className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/50 bg-white/90 text-sm font-semibold text-[#087990]"
-    >
-      {label.slice(0, 2).toUpperCase()}
-    </span>
+    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-card text-primary text-sm font-semibold shadow-sm">
+      <span className="text-[12px] text-primary">{label.slice(0, 2).toUpperCase()}</span>
+    </div>
   );
 }
 
@@ -63,14 +54,14 @@ function NavSection({ items, activeItem }) {
           <button
             key={item.key}
             type="button"
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-left font-medium transition-colors ${
+            className={`flex items-center gap-3 rounded-[12px] px-3 py-2 text-left font-medium transition-all duration-200 ${
               isActive
-                ? 'bg-white text-[#087990] shadow-sm'
-                : 'text-[#087990] hover:bg-white/90'
+                ? 'bg-primary text-white shadow-md'
+                : 'text-text-primary hover:bg-white hover:shadow-sm'
             }`}
           >
             <ItemIcon label={item.label} />
-            <span>{item.label}</span>
+            <span className="capitalize">{item.label}</span>
           </button>
         );
       })}
@@ -83,25 +74,20 @@ function Sidebar({ role = 'admin', activeItem }) {
   const selected = activeItem || content.main[0]?.key;
 
   return (
-    <aside
-      className="flex w-64 flex-col gap-6 rounded-3xl bg-[#E5E7EB] px-4 py-6 shadow-md"
-      style={{ color: palette.primary }}
-    >
-      <header className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 shadow-sm">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#087990]/10 text-xl font-bold text-[#087990]">
+    <aside className="flex w-[260px] flex-col gap-6 rounded-[16px] bg-sidebar px-4 py-6 shadow-sm">
+      <header className="flex items-center gap-3 rounded-[12px] bg-card px-3 py-2 shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-xl font-bold text-primary">
           W
         </div>
         <div className="flex flex-col leading-tight">
-          <span className="text-sm font-semibold text-[#087990]">
-            {content.title}
-          </span>
-          <span className="text-[11px] text-[#087990]/70">Role: {role}</span>
+          <span className="text-sm font-semibold text-text-primary">{content.title}</span>
+          <span className="text-[11px] text-text-secondary">Role: {role}</span>
         </div>
       </header>
 
       <NavSection items={content.main} activeItem={selected} />
 
-      <div className="mt-auto border-t border-white/60 pt-4">
+      <div className="mt-auto border-t border-border/80 pt-4">
         <NavSection items={content.footer} activeItem={selected} />
       </div>
     </aside>
