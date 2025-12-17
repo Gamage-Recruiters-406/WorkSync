@@ -4,13 +4,11 @@ import {
     getMembers,
     updateMemberRole,
     removeMember,
-    getProjectsOfUser
+    getProjectsOfUser,
+    getAllUsers
 } from "../controllers/projectTeamController.js";
 
-import { 
-    requiredSignIn,
-    isManagerOrAdmin
-} from "../middlewares/AuthMiddleware.js";
+import { requiredSignIn } from "../middlewares/AuthMiddleware.js";
 
 const router = express.Router();
 
@@ -19,34 +17,22 @@ router.get("/", (req, res) => {
     res.send("Project Team API Working");
 });
 
-/* ---------------------------
-   ROUTES WITH VALIDATION
-   Only Manager or Admin can:
-   - Add Member
-   - Update Member Role
-   - Remove Member
----------------------------- */
+// Add member
+router.post("/addMember", requiredSignIn, addMember);
 
-// Add member (Manager/Admin ONLY)
-router.post("/addMember", requiredSignIn, isManagerOrAdmin, addMember);
+// Update member role
+router.put("/updateMemberRole", requiredSignIn, updateMemberRole);
 
-// Update member role (Manager/Admin ONLY)
-router.put("/updateMemberRole/:id", requiredSignIn, isManagerOrAdmin, updateMemberRole);
+// Remove member
+router.delete("/removeMember", requiredSignIn, removeMember);
 
-// Remove member (Manager/Admin ONLY)
-router.delete("/removeMember/:id", requiredSignIn, isManagerOrAdmin, removeMember);
-
-/* ---------------------------
- VIEW ROUTES (Employees allowed)
-   Anyone logged in (employees, managers, admin) can:
-   - View team members
-   - View projects of user
----------------------------- */
-
-// Get team members (visible to employees)
+// Get team members
 router.get("/getMembers/:pid", requiredSignIn, getMembers);
 
 // Get projects of a user
 router.get("/getProjects/:uid", requiredSignIn, getProjectsOfUser);
+
+// Get all users for dropdown
+router.get("/all", requiredSignIn, getAllUsers);
 
 export default router;
