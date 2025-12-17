@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
  import ProjectsPage from './ProjectPage';
 import Sidebar from './components/Sidebar';
+import ProjectDetails from "./ProjectDetails";
 
 function App() {
   return (
@@ -11,7 +12,8 @@ function App() {
 
         <main className='flex-1 px-8 py-6'>
           <Routes>
-            <Route path="/" element={<ProjectsPage/>}></Route>
+            <Route path="/projects" element={<ProjectsPage/>}></Route>
+            <Route path="/projects/:id" element={<ProjectDetails />} />
           </Routes>
 
         </main>
