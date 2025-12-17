@@ -42,7 +42,6 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
 
-
 app.get("/", (req, res) => {
     res.send({
         message: "Welcome to WorkSync"
