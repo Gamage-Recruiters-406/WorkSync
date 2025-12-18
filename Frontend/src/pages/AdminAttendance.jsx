@@ -10,7 +10,7 @@ import {
   FileText,
   Search,
 } from "lucide-react";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../components/sidebar/Sidebar";
 
 const AdminAttendance = () => {
   const [activeTab, setActiveTab] = useState("logs");
