@@ -8,12 +8,20 @@ const ProjectsPage = () => {
     const currentUser = { name: "Jeyson" }; // example user
     const [projects, setProjects] = useState([]);
     const [statusFilter, setStatusFilter] = useState("all");
-    const [projectFilter, setProjectFilter] = useState("all");
+
     const [loading, setLoading] = useState(true);
+    const URL_API = "http://localhost:8090";
 
     useEffect(()=>{
       //Fetch projects
-      axios.get("http://localhost:8090/projects") // need to replace with API route
+      axios.get(
+        `${URL_API}/api/v1/projects/getAllProjects`,
+        {
+          withCredentials:true
+        }
+        
+        ) // need to replace with API route
+
       .then((res)=>{
         setProjects(res.data);
         setLoading(false);
@@ -26,8 +34,7 @@ const ProjectsPage = () => {
 
     const filteredProjects = projects.filter((project) =>{
         const statusMatch = statusFilter ==="all" || project.status === statusFilter;
-        const projectMatch = projectFilter === "all" || projectFilter === "my-projects";
-        return statusMatch && projectMatch;
+        return statusMatch;
     });
 
   return (
@@ -40,19 +47,8 @@ const ProjectsPage = () => {
         </p>
       </header>
 
-      <div className="flex flex-wrap justify-left gap-4 mb-6 ml-8 mx-auto">
-        {/* All Projects Dropdown */}
-        <div className="relative w-34">
-            <select 
-            value={projectFilter}
-            onChange={(e)=> setProjectFilter(e.target.value)}
-             className="w-full px-3 py-2 border rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#087990]">
-            <option value="all">All</option>
-            <option value="my-projects">My Projects</option>
-            <option value="team-projects">Team Projects</option>
-            </select>
-        </div>
 
+      <div className="flex flex-wrap justify-start gap-4 mb-6 ml-8 mx-auto">
         {/* Status Dropdown */}
         <div className="relative w-34">
             <select
@@ -73,7 +69,7 @@ const ProjectsPage = () => {
           <p className="text-center col-span-2">Loading projects...</p>
         ): filteredProjects.length > 0 ? (
             filteredProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
+                <ProjectCard key={project._id} project={project}/>
               ))
         ): (<p className="text-center text-gray-500 col-span-2">No projects found.</p>)}
         
