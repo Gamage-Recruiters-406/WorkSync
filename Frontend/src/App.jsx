@@ -1,11 +1,17 @@
-// import Sidebar from './components/Sidebar';
+// src/App.js
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AdminAttendance from './pages/AdminAttendance';
+import UserAttendance from './pages/UserAttendance';
 
 function App() {
   return (
-    <div className="min-h-screen bg-[#E5E7EB] flex gap-6 px-6 py-8">
-      <Sidebar role="admin" activeItem="system-settings" />
-      <Sidebar role="employee" activeItem="dashboard" />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/admin/attendance" element={<AdminAttendance />} />
+        <Route path="/user/attendance" element={<UserAttendance />} />
+      </Routes>
+    </Router>
   );
 }
 
