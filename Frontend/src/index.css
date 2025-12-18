@@ -1,14 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 16px;
-  background-color: #e5e7eb;
-  color: #0f172a;
+@layer base {
+  html {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 16px; /* paragraph size */
+  }
 }
 
 body {
@@ -17,4 +17,6 @@ body {
 
 #root {
   min-height: 100vh;
+  background-color: #e5e7eb;
+  color: #0f172a;
 }

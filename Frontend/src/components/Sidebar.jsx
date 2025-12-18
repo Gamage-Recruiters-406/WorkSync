@@ -1,46 +1,55 @@
+import { useNavigate } from "react-router-dom";
+
 const palette = {
-  primary: '#087990',
-  surface: '#E5E7EB',
-  white: '#FFFFFF',
+  primary: "#087990",
+  surface: "#E5E7EB",
+  white: "#FFFFFF",
 };
 
 const sidebarContent = {
   admin: {
-    title: 'WorkSync',
+    title: "WorkSync",
     main: [
-      { key: 'dashboard', label: 'Dashboard' },
-      { key: 'assign-task', label: 'Assign Task' },
-      { key: 'users', label: 'Users' },
-      { key: 'manage-leaves', label: 'Manage Leaves' },
-      { key: 'reports', label: 'Reports & Analytics' },
-      { key: 'announcements', label: 'Announcements' },
-      { key: 'departments', label: 'Departments' },
-      { key: 'projects', label: 'Projects' },
-      { key: 'attendance', label: 'Attendance' },
+      { key: "dashboard", label: "Dashboard" },
+      { key: "assign-task", label: "Assign Task" },
+      { key: "users", label: "Users" },
+      { key: "manage-leaves", label: "Manage Leaves" },
+      { key: "reports", label: "Reports & Analytics" },
+      { key: "announcements", label: "Announcements" },
+      { key: "departments", label: "Departments" },
+      { key: "projects", label: "Projects" },
+      { key: "attendance", label: "Attendance" },
     ],
     footer: [
-      { key: 'system-settings', label: 'System Settings' },
-      { key: 'support', label: 'Feedback & Support' },
-      { key: 'logout', label: 'Logout' },
+      { key: "system-settings", label: "System Settings" },
+      { key: "support", label: "Feedback & Support" },
+      { key: "logout", label: "Logout" },
     ],
   },
   employee: {
-    title: 'WorkSync',
+    title: "WorkSync",
     main: [
-      { key: 'dashboard', label: 'dashboard' },
-      { key: 'project-team', label: 'Project Team' },
-      { key: 'task', label: 'Task' },
-      { key: 'attendance', label: 'Attendance' },
-      { key: 'reports', label: 'Reports & Analytics' },
-      { key: 'announcements', label: 'Announcements' },
-      { key: 'leave-request', label: 'Leave Request' },
+      { key: "dashboard", label: "Dashboard" },
+      { key: "project-team", label: "Project Team" },
+      { key: "task", label: "Task" },
+      { key: "attendance", label: "Attendance" },
+      { key: "reports", label: "Reports & Analytics" },
+      { key: "announcements", label: "Announcements" },
+      { key: "leave-request", label: "Leave Request" },
     ],
     footer: [
-      { key: 'system-settings', label: 'System Settings' },
-      { key: 'support', label: 'Support' },
-      { key: 'logout', label: 'Logout' },
+      { key: "system-settings", label: "System Settings" },
+      { key: "support", label: "Support" },
+      { key: "logout", label: "Logout" },
     ],
   },
+};
+
+/* 🔗 ROUTE MAP */
+const routeMap = {
+  dashboard: "/dashboard",
+  reports: "Admin/reports",
+  "system-settings": "/settings", // special case handled below
 };
 
 function ItemIcon({ label }) {
@@ -55,18 +64,32 @@ function ItemIcon({ label }) {
 }
 
 function NavSection({ items, activeItem }) {
+  const navigate = useNavigate();
+
   return (
     <nav className="grid gap-2">
       {items.map((item) => {
         const isActive = activeItem === item.key;
+
         return (
           <button
             key={item.key}
             type="button"
+            onClick={() => {
+              if (!routeMap[item.key]) return;
+
+              // System Settings opens profile page by default
+              const path =
+                item.key === "system-settings"
+                  ? "/settings/profile"
+                  : routeMap[item.key];
+
+              navigate(path);
+            }}
             className={`flex items-center gap-3 rounded-xl px-3 py-2 text-left font-medium transition-colors ${
               isActive
-                ? 'bg-white text-[#087990] shadow-sm'
-                : 'text-[#087990] hover:bg-white/90'
+                ? "bg-white text-[#087990] shadow-sm"
+                : "text-[#087990] hover:bg-white/90"
             }`}
           >
             <ItemIcon label={item.label} />
@@ -78,7 +101,7 @@ function NavSection({ items, activeItem }) {
   );
 }
 
-function Sidebar({ role = 'admin', activeItem }) {
+function Sidebar({ role = "admin", activeItem }) {
   const content = sidebarContent[role] ?? sidebarContent.admin;
   const selected = activeItem || content.main[0]?.key;
 
@@ -109,4 +132,3 @@ function Sidebar({ role = 'admin', activeItem }) {
 }
 
 export default Sidebar;
-
