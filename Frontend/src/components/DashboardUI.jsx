@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import officeImg from '../assets/office.jpg';
 
 /*
   Consolidated dashboard UI components:
@@ -58,20 +59,24 @@ const StatCard = ({ icon, number, label }) => (
 );
 
 const WelcomeCard = () => (
-  <div className="col-span-2 rounded-[12px] bg-card p-6 shadow-md">
-    <div className="flex items-center gap-6">
+  <div
+    className="relative col-span-2 overflow-hidden rounded-[12px] shadow-md"
+    style={{ minHeight: '160px' }}
+  >
+    <img
+      src={officeImg}
+      alt="Team workspace"
+      className="absolute inset-0 h-full w-full object-cover"
+    />
+    <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/35 to-black/15" />
+
+    <div className="relative flex items-center gap-6 px-6 py-6 text-white">
       <div className="flex-1">
-        <h2 className="text-2xl font-semibold text-text-primary">Dashboard</h2>
-        <p className="mt-1 text-sm text-text-secondary">Welcome, John Doe</p>
-        <p className="mt-4 text-sm text-text-secondary">Upcoming: Team sync at 3:00 PM</p>
+        <h2 className="text-2xl font-semibold drop-shadow">Dashboard</h2>
+        <p className="mt-1 text-sm text-white/90">Welcome, John Doe</p>
+        <p className="mt-4 text-sm text-white/80">Upcoming: Team sync at 3:00 PM</p>
       </div>
-      <div className="h-32 w-48 overflow-hidden rounded-lg bg-[#EEF2FF]">
-        <img
-          src="https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=1f4b2e5f6b7e2a7f3b6d7e4d037a3c3b"
-          alt="Team meeting"
-          className="h-full w-full object-cover"
-        />
-      </div>
+      <div className="hidden h-28 w-36 shrink-0 rounded-lg border border-white/15 bg-white/5 backdrop-blur-sm lg:block" />
     </div>
   </div>
 );

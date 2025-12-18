@@ -1,3 +1,16 @@
+import {
+  LayoutDashboard,
+  Users,
+  CheckSquare,
+  CalendarCheck,
+  BarChart3,
+  Megaphone,
+  FileText,
+  Settings,
+  HelpCircle,
+  LogOut,
+} from 'lucide-react';
+
 const sidebarContent = {
   admin: {
     title: 'WorkSync',
@@ -37,10 +50,29 @@ const sidebarContent = {
   },
 };
 
-function ItemIcon({ label }) {
+const iconMap = {
+  dashboard: LayoutDashboard,
+  'assign-task': CheckSquare,
+  users: Users,
+  'manage-leaves': CalendarCheck,
+  reports: BarChart3,
+  announcements: Megaphone,
+  departments: Users,
+  projects: FileText,
+  attendance: CalendarCheck,
+  'project-team': Users,
+  task: CheckSquare,
+  'leave-request': CalendarCheck,
+  'system-settings': Settings,
+  support: HelpCircle,
+  logout: LogOut,
+};
+
+function ItemIcon({ label, iconKey }) {
+  const Icon = iconMap[iconKey];
   return (
     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-card text-primary text-sm font-semibold shadow-sm">
-      <span className="text-[12px] text-primary">{label.slice(0, 2).toUpperCase()}</span>
+      {Icon ? <Icon size={18} /> : <span className="text-[12px] text-primary">{label.slice(0, 2).toUpperCase()}</span>}
     </div>
   );
 }
@@ -60,7 +92,7 @@ function NavSection({ items, activeItem }) {
                 : 'text-text-primary hover:bg-white hover:shadow-sm'
             }`}
           >
-            <ItemIcon label={item.label} />
+            <ItemIcon label={item.label} iconKey={item.key} />
             <span className="capitalize">{item.label}</span>
           </button>
         );
@@ -95,4 +127,3 @@ function Sidebar({ role = 'admin', activeItem }) {
 }
 
 export default Sidebar;
-
