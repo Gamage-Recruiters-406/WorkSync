@@ -1,8 +1,8 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import AdminAttendance from './pages/AdminAttendance';
-import UserAttendance from './pages/UserAttendance';
+import AdminAttendance from './pages/admin/AdminAttendance';
+import UserAttendance from './pages/employee/UserAttendance';
 
 function App() {
   return (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, User, Calendar, Bell, Settings, HelpCircle, LogOut, BarChart2, ClipboardList, Users, Edit2 } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../../components/Sidebar';
 
 const UserAttendance = () => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
