@@ -1,22 +1,24 @@
 // src/App.js
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AdminAttendance from "./pages/admin/AdminAttendance";
-import UserAttendance from "./pages/employee/UserAttendance";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AssignTask from "./pages/admin/AssignTask";
-import Users from "./pages/admin/Users";
-import ManageLeaves from "./pages/admin/ManageLeaves";
-import AdminReports from "./pages/admin/AdminReports";
-import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
-import Departments from "./pages/admin/Departments";
-import Projects from "./pages/admin/Projects";
-import UserDashboard from "./pages/employee/UserDashboard";
-import ProjectTeam from "./pages/employee/ProjectTeam";
-import Task from "./pages/employee/Task";
-import UserReports from "./pages/employee/UserReports";
-import LeaveRequest from "./pages/employee/LeaveRequest";
-import UserAnnouncements from "./pages/employee/UserAnnouncements";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AdminAttendance from './pages/admin/AdminAttendance';
+import UserAttendance from './pages/employee/UserAttendance';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AssignTask from './pages/admin/AssignTask';
+import Users from './pages/admin/Users';
+import ManageLeaves from './pages/admin/ManageLeaves';
+import AdminReports from './pages/admin/AdminReports';
+import AdminAnnouncements from './pages/admin/AdminAnnouncements';
+import Departments from './pages/admin/Departments';
+import Projects from './pages/admin/Projects';
+import UserDashboard from './pages/employee/UserDashboard';
+import ProjectTeam from './pages/employee/ProjectTeam';
+import Task from './pages/employee/Task';
+import UserReports from './pages/employee/UserReports';
+import LeaveRequest from './pages/employee/LeaveRequest';
+import UserAnnouncements from './pages/employee/UserAnnouncements';
+import CreateTaskForm from './pages/TeamLeader/CreateTaskForm';
+import TaskHistory from './pages/TeamLeader/TaskHistory';
 
 function App() {
   return (
@@ -41,6 +43,11 @@ function App() {
         <Route path="/user/reports" element={<UserReports />} />
         <Route path="/user/announcements" element={<UserAnnouncements />} />
         <Route path="/user/leave-request" element={<LeaveRequest />} />
+
+        {/* Team Leader - Employee Routes */}
+        <Route path="/create-task" element={<CreateTaskForm />} />
+        <Route path="/edit-task/:taskId" element={<CreateTaskForm />} />
+        <Route path="/task-history" element={<TaskHistory />} />
       </Routes>
     </Router>
   );
