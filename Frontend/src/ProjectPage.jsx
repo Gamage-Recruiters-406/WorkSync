@@ -49,6 +49,7 @@ const ProjectsPage = () => {
 
 
       <div className="flex flex-wrap justify-start gap-4 mb-6 ml-8 mx-auto">
+
         {/* Status Dropdown */}
         <div className="relative w-34">
             <select
@@ -69,7 +70,7 @@ const ProjectsPage = () => {
           <p className="text-center col-span-2">Loading projects...</p>
         ): filteredProjects.length > 0 ? (
             filteredProjects.map((project) => (
-                <ProjectCard key={project._id} project={project}/>
+                <ProjectCard key={project._id} project={project} />
               ))
         ): (<p className="text-center text-gray-500 col-span-2">No projects found.</p>)}
         
