@@ -8,7 +8,8 @@ import {
     updateAttendanceController,
     requestCorrectionController,
     getPendingCorrectionsController,
-    approveCorrectionController
+    approveCorrectionController,
+    getMyAttendanceHistoryController
 } from "../controllers/attendanceController.js";
 
 import { requiredSignIn, isManagerOrAdmin } from "../middlewares/AuthMiddleware.js";
@@ -41,5 +42,8 @@ router.get("/pending-corrections", requiredSignIn, isManagerOrAdmin, getPendingC
 
 // Admin Approve/Reject 
 router.post("/approve-correction", requiredSignIn, isManagerOrAdmin, approveCorrectionController);
+
+// User Get Their Own History (For Personal Attendance Summary Dashboard)
+router.get("/my-history", requiredSignIn, getMyAttendanceHistoryController);
 
 export default router;

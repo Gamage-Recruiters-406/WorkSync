@@ -456,3 +456,35 @@ export const approveCorrectionController = async (req, res) => {
         res.status(500).send({ success: false, message: "Error processing request", error });
     }
 };
+
+// 10. GET OWN ATTENDANCE HISTORY (For Employee Dashboard)
+export const getMyAttendanceHistoryController = async (req, res) => {
+    try {
+        
+        const userId = req.user.userid; 
+
+        const attendanceRecords = await attendanceModel.find({ userId })
+            .sort({ date: -1 }) // Newest first
+            .lean();
+
+        const enrichedAttendance = attendanceRecords.map(record => {
+            let hours = 0;
+            if (record.inTime && record.outTime) { 
+                const start = new Date(record.inTime);
+                const end = new Date(record.outTime);
+                hours = (end - start) / (1000 * 60 * 60); 
+            }
+            return { ...record, hoursWorked: hours.toFixed(2) }; 
+        });
+
+        res.status(200).send({
+            success: true,
+            count: enrichedAttendance.length,
+            attendance: enrichedAttendance
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false, message: "Error fetching history", error });
+    }
+};
