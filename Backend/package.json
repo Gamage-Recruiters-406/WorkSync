@@ -15,6 +15,7 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "colors": "^1.4.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "exceljs": "^4.4.0",
@@ -22,12 +23,11 @@
     "express-mongo-sanitize": "^2.2.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
-    "cookie-parser": "^1.4.7",
     "mongoose": "^9.0.1",
     "morgan": "^1.10.1",
-    "pdfkit": "^0.17.2",
     "multer": "^2.0.2",
     "uuid": "^13.0.0",
+    "pdfkit": "^0.17.2",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
@@ -35,7 +35,6 @@
     "@swc/core": "^1.15.3",
     "@swc/jest": "^0.2.39",
     "jest": "^30.2.0",
-    "mongodb-memory-server": "^10.4.1",
     "nodemon": "^3.1.11",
     "supertest": "^7.1.4"
   },
