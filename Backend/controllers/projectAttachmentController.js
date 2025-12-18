@@ -1,15 +1,44 @@
 import fs from "fs";
+import path from "path";
 import mongoose from "mongoose";
 import Project from "../models/ProjectModel.js";
 import ProjectAttachment from "../models/ProjectAttachmentModel.js";
 
 const MAX_ATTACHMENTS_PER_PROJECT = 5;
 
+const UPLOADS_ROOT = path.resolve(process.cwd(), "uploads");
+
 const cleanupFiles = async (files = []) => {
     await Promise.allSettled(
         files.map((f) => fs.promises.unlink(f.path).catch(() => null))
     );
 };
+
+function resolveSafeUploadPath(dbFilePath) {
+  if (!dbFilePath) throw new Error("Attachment filePath is missing");
+
+  // normalize slashes
+  const normalized = dbFilePath.replace(/\\/g, "/");
+
+  // If it's relative like "uploads/projects/..", resolve from project root
+  // If it's absolute like "D:\...\uploads\...", resolve directly
+  const absolutePath = path.isAbsolute(normalized)
+    ? path.resolve(normalized)
+    : path.resolve(process.cwd(), normalized);
+
+  // Ensure it is inside UPLOADS_ROOT
+  const rel = path.relative(UPLOADS_ROOT, absolutePath);
+  const isInsideUploads =
+    rel && !rel.startsWith("..") && !path.isAbsolute(rel);
+
+  if (!isInsideUploads) {
+    throw new Error("Invalid file path");
+  }
+
+  return absolutePath;
+}
+
+
 
 // Upload a new attachment to a project
 export const addProjectAttachmentController = async (req, res) => {
@@ -83,3 +112,95 @@ export const addProjectAttachmentController = async (req, res) => {
         });
     }
 };
+
+
+
+// Get one attachment --> stream actual file
+export const streamProjectAttachmentController = async (req, res) => {
+    try {
+        const { projectId, attachmentId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(projectId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid project ID",
+            });
+        }
+        if (!mongoose.Types.ObjectId.isValid(attachmentId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid attachment ID",
+            });
+        }
+
+        const attachment = await ProjectAttachment.findOne({ 
+            _id: attachmentId, 
+            projectId 
+        }).select("filePath fileType originalName fileSize");
+
+        if (!attachment) {
+            return res.status(404).json({
+                success: false,
+                message: "Attachment not found",
+            });
+        }
+
+        const absPath = resolveSafeUploadPath(attachment.filePath);
+        if (!absPath) {
+            return res.status(500).json({
+                success: false,
+                message: "Invalid attachment path",
+            });
+        }
+
+        // check file exists
+        const stat = await fs.promises.stat(absPath).catch(() => null);
+        if (!stat || !stat.isFile()) {
+            return res.status(404).json({
+                success: false,
+                message: "File missing on server",
+            });
+        }
+
+        // headers
+        res.setHeader("Content-Type", attachment.fileType || "application/octet-stream");
+        // inline = preview in browser (PDF, images)
+        res.setHeader(
+            "Content-Disposition",
+            `inline; filename="${encodeURIComponent(attachment.originalName || "file")}"`
+        );
+
+        const range = req.headers.range;
+        if (range) {
+            const fileSize = stat.size;
+            const parts = range.replace(/bytes=/, "").split("-");
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+            if (isNaN(start) || isNaN(end) || start > end || end >= fileSize) {
+                return res.status(416).setHeader("Content-Range", `bytes */${fileSize}`).end();
+            }
+
+            res.status(206);
+            res.setHeader("Accept-Ranges", "bytes");
+            res.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
+            res.setHeader("Content-Length", end - start + 1);
+
+            fs.createReadStream(absPath, { start, end }).pipe(res);
+            return;
+        }
+
+        // normal stream
+        res.setHeader("Content-Length", stat.size);
+        fs.createReadStream(absPath).pipe(res);
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Error streaming attachment",
+            error: error.message,
+        });
+    }
+};
+
+
+
