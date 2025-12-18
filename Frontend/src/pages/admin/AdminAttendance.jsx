@@ -129,7 +129,7 @@ const AdminAttendance = () => {
   const summary = getSummaryByFilter();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-white flex">
       {/* Sidebar */}
       <div className="flex-shrink-0">
         <Sidebar role="admin" activeItem="attendance" />
@@ -138,7 +138,7 @@ const AdminAttendance = () => {
       {/* Main Content Area */}
       <div className="flex-1">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <div className="bg-white px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">
@@ -154,76 +154,61 @@ const AdminAttendance = () => {
         {/* Summary Cards */}
         <div className="px-6 py-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Employees</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {summary.totalEmployees}
-                  </p>
-                </div>
-                <div
-                  className="p-3 rounded-lg"
-                  style={{ backgroundColor: "#E5E7EB" }}
-                >
-                  <Users size={24} className="text-gray-700" />
-                </div>
+            {/* All Employees Card */}
+            <div className="bg-gray-100 p-5 rounded-lg shadow-sm border border-gray-200 relative">
+              <div className="absolute top-4 left-4">
+                <Users size={24} className="text-gray-800" />
+              </div>
+              <div className="text-center pt-1">
+                <p className="text-2xl font-bold text-gray-800">70</p>
+                <p className="text-sm text-gray-600 mt-1">All Employees</p>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Present</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {summary.present}
-                  </p>
-                </div>
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <CheckCircle size={24} className="text-green-600" />
-                </div>
+            {/* Present Card */}
+            <div className="bg-gray-100 p-5 rounded-lg shadow-sm border border-gray-200 relative">
+              <div className="absolute top-4 left-4">
+                <CheckCircle size={24} className="text-gray-800" />
+              </div>
+              <div className="text-center pt-1">
+                <p className="text-2xl font-bold text-gray-800">60</p>
+                <p className="text-sm text-gray-600 mt-1">Present</p>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Late</p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {summary.late}
-                  </p>
-                </div>
-                <div className="p-3 bg-yellow-100 rounded-lg">
-                  <Clock size={24} className="text-yellow-600" />
-                </div>
+            {/* Late Card */}
+            <div className="bg-gray-100 p-5 rounded-lg shadow-sm border border-gray-200 relative">
+              <div className="absolute top-4 left-4">
+                <Clock size={24} className="text-gray-800" />
+              </div>
+              <div className="text-center pt-1">
+                <p className="text-2xl font-bold text-gray-800">5</p>
+                <p className="text-sm text-gray-600 mt-1">Late</p>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Absent</p>
-                  <p className="text-2xl font-bold text-red-600">
-                    {summary.absent}
-                  </p>
-                </div>
-                <div className="p-3 bg-red-100 rounded-lg">
-                  <XCircle size={24} className="text-red-600" />
-                </div>
+            {/* Absent Card */}
+            <div className="bg-gray-100 p-5 rounded-lg shadow-sm border border-gray-200 relative">
+              <div className="absolute top-4 left-4">
+                <XCircle size={24} className="text-gray-800" />
+              </div>
+              <div className="text-center pt-1">
+                <p className="text-2xl font-bold text-gray-800">5</p>
+                <p className="text-sm text-gray-600 mt-1">Absent</p>
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="border-b border-gray-200">
+          <div className="bg-gray-100 rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-white border-b border-gray-200">
               <div className="flex gap-1 p-2">
                 <button
                   onClick={() => setActiveTab("logs")}
                   className={`px-4 py-2 rounded-md transition ${
                     activeTab === "logs"
                       ? "text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                      : "text-gray-600 border border-[#087990] hover:bg-gray-200"
                   }`}
                   style={
                     activeTab === "logs" ? { backgroundColor: "#087990" } : {}
@@ -236,7 +221,7 @@ const AdminAttendance = () => {
                   className={`px-4 py-2 rounded-md transition flex items-center gap-2 ${
                     activeTab === "corrections"
                       ? "text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                      : "text-gray-600 border border-[#087990] hover:bg-gray-200"
                   }`}
                   style={
                     activeTab === "corrections"
@@ -244,7 +229,7 @@ const AdminAttendance = () => {
                       : {}
                   }
                 >
-                  Pending Corrections
+                  Correction Approvals
                   {corrections.length > 0 && (
                     <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
                       {corrections.length}
@@ -256,7 +241,7 @@ const AdminAttendance = () => {
                   className={`px-4 py-2 rounded-md transition ${
                     activeTab === "reports"
                       ? "text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                      : "text-gray-600 border border-[#087990] hover:bg-gray-200"
                   }`}
                   style={
                     activeTab === "reports"
@@ -264,7 +249,7 @@ const AdminAttendance = () => {
                       : {}
                   }
                 >
-                  Reports
+                  Attendance Reports
                 </button>
               </div>
             </div>
@@ -277,23 +262,24 @@ const AdminAttendance = () => {
                     <div className="relative">
                       <Search
                         size={18}
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#087990]"
                       />
                       <input
                         type="text"
-                        placeholder="Search by name or employee ID..."
+                        placeholder="Search"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 placeholder:text-[#087990] bg-white"
                         style={{ focusRingColor: "#087990" }}
                       />
                     </div>
                   </div>
 
+                  {/* Date Filter Dropdown */}
                   <select
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 bg-white"
                     style={{ focusRingColor: "#087990" }}
                   >
                     <option value="today">Today</option>
@@ -302,89 +288,222 @@ const AdminAttendance = () => {
                     <option value="custom">Custom Range</option>
                   </select>
 
+                  {/* Status Filter Dropdown */}
                   <select
                     value={selectedEmployee}
                     onChange={(e) => setSelectedEmployee(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 bg-white"
                     style={{ focusRingColor: "#087990" }}
                   >
                     <option value="all">All Employees</option>
                     <option value="present">Present</option>
                     <option value="absent">Absent</option>
                     <option value="late">Late</option>
+                    <option value="working">Working</option>
                   </select>
                 </div>
 
-                <div className="overflow-x-auto">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Attendance Logs
+                </h3>
+
+                <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                          Employee ID
+                      <tr className="border-b border-gray-200 bg-[#087990]">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-white border-r border-white">
+                          Attendee ID
                         </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-white border-r border-white">
                           Name
                         </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-white border-r border-white">
                           Date
                         </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                          Check In
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-white border-r border-white">
+                          Check IN
                         </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-white border-r border-white">
                           Check Out
                         </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-white border-r border-white">
                           Hours
                         </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-white">
                           Status
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {attendanceLogs.map((log) => (
-                        <tr
-                          key={log.id}
-                          className="border-b border-gray-100 hover:bg-gray-50"
-                        >
-                          <td className="py-3 px-4 text-sm text-gray-800">
-                            {log.empId}
-                          </td>
-                          <td className="py-3 px-4 text-sm font-medium text-gray-800">
-                            {log.name}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">
-                            {log.date}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-800">
-                            {log.checkIn}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-800">
-                            {log.checkOut}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-800">
-                            {log.hours}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                log.status === "Present"
-                                  ? "bg-green-100 text-green-700"
-                                  : log.status === "Late"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : log.status === "Working"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-red-100 text-red-700"
-                              }`}
-                            >
-                              {log.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      <tr className="border-b border-white bg-gray-100">
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          EPM001
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-800 border-r border-white">
+                          John Doe
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600 border-r border-white">
+                          2025-12-10
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          9.00 AM
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          5.00 PM
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          8h 0m
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800">
+                          <span className="px-3 py-1 text-xs font-medium text-green-600">
+                            Present
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="border-b border-white bg-gray-100">
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          EMP002
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-800 border-r border-white">
+                          Jane Smith
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600 border-r border-white">
+                          2025-12-10
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          8.45 AM
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          5.00 PM
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          8h 15m
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800">
+                          <span className="px-3 py-1 text-xs font-medium text-green-600">
+                            Present
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="border-b border-white bg-gray-100">
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          EMP003
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-800 border-r border-white">
+                          Mike Jnonson
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600 border-r border-white">
+                          2025-12-10
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          -
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          -
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          -
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800">
+                          <span className="px-3 py-1 text-xs font-medium text-red-600">
+                            Absent
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="border-b border-white bg-gray-100">
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          EMP004
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-800 border-r border-white">
+                          David Brown
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600 border-r border-white">
+                          2025-12-10
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          9.10 AM
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          -
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          -
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800">
+                          <span className="px-3 py-1 text-xs font-medium text-blue-600">
+                            Working
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="border-b border-white bg-gray-100">
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          EMP005
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-800 border-r border-white">
+                          Dwayne Smith
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600 border-r border-white">
+                          2025-12-10
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          9.15 AM
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          5.30 PM
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">
+                          8h 15m
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800">
+                          <span className="px-3 py-1 text-xs font-medium text-yellow-600">
+                            Late
+                          </span>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
+
+                  {/* PAGINATION */}
+                  <div className="flex justify-between items-center p-4 bg-gray-100 border-t border-gray-200">
+                    <div className="flex items-center gap-1 ml-auto">
+                      <button className="p-2 text-gray-400 hover:text-gray-600 border border-gray-300 rounded">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                      </button>
+                      <button className="px-3 py-1 text-sm bg-[#087990] text-white rounded">
+                        1
+                      </button>
+                      <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded">
+                        2
+                      </button>
+                      <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded">
+                        3
+                      </button>
+                      <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded">
+                        4
+                      </button>
+                      <button className="p-2 text-gray-400 hover:text-gray-600 border border-gray-300 rounded">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -397,7 +516,7 @@ const AdminAttendance = () => {
                 </h3>
 
                 {corrections.length === 0 ? (
-                  <div className="text-center py-12">
+                  <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
                     <CheckCircle
                       size={48}
                       className="mx-auto text-gray-400 mb-3"
@@ -409,9 +528,10 @@ const AdminAttendance = () => {
                     {corrections.map((correction) => (
                       <div
                         key={correction.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                        className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
                       >
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between">
+                          {/* Left content */}
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <h4 className="font-semibold text-gray-800">
@@ -446,32 +566,34 @@ const AdminAttendance = () => {
                               </div>
                             </div>
 
-                            <div className="bg-gray-50 rounded p-3 mb-3">
-                              <p className="text-xs text-gray-500 mb-1">
-                                Reason:
-                              </p>
-                              <p className="text-sm text-gray-700">
-                                {correction.reason}
-                              </p>
+                            {/* Reason with background rectangle - decreased width */}
+                            <div className="bg-gray-50 rounded p-3 mt-3 w-fit">
+                              <div className="flex items-start gap-2">
+                                <p className="text-sm text-gray-500 whitespace-nowrap">
+                                  Reason:
+                                </p>
+                                <p className="text-sm text-gray-700">
+                                  {correction.reason}
+                                </p>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="flex gap-2 ml-4">
+                          {/* Right side buttons - vertically centered */}
+                          <div className="flex flex-col gap-2 ml-6 justify-center">
                             <button
                               onClick={() =>
                                 handleApproveCorrection(correction)
                               }
-                              className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition flex items-center gap-2"
+                              className="px-6 py-2.5 text-white rounded-lg hover:opacity-90 transition w-32"
                               style={{ backgroundColor: "#087990" }}
                             >
-                              <CheckCircle size={16} />
                               Approve
                             </button>
                             <button
                               onClick={() => handleRejectCorrection(correction)}
-                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+                              className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition w-32"
                             >
-                              <XCircle size={16} />
                               Reject
                             </button>
                           </div>
@@ -491,118 +613,145 @@ const AdminAttendance = () => {
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Calendar className="text-gray-600" size={24} />
-                      <h4 className="font-semibold text-gray-800">
-                        Daily Report
-                      </h4>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      View detailed attendance for today
-                    </p>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Present:</span>
-                        <span className="font-medium text-green-600">
-                          {summaryData.daily.present}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Late:</span>
-                        <span className="font-medium text-yellow-600">
-                          {summaryData.daily.late}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Absent:</span>
-                        <span className="font-medium text-red-600">
-                          {summaryData.daily.absent}
-                        </span>
+                  {/* Daily Report Card */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition">
+                    <div className="p-4" style={{ backgroundColor: "#087990" }}>
+                      <div className="flex items-center justify-center gap-2">
+                        <FileText size={20} className="text-black" />
+                        <h4 className="font-semibold text-black text-base">
+                          Daily Report
+                        </h4>
                       </div>
                     </div>
-                    <button
-                      className="w-full py-2 text-white rounded-lg hover:opacity-90 transition"
-                      style={{ backgroundColor: "#087990" }}
-                    >
-                      Generate Report
-                    </button>
+                    <div className="p-4">
+                      <p className="text-1xl text-black font-semibold text-left">
+                        Attendance for today
+                      </p>
+                    </div>
+
+                    <div className="p-6">
+                      <div className="space-y-4 mb-6">
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-800">Present</p>
+                          <p className="text-xl font-semibold text-gray-800">
+                            60
+                          </p>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-800">Late</p>
+                          <p className="text-xl font-semibold text-gray-800">
+                            05
+                          </p>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-800">Absent</p>
+                          <p className="text-xl font-semibold text-gray-800">
+                            05
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        className="w-full py-2.5 text-white rounded-lg hover:opacity-90 transition"
+                        style={{ backgroundColor: "#087990" }}
+                      >
+                        Generate Report
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Calendar className="text-gray-600" size={24} />
-                      <h4 className="font-semibold text-gray-800">
-                        Weekly Report
-                      </h4>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      View attendance for this week
-                    </p>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Present:</span>
-                        <span className="font-medium text-green-600">
-                          {summaryData.weekly.present}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Late:</span>
-                        <span className="font-medium text-yellow-600">
-                          {summaryData.weekly.late}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Absent:</span>
-                        <span className="font-medium text-red-600">
-                          {summaryData.weekly.absent}
-                        </span>
+                  {/* Weekly Report Card */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition">
+                    <div className="p-4" style={{ backgroundColor: "#087990" }}>
+                      <div className="flex items-center justify-center gap-2">
+                        <FileText size={20} className="text-black" />
+                        <h4 className="font-semibold text-black text-base">
+                          Weekly Report
+                        </h4>
                       </div>
                     </div>
-                    <button
-                      className="w-full py-2 text-white rounded-lg hover:opacity-90 transition"
-                      style={{ backgroundColor: "#087990" }}
-                    >
-                      Generate Report
-                    </button>
+                    <div className="p-4">
+                      <p className="text-1xl text-black font-semibold text-left">
+                        Attendance for this week
+                      </p>
+                    </div>
+
+                    <div className="p-6">
+                      <div className="space-y-4 mb-6">
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-800">Working Days</p>
+                          <p className="text-xl font-semibold text-gray-800">
+                            05
+                          </p>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-800">Most Late</p>
+                          <p className="text-base font-semibold text-gray-800">
+                            Jane Smith
+                          </p>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-800">Most Absent</p>
+                          <p className="text-base font-semibold text-gray-800">
+                            Dwayne Smith
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        className="w-full py-2.5 text-white rounded-lg hover:opacity-90 transition"
+                        style={{ backgroundColor: "#087990" }}
+                      >
+                        Generate Report
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Calendar className="text-gray-600" size={24} />
-                      <h4 className="font-semibold text-gray-800">
-                        Monthly Report
-                      </h4>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      View attendance for this month
-                    </p>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Present:</span>
-                        <span className="font-medium text-green-600">
-                          {summaryData.monthly.present}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Late:</span>
-                        <span className="font-medium text-yellow-600">
-                          {summaryData.monthly.late}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Absent:</span>
-                        <span className="font-medium text-red-600">
-                          {summaryData.monthly.absent}
-                        </span>
+                  {/* Monthly Report Card */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition">
+                    <div className="p-4" style={{ backgroundColor: "#087990" }}>
+                      <div className="flex items-center justify-center gap-2">
+                        <FileText size={20} className="text-black" />
+                        <h4 className="font-semibold text-black text-base">
+                          Monthly Report
+                        </h4>
                       </div>
                     </div>
-                    <button
-                      className="w-full py-2 text-white rounded-lg hover:opacity-90 transition"
-                      style={{ backgroundColor: "#087990" }}
-                    >
-                      Generate Report
-                    </button>
+                    <div className="p-4">
+                      <p className="text-1xl text-black font-semibold text-left">
+                        Attendance for this month
+                      </p>
+                    </div>
+
+                    <div className="p-6">
+                      <div className="space-y-4 mb-6">
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-800">Working Days</p>
+                          <p className="text-xl font-semibold text-gray-800">
+                            20
+                          </p>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-800">Most Late</p>
+                          <p className="text-base font-semibold text-gray-800">
+                            Jane Smith
+                          </p>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-800">Most Absent</p>
+                          <p className="text-base font-semibold text-gray-800">
+                            Dwayne Smith
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        className="w-full py-2.5 text-white rounded-lg hover:opacity-90 transition"
+                        style={{ backgroundColor: "#087990" }}
+                      >
+                        Generate Report
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
