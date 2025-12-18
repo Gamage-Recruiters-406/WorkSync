@@ -12,7 +12,7 @@ import {
   Users,
   Edit2,
 } from "lucide-react";
-import Sidebar from "../components/sidebar/Sidebar";
+import Sidebar from "../../components/sidebar/Sidebar";
 
 const UserAttendance = () => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
