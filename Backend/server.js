@@ -32,8 +32,8 @@ connectDB();
 const app = express();
 
 //Data sanitizations
-app.use(MongoSanitize());
-app.use(xss());
+// app.use(MongoSanitize());
+// app.use(xss());
 
 // Middlewares
 app.use(cors());
