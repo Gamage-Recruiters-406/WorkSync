@@ -2,6 +2,9 @@ import Announcement from "../models/Announcement.js";
 import { v4 as uuidv4 } from "uuid";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
+import File from "../models/AnnouncemetAttachmet.js";
+import fs from "fs";
+import path from "path";
 
 // Create Announcement
 export async function createAnnouncement(req, res) {
@@ -18,8 +21,21 @@ export async function createAnnouncement(req, res) {
       neverExpire,
     } = req.body;
 
+    const announcementId = uuidv4();
+    const attachments = [];
+
+    // Handle multiple files
+    if (req.files && req.files.length > 0) {
+      for (const fileData of req.files) {
+         // Create file object using static method, adding announcementId
+         const file = File.fromMulterFile({ ...fileData, announcementId }); 
+         await file.save();
+         attachments.push(file._id);
+      }
+    }
+
     const newAnnouncement = await Announcement.create({
-      announcementId: uuidv4(),
+      announcementId,
       title,
       startDate,
       endDate,
@@ -29,7 +45,7 @@ export async function createAnnouncement(req, res) {
       message,
       notifyRoles, // ["1", "2","3"]
       neverExpire,
-      attachment: req.uploadedFile ? req.uploadedFile._id : null,
+      attachments, // Store array of file IDs
     });
 
     // NOTIFICATION LOGIC
@@ -206,12 +222,11 @@ export async function updateAnnouncement(req, res) {
   }
 }
 
-// Delete Announcement
-async function deleteAnnouncementByAnnouncementId(announcementId) {
-  return await Announcement.findOneAndDelete({ announcementId });
-}
+// Delete Announcement  
+//delete announcement releted notification and files
 
-export async function deleteAnnouncement(req, res) {
+export async function deleteAnnouncement(req, res) 
+{
   const { id } = req.params;
     if(!id){
       return res.status(404).json({
@@ -234,6 +249,31 @@ export async function deleteAnnouncement(req, res) {
         
        if (deletedNotificationsResult.deletedCount > 0) {
       console.log(`Auto-deleted ${deletedNotificationsResult.deletedCount} related notifications`);
+    }
+
+    // Delete associated files
+    const associatedFiles = await File.find({ announcementId: id });
+    for (const file of associatedFiles) {
+        
+        const filePath = path.resolve(file.path);
+        try {
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            } else {
+                console.warn(`[DeleteAnnouncement] File NOT found at path: ${filePath}`);
+                
+                // Fallback attempt: check 'uploads' folder directly
+                const fallbackPath = path.join(process.cwd(), "uploads", path.basename(file.path));
+                if (filePath !== fallbackPath && fs.existsSync(fallbackPath)) {
+                    console.log(`[DeleteAnnouncement] Found at fallback path: ${fallbackPath}, deleting...`);
+                    fs.unlinkSync(fallbackPath);
+                }
+            }
+        } catch (err) {
+            console.error(`[DeleteAnnouncement] Error deleting file: ${filePath}`, err);
+        }
+        //delet main announcement
+         await file.deleteOne();
     }
       await deletedAnnouncement.deleteOne();
 

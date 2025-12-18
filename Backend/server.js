@@ -16,7 +16,7 @@ import announcementRoutes from "./routes/announcement_route.js";
 import cookieParser from "cookie-parser";
 import milestoneRoutes from "./routes/milestoneRoute.js";
 import { autoDeleteExpiredAnnouncements } from "./middlewares/announcementExpirymiddleware.js";
-import fileRoutes from "./routes/fileRoutes.js";
+import AnnouncemetAttachmetRoutes from "./routes/AnnouncemetAttachmetRoutes.js";
 // Configure environment
 
 dotenv.config();
@@ -45,7 +45,7 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
 app.use("/api/v1/millestone", milestoneRoutes);
-app.use("/api/v1/file", fileRoutes);
+app.use("/api/v1/AnnouncemetAttachmet", AnnouncemetAttachmetRoutes);
 app.get("/", (req, res) => {
   res.send({
     message: "Welcome to WorkSync",

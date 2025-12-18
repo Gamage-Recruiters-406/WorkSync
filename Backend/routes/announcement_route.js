@@ -16,14 +16,15 @@ import {
 } from "../controllers/announcementController.js";
 
 // OR isAdmin — depends on your rule
-import {
-  requiredSignIn,
-  isManagerOrAdmin,
-} from "../middlewares/AuthMiddleware.js";
-import {
-  uploadSingleFile,
-  handleFileUpload,
-} from "../middlewares/fileUploadMiddleware.js";
+import {requiredSignIn,isManagerOrAdmin,} from "../middlewares/AuthMiddleware.js";
+import { createDiskUploader } from "../middlewares/uploadFactory.js";
+
+import path from "path";
+
+// Setup local uploader
+const upload = createDiskUploader({
+  getDestination: () => path.join(process.cwd(), "uploads"),
+});
 
 const AnnouncementRouter = express.Router();
 
@@ -39,7 +40,7 @@ AnnouncementRouter.get("/getAnnouncement/:id", getAnnouncementbyID);
 AnnouncementRouter.get("/getActiveAnnouncements", getActiveAnnouncements);
 
 //protected routes
-AnnouncementRouter.post(  "/createAnnouncement",requiredSignIn,isManagerOrAdmin,uploadSingleFile,handleFileUpload,createAnnouncement);
+AnnouncementRouter.post(  "/createAnnouncement",requiredSignIn,isManagerOrAdmin,upload.array("files", 3),createAnnouncement);
 AnnouncementRouter.put(  "/updateAnnouncement/:id", requiredSignIn,isManagerOrAdmin,updateAnnouncement);
 AnnouncementRouter.delete(  "/deleteAnnouncement/:id", requiredSignIn, isManagerOrAdmin, deleteAnnouncement);
 

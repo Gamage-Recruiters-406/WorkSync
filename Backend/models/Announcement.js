@@ -67,10 +67,12 @@ const announcementSchema = new mongoose.Schema(
       default: false,
     },
 
-    attachment: {
-      type: String,
-      // store File _id
-    },
+    attachments: [
+      {
+        type: String,
+        // store File _id
+      },
+    ],
   },
 
   {

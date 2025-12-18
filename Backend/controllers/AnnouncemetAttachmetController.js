@@ -1,6 +1,30 @@
-import File from "../models/File.js";
+import File from "../models/AnnouncemetAttachmet.js";
 import fs from "fs";
 import path from "path";
+import Announcement from "../models/Announcement.js";
+
+//  save file to DB (migrated from fileUploadMiddleware)
+export const saveFileToDb = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return next();
+    }
+
+    const file = File.fromMulterFile(req.file);
+    await file.save();
+
+    // Attach saved file to request
+    req.uploadedFile = file;
+    next();
+    
+  } catch (error) {
+    console.error("Error saving file to DB:", error);
+    res.status(500).send({
+      message: "Error processing file upload",
+      error,
+    });
+  }
+};
 
 // Upload File
 export const uploadFile = async (req, res) => {
@@ -107,6 +131,12 @@ export const deleteFile = async (req, res) => {
 
     // Delete from database
     await File.findByIdAndDelete(req.params.id);
+
+    // Remove file reference from Announcements
+    await Announcement.updateMany(
+      { attachments: req.params.id },
+      { $pull: { attachments: req.params.id } }
+    );
 
     res.status(200).send({ message: "File deleted successfully" });
   } catch (error) {
