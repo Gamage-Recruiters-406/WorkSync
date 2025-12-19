@@ -1,6 +1,6 @@
 import express from 'express';
 import { requiredSignIn } from './../middlewares/AuthMiddleware.js';
-import { addProjectAttachmentController, getAllProjectAttachmentsController,streamProjectAttachmentController } from '../controllers/projectAttachmentController.js';
+import { addProjectAttachmentController, getAllProjectAttachmentsController,streamProjectAttachmentController, deleteProjectAttachmentController } from '../controllers/projectAttachmentController.js';
 import { createDiskUploader } from '../middlewares/uploadFactory.js';
 
 const router = express.Router({ mergeParams: true });
@@ -19,5 +19,8 @@ router.get("/file/:attachmentId", requiredSignIn, streamProjectAttachmentControl
 
 // GET ALL ATTACHMENTS (MongoDB metadata) for a project
 router.get("/", requiredSignIn, getAllProjectAttachmentsController);
+
+// DELETE ONE ATTACHMENT (DB + file) -> DELETE /api/v1/projects/:projectId/attachments/:attachmentId
+router.delete("/:attachmentId", requiredSignIn, deleteProjectAttachmentController);
 
 export default router;
