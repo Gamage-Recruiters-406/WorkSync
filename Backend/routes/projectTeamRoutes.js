@@ -4,29 +4,35 @@ import {
     getMembers,
     updateMemberRole,
     removeMember,
-    getProjectsOfUser
+    getProjectsOfUser,
+    getAllUsers
 } from "../controllers/projectTeamController.js";
+
+import { requiredSignIn } from "../middlewares/AuthMiddleware.js";
 
 const router = express.Router();
 
-// TEST ROUTE 
+// TEST ROUTE
 router.get("/", (req, res) => {
     res.send("Project Team API Working");
 });
 
 // Add member
-router.post("/addMember", addMember);
-
-// Get all members of a project
-router.get("/getMembers/:pid", getMembers);
+router.post("/addMember", requiredSignIn, addMember);
 
 // Update member role
-router.put("/updateMemberRole/:id", updateMemberRole);
+router.put("/updateMemberRole", requiredSignIn, updateMemberRole);
 
 // Remove member
-router.delete("/removeMember/:id", removeMember);
+router.delete("/removeMember", requiredSignIn, removeMember);
 
-// Get all projects of a user
-router.get("/getProjects/:uid", getProjectsOfUser);
+// Get team members
+router.get("/getMembers/:pid", requiredSignIn, getMembers);
+
+// Get projects of a user
+router.get("/getProjects/:uid", requiredSignIn, getProjectsOfUser);
+
+// Get all users for dropdown
+router.get("/all", requiredSignIn, getAllUsers);
 
 export default router;

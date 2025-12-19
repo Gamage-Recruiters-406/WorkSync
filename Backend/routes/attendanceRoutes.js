@@ -2,21 +2,48 @@ import express from "express";
 import { 
     clockInController, 
     clockOutController,
-    getAttendanceController     
+    getAttendanceController,
+    getSingleUserAttendanceController,
+    generateAttendanceReport,
+    updateAttendanceController,
+    requestCorrectionController,
+    getPendingCorrectionsController,
+    approveCorrectionController,
+    getMyAttendanceHistoryController
 } from "../controllers/attendanceController.js";
 
-
-import { requiredSignIn } from "../middlewares/AuthMiddleware.js";
+import { requiredSignIn, isManagerOrAdmin } from "../middlewares/AuthMiddleware.js";
 
 const router = express.Router();
 
-// CHECK IN TIME
-router.post("/clock-in", requiredSignIn, clockInController);
+// Add attendance
+router.post("/startAttendent", requiredSignIn, clockInController);
 
-//  CHECK OUT TIME
-router.put("/clock-out", requiredSignIn, clockOutController);
+// Get Attendance (admin) 
+router.get("/getAttendent", requiredSignIn, getAttendanceController);
 
-//  GET ALL RECODERS
-router.get("/get-all", requiredSignIn, getAttendanceController);
+// Get single user attendance 
+router.get("/get-single-user-attendance/:id", requiredSignIn, isManagerOrAdmin, getSingleUserAttendanceController);
+
+// Check out attendance 
+router.patch("/EndAttendance/:id", requiredSignIn, clockOutController);
+
+// Generate attendance report 
+router.get("/attendanceReport", requiredSignIn, isManagerOrAdmin, generateAttendanceReport);
+
+// Manual Admin Update (Fix mistakes Admin Full Access)
+router.put("/update/:attendanceId", requiredSignIn, isManagerOrAdmin, updateAttendanceController);
+
+// Employee Request Correction 
+router.post("/request-correction", requiredSignIn, requestCorrectionController);
+
+// Admin Get Pending Requests 
+router.get("/pending-corrections", requiredSignIn, isManagerOrAdmin, getPendingCorrectionsController);
+
+// Admin Approve/Reject 
+router.post("/approve-correction", requiredSignIn, isManagerOrAdmin, approveCorrectionController);
+
+// User Get Their Own History (For Personal Attendance Summary Dashboard)
+router.get("/my-history", requiredSignIn, getMyAttendanceHistoryController);
 
 export default router;

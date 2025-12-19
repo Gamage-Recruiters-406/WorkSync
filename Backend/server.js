@@ -1,8 +1,12 @@
 import express from "express";
-import colors from 'colors';
+import colors from "colors";
 import dotenv from "dotenv";
-import morgan from "morgan";
+import helmet from "helmet";
+import MongoSanitize from "express-mongo-sanitize";
+import xss from "xss-clean";
 import connectDB from "./config/db.js";
+// import app from "./app.js";
+import morgan from "morgan";
 import cors from "cors";
 import projectTeamRoutes from "./routes/projectTeamRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
@@ -13,9 +17,11 @@ import departmentRoutes from "./routes/departmentRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import announcementRoutes from "./routes/announcement_route.js";
 import cookieParser from "cookie-parser";
-
-
+import milestoneRoutes from "./routes/milestoneRoute.js";
+import { autoDeleteExpiredAnnouncements } from "./middlewares/announcementExpirymiddleware.js";
+import AnnouncemetAttachmetRoutes from "./routes/AnnouncemetAttachmetRoutes.js";
 // Configure environment
+
 dotenv.config();
 
 // Database config
@@ -24,34 +30,45 @@ connectDB();
 const app = express();
 
 
+//Data sanitizations
+// app.use(MongoSanitize());
+// app.use(xss());
+
+
 // Middlewares
 app.use(cors());
+app.use(helmet());
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 app.use(cookieParser());
+// run every 1 minute
+setInterval(autoDeleteExpiredAnnouncements, 60 * 1000);
+//setInterval(autoDeleteExpiredAnnouncements, 86400000);
 
 //routes
 app.use("/api/v1/userAuth", userRoutes);
 app.use("/api/v1/attendance", attendanceRoutes);
 app.use("/api/v1/leave-request", leaveRoutes);
 app.use("/api/v1/task", taskRoutes);
-
 app.use("/api/v1/department", departmentRoutes);
-
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
+app.use("/api/v1/millestone", milestoneRoutes);
+app.use("/api/v1/AnnouncemetAttachmet", AnnouncemetAttachmetRoutes);
+
+
 
 app.get("/", (req, res) => {
-    res.send({
-        message: "Welcome to WorkSync"
-    });
+  res.send({
+    message: "Welcome to WorkSync",
+  });
 });
 
 const PORT = process.env.PORT || 8090;
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Server Running on ${process.env.DEV_MODE} mode`.bgCyan.white);
-    console.log(`Server is running on port ${PORT}`.bgCyan.white)
+  console.log(`Server Running on ${process.env.DEV_MODE} mode`.bgCyan.white);
+  console.log(`Server is running on port ${PORT}`.bgCyan.white);
 });
