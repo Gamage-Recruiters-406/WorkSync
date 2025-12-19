@@ -21,7 +21,16 @@ const attendanceSchema = new mongoose.Schema({
     },
     outTime: {
         type: Date
+    },
+
+    correction: {
+        isRequested: { type: Boolean, default: false },
+        requestType: { type: String, enum: ['CheckIn', 'CheckOut', null], default: null }, 
+        requestedTime: { type: Date, default: null }, 
+        reason: { type: String, default: "" }, 
+        status: { type: String, enum: ['Pending', 'Approved', 'Rejected', null], default: null } 
     }
+
 }, { timestamps: true });
 
 export default mongoose.model("Attendance", attendanceSchema);
