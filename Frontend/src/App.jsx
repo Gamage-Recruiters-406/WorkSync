@@ -19,13 +19,25 @@ import LeaveRequest from "./pages/employee/LeaveRequest";
 import UserAnnouncements from "./pages/employee/UserAnnouncements";
 import CreateTaskForm from "./pages/TeamLeader/CreateTaskForm";
 import TaskHistory from "./pages/TeamLeader/TaskHistory";
-
+import Login from "./Pages/Login";
+import SignUp from "./Pages/Singup";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
 
 function App() {
   return (
     <Router>
       <Routes>
+         {/* Default route - redirect to login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        
+        {/* Authentication routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+
+        {/* Dashboard routes */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} /> 
+        <Route path="*" element={<Navigate to="/login" replace />} />
+
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/assign-task" element={<AssignTask />} />
