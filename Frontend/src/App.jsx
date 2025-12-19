@@ -23,6 +23,11 @@ import Login from "./Pages/Login";
 import SignUp from "./Pages/Signup";
 import { Navigate } from "react-router-dom";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
+import SystemSettings from "./pages/systemSetting/SystemSettings";
+import CompanyInfoSettings from "./pages/systemSetting/CompanyInfoSettings";
+import ProfileSettings from "./pages/systemSetting/ProfileSettings";
+import RolesAttendanceSettings from "./pages/systemSetting/RolesAttendanceSettings";
+import WorkingHoursSettings from "./pages/systemSetting/WorkingHoursSettings";
 
 function App() {
   return (
@@ -50,6 +55,17 @@ function App() {
         <Route path="/admin/departments" element={<Departments />} />
         <Route path="/admin/projects" element={<Projects />} />
         <Route path="/admin/attendance" element={<AdminAttendance />} />
+
+        {/* System Settings (Tabs)*/}
+        <Route path="/admin/system-settings" element={<SystemSettings />}>
+          <Route path="company-info" element={<CompanyInfoSettings />} />
+          <Route path="profile" element={<ProfileSettings />} />
+          <Route
+            path="roles-attendance"
+            element={<RolesAttendanceSettings />}
+          />
+          <Route path="working-hours" element={<WorkingHoursSettings />} />
+        </Route>
 
         {/* Employee Routes */}
         <Route path="/user/dashboard" element={<UserDashboard />} />
