@@ -148,6 +148,94 @@ export const updateLeaveStatus = async (req, res) => {
   }
 };
 
+// Get all leaves of a user
+export const getLeavesByUser = async (req, res) => {
+  try {
+    validateUserIdFromToken(req.user?.userid);
+    const { uid } = req.params;
+
+    // Check user exists
+    await checkUserExists(uid);
+
+    // If current user is not Admin/Manager, they can only view their own leaves
+    if (![2, 3].includes(req.user.role) && req.user.userid !== uid) {
+      throw {
+        status: 403,
+        message: "You can only view your own leave requests.",
+      };
+    }
+
+    const leaves = await LeaveRequest.find({ requestedBy: uid })
+      .sort({ createdAt: -1 })
+      .populate("requestedBy", "username fullName email department")
+      .populate("approvedBy", "username fullName email");
+
+    res.json({
+      success: true,
+      count: leaves.length,
+      data: leaves,
+    });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+};
+
+// Get single leave request
+export const getSingleLeave = async (req, res) => {
+  try {
+    validateUserIdFromToken(req.user?.userid);
+    const { id } = req.params;
+
+    // Find leave
+    const leave = await checkLeaveRequestExists(id);
+
+    // If current user is not Admin/Manager, they can only view their own leave
+    if (![2, 3].includes(req.user.role) && !isRequester(leave.requestedBy, req.user.userid)) {
+      throw {
+        status: 403,
+        message: "You are not allowed to view this leave request.",
+      };
+    }
+
+    const populatedLeave = await populateLeaveRequestDetails(leave._id);
+
+    res.json({
+      success: true,
+      data: populatedLeave,
+    });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+};
+
+// Get all leave requests (Admin / Manager only)
+export const getAllLeaves = async (req, res) => {
+  try {
+    validateUserIdFromToken(req.user?.userid);
+
+    // Only Admin (3) or Manager (2) can access all leaves
+    if (![2, 3].includes(req.user.role)) {
+      throw {
+        status: 403,
+        message: "Access denied. Only Admin or Manager can view all leave requests.",
+      };
+    }
+
+    const leaves = await LeaveRequest.find()
+      .sort({ createdAt: -1 })
+      .populate("requestedBy", "username fullName email department")
+      .populate("approvedBy", "username fullName email");
+
+    res.json({
+      success: true,
+      count: leaves.length,
+      data: leaves,
+    });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+};
+
 // Delete Leave Request - Requester only
 export const deleteLeaveRequest = async (req, res) => {
   try {
