@@ -20,7 +20,8 @@ import UserAnnouncements from "./pages/employee/UserAnnouncements";
 import CreateTaskForm from "./pages/TeamLeader/CreateTaskForm";
 import TaskHistory from "./pages/TeamLeader/TaskHistory";
 import Login from "./Pages/Login";
-import SignUp from "./Pages/Singup";
+import SignUp from "./Pages/Signup";
+import { Navigate } from "react-router-dom";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
 
         {/* Dashboard routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} /> 
+        
         <Route path="*" element={<Navigate to="/login" replace />} />
 
         {/* Admin Routes */}
