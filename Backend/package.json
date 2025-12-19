@@ -31,6 +31,13 @@
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
+    "cookie-parser": "^1.4.7",
+    "nodemon": "^3.1.11",
+
+    "multer": "^2.0.2",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
     "@jest/globals": "^30.2.0",
     "@swc/core": "^1.15.3",
     "@swc/jest": "^0.2.39",
@@ -49,6 +56,9 @@
       "**/*.spec.{js,jsx,ts,tsx}",
       "**/test/**/*.{js,jsx,ts,tsx}",
       "**/__tests__/**/*.{js,jsx,ts,tsx}"
-    ]
+    ],
+    "nodemon": "^3.1.11",
+    "cookie-parser": "^1.4.7"
+
   }
 }

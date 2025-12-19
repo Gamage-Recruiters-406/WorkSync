@@ -366,3 +366,125 @@ export const updateAttendanceController = async (req, res) => {
         res.status(500).send({ success: false, message: "Error updating attendance", error });
     }
 };
+
+
+// 7. EMPLOYEE: REQUEST CORRECTION
+export const requestCorrectionController = async (req, res) => {
+    try {
+        const userId = req.user.userid;
+        const { date, type, requestedTime, reason } = req.body; // type must be 'CheckIn' or 'CheckOut'
+
+        // 1. Find the attendance record for that day
+        const attendance = await attendanceModel.findOne({ userId, date });
+        if (!attendance) {
+            return res.status(404).send({ success: false, message: "Attendance record not found for this date" });
+        }
+
+        // 2. Update the correction section
+        attendance.correction = {
+            isRequested: true,
+            requestType: type, // 'CheckIn' or 'CheckOut'
+            requestedTime: new Date(requestedTime),
+            reason: reason,
+            status: 'Pending'
+        };
+
+        await attendance.save();
+
+        res.status(200).send({
+            success: true,
+            message: "Correction Request Sent Successfully",
+            attendance
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false, message: "Error in requesting correction", error });
+    }
+};
+
+
+// 8. ADMIN: GET ALL PENDING REQUESTS
+export const getPendingCorrectionsController = async (req, res) => {
+    try {
+        // Find records where correction status is 'Pending'
+        const pendingRequests = await attendanceModel.find({ "correction.status": "Pending" })
+            .populate("userId", "name email") // Show employee name
+            .sort({ date: -1 });
+
+        res.status(200).send({
+            success: true,
+            count: pendingRequests.length,
+            requests: pendingRequests
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false, message: "Error fetching requests", error });
+    }
+};
+
+
+// 9. ADMIN: APPROVE OR REJECT CORRECTION
+export const approveCorrectionController = async (req, res) => {
+    try {
+        const { attendanceId, action } = req.body; // action = 'Approve' or 'Reject'
+        const attendance = await attendanceModel.findById(attendanceId);
+
+        if (!attendance) return res.status(404).send({ success: false, message: "Record not found" });
+
+        if (action === "Reject") {
+            attendance.correction.status = "Rejected";
+            await attendance.save();
+            return res.status(200).send({ success: true, message: "Request Rejected" });
+        }
+
+        if (action === "Approve") {
+            // APPLY THE CHANGE
+            if (attendance.correction.requestType === "CheckIn") {
+                attendance.inTime = attendance.correction.requestedTime;
+            } else if (attendance.correction.requestType === "CheckOut") {
+                attendance.outTime = attendance.correction.requestedTime;
+            }
+
+            attendance.correction.status = "Approved";
+            await attendance.save();
+            return res.status(200).send({ success: true, message: "Request Approved & Attendance Updated", attendance });
+        }
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false, message: "Error processing request", error });
+    }
+};
+
+// 10. GET USER ATTENDANCE HISTORY (for User side)
+export const getMyAttendanceHistoryController = async (req, res) => {
+    try {
+        
+        const userId = req.user.userid; 
+
+        const attendanceRecords = await attendanceModel.find({ userId })
+            .sort({ date: -1 }) // Newest first
+            .lean();
+
+        const enrichedAttendance = attendanceRecords.map(record => {
+            let hours = 0;
+            if (record.inTime && record.outTime) { 
+                const start = new Date(record.inTime);
+                const end = new Date(record.outTime);
+                hours = (end - start) / (1000 * 60 * 60); 
+            }
+            return { ...record, hoursWorked: hours.toFixed(2) }; 
+        });
+
+        res.status(200).send({
+            success: true,
+            count: enrichedAttendance.length,
+            attendance: enrichedAttendance
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false, message: "Error fetching history", error });
+    }
+};
