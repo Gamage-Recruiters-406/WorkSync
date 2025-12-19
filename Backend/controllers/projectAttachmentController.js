@@ -204,3 +204,37 @@ export const streamProjectAttachmentController = async (req, res) => {
 
 
 
+// Get all attachments (metadata) for a project
+export const getAllProjectAttachmentsController = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(projectId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid project ID",
+            });
+        }
+
+        const attachments = await ProjectAttachment.find({ projectId })
+            .sort({ createdAt: -1 })
+            .select("_id projectId originalName filename fileType fileSize createdAt updatedAt");
+
+        const data = attachments.map((a) => ({
+            ...a.toObject(),
+            fileUrl: `/api/v1/projects/${projectId}/attachments/file/${a._id}`,
+        }));
+
+        return res.status(200).json({
+            success: true,
+            count: data.length,
+            data,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Error fetching attachments",
+            error: error.message,
+        });
+    }
+};
