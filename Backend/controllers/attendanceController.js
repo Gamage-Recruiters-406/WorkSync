@@ -3,8 +3,40 @@ import User from "../models/User.js";
 import ExcelJS from 'exceljs';       
 import PDFDocument from 'pdfkit';    
 
+// Calculate "0h 0m" format
+const calculateDuration = (inTime, outTime) => {
+    if (!inTime || !outTime) return "-";
+    const start = new Date(inTime);
+    const end = new Date(outTime);
+    const diffMs = end - start;
+    if (diffMs < 0) return "Error"; 
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+};
 
-// 1. START ATTENDANT 
+//  Get Status Based on SL Time
+const determineStatus = () => {
+    const now = new Date();
+    const slTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Colombo" });
+    const slDate = new Date(slTimeStr);
+    
+    const hours = slDate.getHours();
+    const minutes = slDate.getMinutes();
+
+    // Before 9:00 AM -> Present
+    // 9:01 AM to 10:00 AM -> Late
+    // After 10:00 AM -> Absent
+    
+    if (hours < 9) return "Present"; 
+    if (hours === 9 && minutes === 0) return "Present"; 
+    if (hours === 9 || (hours === 10 && minutes === 0)) return "Late"; 
+
+    return "Absent"; 
+};
+
+
+// 1. START ATTENDANT (Clock In)
 export const clockInController = async (req, res) => {
     try {
         const { date } = req.body; 
@@ -23,10 +55,13 @@ export const clockInController = async (req, res) => {
             });
         }
 
+        // Calculate Status Automatically
+        const calculatedStatus = determineStatus();
+
         const newAttendance = new attendanceModel({
             userId,  
             date,
-            status: "Present", 
+            status: calculatedStatus,
             inTime: new Date()
         });
 
@@ -34,7 +69,7 @@ export const clockInController = async (req, res) => {
 
         res.status(201).send({
             success: true,
-            message: "Check In Successful",
+            message: `Check In Successful. Status: ${calculatedStatus}`,
             newAttendance
         });
 
@@ -45,7 +80,7 @@ export const clockInController = async (req, res) => {
 };
 
 
-// 2. END ATTENDANCE 
+// 2. END ATTENDANCE (Clock Out)
 export const clockOutController = async (req, res) => {
     try {
         const { date } = req.body;
@@ -112,19 +147,21 @@ export const getAttendanceController = async (req, res) => {
         }
 
         const attendanceRecords = await attendanceModel.find(query)
-            .populate('userId', 'name email role') 
+            .populate('userId', 'name email role employeeId') 
             .sort({ date: -1 })
             .lean(); 
 
-        // Enrich with Hours Calculation
         const enrichedAttendance = attendanceRecords.map(record => {
-            let hours = 0;
-            if (record.inTime && record.outTime) { 
-                const start = new Date(record.inTime);
-                const end = new Date(record.outTime);
-                hours = (end - start) / (1000 * 60 * 60); 
+            let displayStatus = record.status;
+            if (record.inTime && !record.outTime) {
+                displayStatus = "Working";
             }
-            return { ...record, hoursWorked: hours.toFixed(2) }; 
+
+            return { 
+                ...record, 
+                status: displayStatus,
+                hoursWorked: calculateDuration(record.inTime, record.outTime) 
+            }; 
         });
 
         res.status(200).send({
@@ -154,15 +191,17 @@ export const getSingleUserAttendanceController = async (req, res) => {
             return res.status(404).send({ success: false, message: "No records found for this user" });
         }
 
-        // Calculate Hours for Single User 
         const enrichedAttendance = attendanceRecords.map(record => {
-            let hours = 0;
-            if (record.inTime && record.outTime) { 
-                const start = new Date(record.inTime);
-                const end = new Date(record.outTime);
-                hours = (end - start) / (1000 * 60 * 60); 
+            let displayStatus = record.status;
+            if (record.inTime && !record.outTime) {
+                displayStatus = "Working";
             }
-            return { ...record, hoursWorked: hours.toFixed(2) }; 
+
+            return { 
+                ...record, 
+                status: displayStatus,
+                hoursWorked: calculateDuration(record.inTime, record.outTime) 
+            }; 
         });
 
         res.status(200).send({
@@ -176,7 +215,6 @@ export const getSingleUserAttendanceController = async (req, res) => {
         res.status(500).send({ success: false, message: "Error fetching user attendance", error });
     }
 };
-
 
 
 // 5. ATTENDANCE REPORT (Excel/PDF)
@@ -217,8 +255,7 @@ const buildExportQuery = async (req) => {
 // Unified Export Controller 
 export const generateAttendanceReport = async (req, res) => {
     try {
-        const { type } = req.query; // Check "pdf" or "excel"
-
+        const { type } = req.query; 
         if (type === 'pdf') {
             return exportAttendancePDF(req, res);
         } else {
@@ -229,20 +266,24 @@ export const generateAttendanceReport = async (req, res) => {
     }
 };
 
-// Excel Function 
+// Excel Function
 const exportAttendanceExcel = async (req, res) => {
     try {
         const query = await buildExportQuery(req);
-        const attendanceData = await attendanceModel.find(query).populate('userId', 'name email').sort({ date: -1 });
+        const attendanceData = await attendanceModel.find(query)
+            .populate('userId', 'name email _id') 
+            .sort({ date: -1 });
 
-        let totalHoursWorked = 0;
+        let totalHoursWorked = 0; 
         let daysPresent = 0;
+
         attendanceData.forEach(record => {
-            if (record.status === 'Present') daysPresent++;
+            if (record.status === 'Present' || record.status === 'Late') daysPresent++;
             if (record.inTime && record.outTime) {
                 const start = new Date(record.inTime);
                 const end = new Date(record.outTime);
-                totalHoursWorked += (end - start) / (1000 * 60 * 60);
+                const hours = (end - start) / (1000 * 60 * 60); 
+                totalHoursWorked += hours;
             }
         });
 
@@ -250,35 +291,43 @@ const exportAttendanceExcel = async (req, res) => {
         const worksheet = workbook.addWorksheet('Attendance Report');
         worksheet.columns = [
             { header: 'Date', key: 'date', width: 15 },
+            { header: 'ID', key: 'empId', width: 15 },
             { header: 'Employee Name', key: 'name', width: 25 },
             { header: 'Status', key: 'status', width: 15 },
-            { header: 'Check In (SL Time)', key: 'inTime', width: 25 },
-            { header: 'Check Out (SL Time)', key: 'outTime', width: 25 },
-            { header: 'Email', key: 'email', width: 30 }
+            { header: 'Check In', key: 'inTime', width: 15 },
+            { header: 'Check Out', key: 'outTime', width: 15 },
+            { header: 'Hours', key: 'hours', width: 15 }
         ];
 
         const formatSLTime = (date) => {
             if (!date) return '-';
-            return new Date(date).toLocaleString('en-US', { timeZone: 'Asia/Colombo', dateStyle: 'medium', timeStyle: 'short' });
+            return new Date(date).toLocaleString('en-US', { timeZone: 'Asia/Colombo', timeStyle: 'short', hour12: true });
         };
 
         attendanceData.forEach(record => {
+            let uniqueId = "Unknown";
+            if (record.userId && record.userId._id) {
+                const shortId = record.userId._id.toString().slice(-4).toUpperCase();
+                uniqueId = `EMP-${shortId}`;
+            }
+
             worksheet.addRow({
                 date: record.date,
+                empId: uniqueId, 
                 name: record.userId ? record.userId.name : 'Unknown',
                 status: record.status,
                 inTime: formatSLTime(record.inTime),
                 outTime: formatSLTime(record.outTime),
-                email: record.userId ? record.userId.email : '-'
+                hours: calculateDuration(record.inTime, record.outTime)
             });
         });
 
         worksheet.addRow([]); 
         worksheet.addRow(['SUMMARY REPORT']);
-        worksheet.addRow(['Total Days Present', daysPresent]);
+        worksheet.addRow(['Total Presents', daysPresent]);
         worksheet.addRow(['Total Hours Worked', totalHoursWorked.toFixed(2)]);
         
-        const filename = `Attendance_Report_${req.query.viewType || 'All'}.xlsx`;
+        const filename = `Attendance_Report.xlsx`;
         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
 
@@ -290,31 +339,34 @@ const exportAttendanceExcel = async (req, res) => {
     }
 };
 
-// PDF Function 
+// PDF Function
 const exportAttendancePDF = async (req, res) => {
     try {
         const query = await buildExportQuery(req);
-        const attendanceData = await attendanceModel.find(query).populate('userId', 'name email').sort({ date: -1 });
+        const attendanceData = await attendanceModel.find(query)
+            .populate('userId', 'name email _id')
+            .sort({ date: -1 });
 
         let totalHoursWorked = 0;
         let daysPresent = 0;
+
         attendanceData.forEach(record => {
-            if (record.status === 'Present') daysPresent++;
+            if (record.status === 'Present' || record.status === 'Late') daysPresent++;
             if (record.inTime && record.outTime) {
                 const start = new Date(record.inTime);
                 const end = new Date(record.outTime);
-                totalHoursWorked += (end - start) / (1000 * 60 * 60);
+                const hours = (end - start) / (1000 * 60 * 60);
+                totalHoursWorked += hours;
             }
         });
 
-        const doc = new PDFDocument();
-        const filename = `Attendance_Report_${req.query.viewType || 'All'}.pdf`;
+        const doc = new PDFDocument({ margin: 30 });
+        const filename = `Attendance_Report.pdf`;
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
         doc.pipe(res);
 
-        const title = `Attendance Report (${req.query.viewType || 'All Time'})`;
-        doc.fontSize(20).text(title, { align: 'center' });
+        doc.fontSize(20).text("Attendance Report - WorkSync", { align: 'center' });
         doc.moveDown();
 
         const formatSLTime = (date) => {
@@ -322,19 +374,51 @@ const exportAttendancePDF = async (req, res) => {
             return new Date(date).toLocaleString('en-US', { timeZone: 'Asia/Colombo', hour12: true, hour: '2-digit', minute: '2-digit' });
         };
 
-        attendanceData.forEach((record, index) => {
-            const inTimeDisplay = formatSLTime(record.inTime);
-            const outTimeDisplay = formatSLTime(record.outTime);
-            const userName = record.userId ? record.userId.name : "Unknown";
-            const line = `${index + 1}. [${userName}] Date: ${record.date} | In: ${inTimeDisplay} | Out: ${outTimeDisplay}`;
-            doc.fontSize(12).text(line);
-            doc.moveDown(0.5);
+        doc.fontSize(10);
+        let y = doc.y;
+        doc.text("Date", 30, y);
+        doc.text("ID", 110, y);
+        doc.text("Name", 160, y);
+        doc.text("In", 300, y);
+        doc.text("Out", 360, y);
+        doc.text("Hours", 420, y);
+        doc.text("Status", 480, y);
+        
+        doc.moveDown(0.5);
+        doc.moveTo(30, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown(0.5);
+
+        attendanceData.forEach((record) => {
+            y = doc.y;
+            const hoursTxt = calculateDuration(record.inTime, record.outTime);
+            
+            let uniqueId = "Unknown";
+            if (record.userId && record.userId._id) {
+                const shortId = record.userId._id.toString().slice(-4).toUpperCase();
+                uniqueId = `EMP-${shortId}`;
+            }
+
+            doc.text(record.date, 30, y);
+            doc.text(uniqueId, 110, y);
+            doc.text(record.userId?.name || "Unknown", 160, y, { width: 130 });
+            doc.text(formatSLTime(record.inTime), 300, y);
+            doc.text(formatSLTime(record.outTime), 360, y);
+            doc.text(hoursTxt, 420, y);
+            
+            if(record.status === 'Absent') doc.fillColor('red');
+            else if(record.status === 'Late') doc.fillColor('orange');
+            else doc.fillColor('green');
+            
+            doc.text(record.status, 480, y);
+            doc.fillColor('black'); 
+            
+            doc.moveDown();
         });
 
         doc.moveDown();
         doc.text("---------------------------------------------------");
-        doc.fontSize(14).text(`Total Days Present: ${daysPresent}`);
-        doc.fontSize(14).text(`Total Hours Worked: ${totalHoursWorked.toFixed(2)}`);
+        doc.fontSize(12).text(`Total Days Present: ${daysPresent}`);
+        doc.fontSize(12).text(`Total Hours Worked: ${totalHoursWorked.toFixed(2)}`);
         doc.end();
     } catch (error) {
         console.log(error);
@@ -342,8 +426,7 @@ const exportAttendancePDF = async (req, res) => {
     }
 };
 
-
-// 6. UPDATE ATTENDANCE (Admin Fix )
+// 6. UPDATE ATTENDANCE (Admin Fix)
 export const updateAttendanceController = async (req, res) => {
     try {
         const { attendanceId } = req.params;
@@ -367,23 +450,20 @@ export const updateAttendanceController = async (req, res) => {
     }
 };
 
-
 // 7. EMPLOYEE: REQUEST CORRECTION
 export const requestCorrectionController = async (req, res) => {
     try {
         const userId = req.user.userid;
-        const { date, type, requestedTime, reason } = req.body; // type must be 'CheckIn' or 'CheckOut'
+        const { date, type, requestedTime, reason } = req.body; 
 
-        // 1. Find the attendance record for that day
         const attendance = await attendanceModel.findOne({ userId, date });
         if (!attendance) {
             return res.status(404).send({ success: false, message: "Attendance record not found for this date" });
         }
 
-        // 2. Update the correction section
         attendance.correction = {
             isRequested: true,
-            requestType: type, // 'CheckIn' or 'CheckOut'
+            requestType: type,
             requestedTime: new Date(requestedTime),
             reason: reason,
             status: 'Pending'
@@ -403,13 +483,11 @@ export const requestCorrectionController = async (req, res) => {
     }
 };
 
-
 // 8. ADMIN: GET ALL PENDING REQUESTS
 export const getPendingCorrectionsController = async (req, res) => {
     try {
-        // Find records where correction status is 'Pending'
         const pendingRequests = await attendanceModel.find({ "correction.status": "Pending" })
-            .populate("userId", "name email") // Show employee name
+            .populate("userId", "name email employeeId")
             .sort({ date: -1 });
 
         res.status(200).send({
@@ -423,11 +501,10 @@ export const getPendingCorrectionsController = async (req, res) => {
     }
 };
 
-
 // 9. ADMIN: APPROVE OR REJECT CORRECTION
 export const approveCorrectionController = async (req, res) => {
     try {
-        const { attendanceId, action } = req.body; // action = 'Approve' or 'Reject'
+        const { attendanceId, action } = req.body; 
         const attendance = await attendanceModel.findById(attendanceId);
 
         if (!attendance) return res.status(404).send({ success: false, message: "Record not found" });
@@ -439,7 +516,6 @@ export const approveCorrectionController = async (req, res) => {
         }
 
         if (action === "Approve") {
-            // APPLY THE CHANGE
             if (attendance.correction.requestType === "CheckIn") {
                 attendance.inTime = attendance.correction.requestedTime;
             } else if (attendance.correction.requestType === "CheckOut") {
@@ -460,21 +536,23 @@ export const approveCorrectionController = async (req, res) => {
 // 10. GET USER ATTENDANCE HISTORY (for User side)
 export const getMyAttendanceHistoryController = async (req, res) => {
     try {
-        
         const userId = req.user.userid; 
 
         const attendanceRecords = await attendanceModel.find({ userId })
-            .sort({ date: -1 }) // Newest first
+            .sort({ date: -1 }) 
             .lean();
 
         const enrichedAttendance = attendanceRecords.map(record => {
-            let hours = 0;
-            if (record.inTime && record.outTime) { 
-                const start = new Date(record.inTime);
-                const end = new Date(record.outTime);
-                hours = (end - start) / (1000 * 60 * 60); 
+            let displayStatus = record.status;
+            if (record.inTime && !record.outTime) {
+                displayStatus = "Working";
             }
-            return { ...record, hoursWorked: hours.toFixed(2) }; 
+
+            return { 
+                ...record, 
+                status: displayStatus,
+                hoursWorked: calculateDuration(record.inTime, record.outTime) 
+            }; 
         });
 
         res.status(200).send({
