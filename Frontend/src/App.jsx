@@ -23,8 +23,13 @@ import Login from "./Pages/Login";
 import SignUp from "./Pages/Signup";
 import { Navigate } from "react-router-dom";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
+import { useState } from 'react';
+import Sidebar from './components/Sidebar';
+import Dashboard from './Dashboard';
 
 function App() {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <Router>
       <Routes>
