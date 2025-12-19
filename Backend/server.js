@@ -1,6 +1,9 @@
 import express from "express";
 import colors from "colors";
 import dotenv from "dotenv";
+import helmet from "helmet";
+import MongoSanitize from "express-mongo-sanitize";
+import xss from "xss-clean";
 import connectDB from "./config/db.js";
 // import app from "./app.js";
 import morgan from "morgan";
@@ -14,9 +17,13 @@ import departmentRoutes from "./routes/departmentRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import announcementRoutes from "./routes/announcement_route.js";
 import cookieParser from "cookie-parser";
+import milestoneRoutes from "./routes/milestoneRoute.js";
 
 
 // Configure environment
+
+
+
 dotenv.config();
 
 // Database config
@@ -24,9 +31,13 @@ connectDB();
 
 const app = express();
 
+//Data sanitizations
+// app.use(MongoSanitize());
+// app.use(xss());
 
 // Middlewares
 app.use(cors());
+app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(cookieParser());
@@ -40,6 +51,7 @@ app.use("/api/v1/department", departmentRoutes);
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
+app.use("/api/v1/millestone", milestoneRoutes);
 
 
 app.get("/", (req, res) => {
