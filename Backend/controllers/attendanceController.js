@@ -457,7 +457,7 @@ export const approveCorrectionController = async (req, res) => {
     }
 };
 
-// 10. GET OWN ATTENDANCE HISTORY (For Employee Dashboard)
+// 10. GET USER ATTENDANCE HISTORY (for User side)
 export const getMyAttendanceHistoryController = async (req, res) => {
     try {
         
