@@ -10,10 +10,10 @@ const router = express.Router();
 router.post("/createProject", requiredSignIn, isManagerOrAdmin, createProjectController);
 
 // GET SINGLE PROJECT -> GET /api/v1/projects/getProject/:id
-router.get("/getProject/:id", requiredSignIn, isManagerOrAdmin, getSingleProjectController);
+router.get("/getProject/:id", requiredSignIn, getSingleProjectController);
 
 // GET ALL PROJECTS -> GET /api/v1/projects/getAllProjects
-router.get("/getAllProjects", requiredSignIn, isManagerOrAdmin, getAllProjectsController);
+router.get("/getAllProjects", requiredSignIn, getAllProjectsController);
 
 // UPDATE PROJECT -> PUT /api/v1/projects/updateProject/:id
 router.put("/updateProject/:id", requiredSignIn, isManagerOrAdmin, updateProjectController);
