@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LogoImg from "../assets/Logo.jpg";
 import axios from "axios";
+import Cookies from  "js-cookie"; 
 
 export default function Login() {
   const navigate = useNavigate();
@@ -43,6 +44,9 @@ export default function Login() {
 
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.data));
+        Cookies.set('access_token', res.data.token, { httpOnly: true,
+          secure: false,       // localhost only
+          sameSite: "lax", expires: 7 });
 
         setTimeout(() => {
           if (res.data.data.role === 3) {

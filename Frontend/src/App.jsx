@@ -24,6 +24,9 @@ import Login from "./Pages/Login";
 import SignUp from "./Pages/Signup";
 import { Navigate } from "react-router-dom";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
+import { useState } from 'react';
+import Sidebar from './components/sidebar/Sidebar';
+import Dashboard from './Dashboard';
 
 
 function App() {
@@ -31,7 +34,7 @@ function App() {
     <Router>
       <Routes>
          {/* Default route - redirect to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
         
         {/* Authentication routes */}
         <Route path="/login" element={<Login />} />
