@@ -137,7 +137,9 @@ export default function AdminReport() {
     <div className="flex h-screen">
       <Sidebar />
       <main className="flex-1 p-6 bg-gray-100">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Admin Reports</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">
+          Admin Report & Analytics{" "}
+        </h1>
         <div className="flex-1 p-6 overflow-y-auto space-y-8 p-">
           {/* KPI GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
