@@ -9,6 +9,7 @@ import {
   Users,
   FileText,
   Search,
+  ChevronLeft,
 } from "lucide-react";
 import Sidebar from "../../components/sidebar/Sidebar";
 
@@ -19,6 +20,10 @@ const AdminAttendance = () => {
   const [selectedEmployee, setSelectedEmployee] = useState("all");
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
   const [selectedCorrection, setSelectedCorrection] = useState(null);
+  
+  // New state for report generation
+  const [generatedReport, setGeneratedReport] = useState(null);
+  const [reportType, setReportType] = useState(null);
 
   // Sample data
   const attendanceLogs = [
@@ -103,6 +108,61 @@ const AdminAttendance = () => {
     monthly: { present: 1850, absent: 100, late: 150, totalEmployees: 2100 },
   };
 
+  // Sample report data
+  const reportData = {
+    daily: {
+      title: "Daily Attendance Report",
+      date: "11th December 2025",
+      stats: {
+        allEmployees: 70,
+        present: 60,
+        late: 5,
+        absent: 5
+      },
+      tableData: [
+        { id: "EPM001", name: "John Doe", date: "2025-12-10", checkIn: "9.00 AM", checkOut: "5.00 PM", hours: "8h 0m", status: "Present" },
+        { id: "EMP002", name: "Jane Smith", date: "2025-12-10", checkIn: "8.45 AM", checkOut: "5.00 PM", hours: "8h 15m", status: "Present" },
+        { id: "EMP003", name: "Mike Jhonson", date: "2025-12-10", checkIn: "-", checkOut: "-", hours: "-", status: "Absent" },
+        { id: "EMP004", name: "David Brown", date: "2025-12-10", checkIn: "9.10 AM", checkOut: "-", hours: "-", status: "Working" },
+        { id: "EMP005", name: "Dwayne Smith", date: "2025-12-10", checkIn: "9.15 AM", checkOut: "5.30 PM", hours: "8h 15m", status: "Late" },
+      ]
+    },
+    weekly: {
+      title: "Weekly Attendance Report",
+      date: "08th December - 12th December",
+      stats: {
+        allEmployees: 70,
+        workingDays: 5,
+        mostLate: "Jane Smith",
+        mostAbsent: "Dwayne Smith"
+      },
+      tableData: [
+        { id: "EPM001", name: "John Doe", daysPresent: 5, daysAbsent: 0, lateCount: 0, hours: "45h 30m" },
+        { id: "EMP002", name: "Jane Smith", daysPresent: 5, daysAbsent: 0, lateCount: 2, hours: "44h 15m" },
+        { id: "EMP003", name: "Mike Jhonson", daysPresent: 4, daysAbsent: 1, lateCount: 0, hours: "36h 0m" },
+        { id: "EMP004", name: "David Brown", daysPresent: 5, daysAbsent: 0, lateCount: 1, hours: "43h 30m" },
+        { id: "EMP005", name: "Dwayne Smith", daysPresent: 3, daysAbsent: 2, lateCount: 0, hours: "27h 0m" },
+      ]
+    },
+    monthly: {
+      title: "Monthly Attendance Report",
+      date: "December 2025",
+      stats: {
+        allEmployees: 70,
+        workingDays: 20,
+        mostLate: "Jane Smith",
+        mostAbsent: "Dwayne Smith"
+      },
+      tableData: [
+        { id: "EPM001", name: "John Doe", daysPresent: 20, daysAbsent: 0, lateCount: 0, hours: "180h 00m" },
+        { id: "EMP002", name: "Jane Smith", daysPresent: 19, daysAbsent: 1, lateCount: 2, hours: "171h 30m" },
+        { id: "EMP003", name: "Mike Jhonson", daysPresent: 18, daysAbsent: 2, lateCount: 0, hours: "162h 00m" },
+        { id: "EMP004", name: "David Brown", daysPresent: 19, daysAbsent: 1, lateCount: 1, hours: "171h 00m" },
+        { id: "EMP005", name: "Dwayne Smith", daysPresent: 15, daysAbsent: 5, lateCount: 0, hours: "135h 00m" },
+      ]
+    }
+  };
+
   const handleApproveCorrection = (correction) => {
     alert(`Approved correction for ${correction.name}`);
     setShowCorrectionModal(false);
@@ -111,6 +171,21 @@ const AdminAttendance = () => {
   const handleRejectCorrection = (correction) => {
     alert(`Rejected correction for ${correction.name}`);
     setShowCorrectionModal(false);
+  };
+
+  const handleGenerateReport = (type) => {
+    setReportType(type);
+    setGeneratedReport(reportData[type]);
+  };
+
+  const handleBackToReports = () => {
+    setGeneratedReport(null);
+    setReportType(null);
+  };
+
+  const handleExport = (format) => {
+    alert(`Exporting ${reportType} report as ${format}...`);
+    // Implement actual export logic here
   };
 
   const getSummaryByFilter = () => {
@@ -128,6 +203,265 @@ const AdminAttendance = () => {
 
   const summary = getSummaryByFilter();
 
+  // If a report is generated, show the report view
+  if (generatedReport) {
+    return (
+      <div className="min-h-screen bg-white flex">
+        {/* Sidebar */}
+        <div className="flex-shrink-0">
+          <Sidebar role="admin" activeItem="attendance" />
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 p-6">
+          {/* Back Button and Header */}
+          <div className="mb-6">
+            <button
+              onClick={handleBackToReports}
+              className="flex items-center gap-2 text-[#087990] hover:text-[#065a70] mb-4"
+            >
+              <ChevronLeft size={20} />
+              Back to Reports
+            </button>
+            
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">
+                  {generatedReport.title}
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  {generatedReport.date}
+                </p>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleExport('PDF')}
+                  className="px-4 py-2 border border-[#087990] text-[#087990] rounded-lg hover:bg-[#087990] hover:text-white transition flex items-center gap-2"
+                >
+                  <Download size={18} />
+                  Export PDF
+                </button>
+                <button
+                  onClick={() => handleExport('Excel')}
+                  className="px-4 py-2 border border-[#087990] text-[#087990] rounded-lg hover:bg-[#087990] hover:text-white transition flex items-center gap-2"
+                >
+                  <Download size={18} />
+                  Export Excel
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Report Content */}
+          <div className="bg-white rounded-lg border border-gray-200">
+            {/* Report Header Stats */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-gray-800">
+                    {reportType === 'daily' ? generatedReport.stats.allEmployees : 
+                     reportType === 'weekly' ? generatedReport.stats.workingDays : 
+                     generatedReport.stats.allEmployees}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {reportType === 'daily' ? 'All Employees' : 
+                     reportType === 'weekly' ? 'Working Days' : 
+                     'All Employees'}
+                  </p>
+                </div>
+                
+                {reportType === 'daily' && (
+                  <>
+                    <div className="text-center">
+                      <p className="text-4xl font-bold text-gray-800">
+                        {generatedReport.stats.late}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">Late</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-4xl font-bold text-gray-800">
+                        {generatedReport.stats.absent}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">Absent</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-4xl font-bold text-gray-800">
+                        {generatedReport.stats.present}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">Present</p>
+                    </div>
+                  </>
+                )}
+                
+                {reportType === 'weekly' && (
+                  <>
+                    <div className="text-center">
+                      <p className="text-4xl font-bold text-gray-800">
+                        {generatedReport.stats.allEmployees}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">All Employees</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-gray-800">
+                        {generatedReport.stats.mostLate}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">Most Late</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-gray-800">
+                        {generatedReport.stats.mostAbsent}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">Most Absent</p>
+                    </div>
+                  </>
+                )}
+                
+                {reportType === 'monthly' && (
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-gray-800">
+                      {generatedReport.stats.mostLate}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">Most Late</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Report Table */}
+            <div className="p-6">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      {reportType === 'daily' ? (
+                        <>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Attendee ID
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Name
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Date
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Check IN
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Check Out
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Hours
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800">
+                            Status
+                          </th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Attendee ID
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Name
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Days Present
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Days Absent
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
+                            Late Count
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800">
+                            Hours
+                          </th>
+                        </>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {generatedReport.tableData.map((row, index) => (
+                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
+                          {row.id}
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-800 border-r border-gray-100">
+                          {row.name}
+                        </td>
+                        
+                        {reportType === 'daily' ? (
+                          <>
+                            <td className="py-3 px-4 text-sm text-gray-600 border-r border-gray-100">
+                              {row.date}
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
+                              {row.checkIn}
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
+                              {row.checkOut}
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
+                              {row.hours}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                row.status === 'Present' ? 'bg-green-100 text-green-600' :
+                                row.status === 'Absent' ? 'bg-red-100 text-red-600' :
+                                row.status === 'Late' ? 'bg-yellow-100 text-yellow-600' :
+                                'bg-blue-100 text-blue-600'
+                              }`}>
+                                {row.status}
+                              </span>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
+                              {row.daysPresent}
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
+                              {row.daysAbsent}
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
+                              {row.lateCount}
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-800">
+                              {row.hours}
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Export Buttons at Bottom */}
+            <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => handleExport('PDF')}
+                className="px-6 py-2.5 border border-[#087990] text-[#087990] rounded-lg hover:bg-[#087990] hover:text-white transition"
+              >
+                Export PDF
+              </button>
+              <button
+                onClick={() => handleExport('Excel')}
+                className="px-6 py-2.5 border border-[#087990] text-[#087990] rounded-lg hover:bg-[#087990] hover:text-white transition"
+              >
+                Export Excel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Original main component
   return (
     <div className="min-h-screen bg-white flex">
       {/* Sidebar */}
@@ -652,6 +986,7 @@ const AdminAttendance = () => {
                       </div>
 
                       <button
+                        onClick={() => handleGenerateReport('daily')}
                         className="w-full py-2.5 text-white rounded-lg hover:opacity-90 transition"
                         style={{ backgroundColor: "#087990" }}
                       >
@@ -699,6 +1034,7 @@ const AdminAttendance = () => {
                       </div>
 
                       <button
+                        onClick={() => handleGenerateReport('weekly')}
                         className="w-full py-2.5 text-white rounded-lg hover:opacity-90 transition"
                         style={{ backgroundColor: "#087990" }}
                       >
@@ -746,6 +1082,7 @@ const AdminAttendance = () => {
                       </div>
 
                       <button
+                        onClick={() => handleGenerateReport('monthly')}
                         className="w-full py-2.5 text-white rounded-lg hover:opacity-90 transition"
                         style={{ backgroundColor: "#087990" }}
                       >
