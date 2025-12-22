@@ -24,6 +24,7 @@ import SignUp from "./Pages/Signup";
 import { Navigate } from "react-router-dom";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
 import { useState } from 'react';
+import EmployeeList from './pages/admin/EmployeeList';
 import Sidebar from './components/Sidebar';
 import Dashboard from './Dashboard';
 
@@ -47,6 +48,8 @@ function App() {
 
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<EmployeeList />} />
+        <Route path="/admin/employee-list" element={<EmployeeList />} />
         <Route path="/admin/assign-task" element={<AssignTask />} />
         <Route path="/admin/users" element={<Users />} />
         <Route path="/admin/manage-leaves" element={<ManageLeaves />} />
