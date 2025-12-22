@@ -45,10 +45,8 @@ export default function Login() {
 
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.data));
-        Cookies.set('access_token', res.data.token, { httpOnly: true ,
-          secure:false,
-          samesize:'Lax',expires:7
-        });
+        Cookies.set('access_token', res.data.token  );
+        console.log(res.data.token);
 
     const role = res.data.data.role;
 
