@@ -95,7 +95,7 @@ const sidebarContent = {
         key: "dashboard",
         label: "Dashboard",
         icon: HouseIcon,
-        path: "/user/dashboard",
+        path: "/user/user-dashboard",
       },
       {
         key: "project-team",
@@ -155,8 +155,8 @@ function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const user = {
-    // role: "employee",
-    role: "admin",
+    role: "employee",
+    // role: "admin",
   };
   const menumainItems = sidebarContent[user.role].main || [];
   const menufooterItems = sidebarContent[user.role].footer || [];
@@ -167,7 +167,7 @@ function Sidebar() {
 
   return (
     <aside
-      className={`flex flex-col min-h-full bg-gray-200 shadow-lg transition-all duration-300 ${
+      className={`flex flex-col h-screen bg-gray-200 shadow-lg transition-all duration-300 ${
         isCollapsed ? "w-15" : "w-72"
       }`}
     >

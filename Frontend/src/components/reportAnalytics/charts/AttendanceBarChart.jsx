@@ -3,7 +3,7 @@ export default function AttendanceBar({ data = [] }) {
   const absent = data.filter((a) => a.status === "Absent").length;
   const leave = data.filter((a) => a.status === "leave").length;
   return (
-    <div className="bg-white p-4 rounded shadow  rounded-xl">
+    <div className="bg-white p-4 shadow  rounded-xl">
       <h3 className="font-semibold mb-4">Attendance Overview</h3>
       <div className="space-y-3">
         <div>
