@@ -14,7 +14,6 @@ import {
   X,
 } from "lucide-react";
 import Sidebar from "../../components/sidebar/Sidebar";
-import { clockIn, clockOut, requestCorrection } from "../../services/userAttendanceApi";
 
 const UserAttendance = () => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
@@ -33,45 +32,15 @@ const UserAttendance = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const getDeviceDate = () => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+  const handleCheckIn = () => {
+    const now = new Date();
+    setCheckInTime(now);
+    setIsCheckedIn(true);
   };
 
-  const handleCheckIn = async () => {
-    try {
-      const date = getDeviceDate();
-      const res = await clockIn(date);
-      if (res?.data?.success) {
-        const now = new Date();
-        setCheckInTime(now);
-        setIsCheckedIn(true);
-      } else {
-        alert(res?.data?.message || "Check-in failed");
-      }
-    } catch (err) {
-      const msg = err?.response?.data?.message || "Error during check-in";
-      alert(msg);
-    }
-  };
-
-  const handleCheckOut = async () => {
-    try {
-      const date = getDeviceDate();
-      const res = await clockOut(date);
-      if (res?.data?.success) {
-        setIsCheckedIn(false);
-        setCheckInTime(null);
-      } else {
-        alert(res?.data?.message || "Check-out failed");
-      }
-    } catch (err) {
-      const msg = err?.response?.data?.message || "Error during check-out";
-      alert(msg);
-    }
+  const handleCheckOut = () => {
+    setIsCheckedIn(false);
+    setCheckInTime(null);
   };
 
   const getWorkingHours = () => {
@@ -138,7 +107,7 @@ const UserAttendance = () => {
     setShowCorrectionForm(true);
   };
 
-  const handleSubmitCorrection = async () => {
+  const handleSubmitCorrection = () => {
     if (!correctTime.trim()) {
       alert("Please enter the correct time");
       return;
@@ -149,21 +118,12 @@ const UserAttendance = () => {
       return;
     }
 
-    try {
-      // For demo, use selectedDate date as attendance ID reference
-      // Backend needs actual attendanceId; using date as placeholder for now
-      const res = await requestCorrection(selectedDate.date, correctTime, reason);
-      
-      if (res?.data?.success) {
-        alert("Correction request submitted successfully");
-        setShowCorrectionForm(false);
-      } else {
-        alert(res?.data?.message || "Failed to submit correction");
-      }
-    } catch (err) {
-      const msg = err?.response?.data?.message || "Error submitting correction";
-      alert(msg);
-    }
+    alert(
+      `Correction requested for ${selectedDate.date}:\n${
+        correctionType === "checkIn" ? "Check In" : "Check Out"
+      } Time: ${correctTime}\nReason: ${reason}`
+    );
+    setShowCorrectionForm(false);
   };
 
   const getOriginalTime = () => {
