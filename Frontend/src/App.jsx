@@ -20,7 +20,7 @@ import LeaveRequest from "./pages/employee/LeaveRequest";
 import UserAnnouncements from "./pages/employee/UserAnnouncements";
 import CreateTaskForm from "./pages/TeamLeader/CreateTaskForm";
 import TaskHistory from "./pages/TeamLeader/TaskHistory";
-import Login from "./Pages/Login";
+import Login from "./pages/Login";
 import SignUp from "./Pages/Signup";
 import { Navigate } from "react-router-dom";
 import AdminReport from "./pages/reportAnalytics/AdminReport";

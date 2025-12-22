@@ -34,9 +34,12 @@ const app = express();
 //Data sanitizations
 // app.use(MongoSanitize());
 // app.use(xss());
-
+app.use(cors({
+    origin: "http://localhost:5173",
+    credentials: true
+}));
 // Middlewares
-app.use(cors());
+// app.use(cors());
 app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));
