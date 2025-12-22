@@ -40,12 +40,11 @@ const DashboardSidebar = ({ activeItem = 'User' }) => {
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-2">
-          <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg"
-            style={{ backgroundColor: '#0E7C86' }}
-          >
-            W
-          </div>
+          <img 
+            src={Logo}
+            alt="Company Logo"
+            className="w-10 h-10 rounded-lg object-contain"
+          />
           <span className="font-semibold text-lg" style={{ color: '#0E7C86' }}>
             WorkSync
           </span>
