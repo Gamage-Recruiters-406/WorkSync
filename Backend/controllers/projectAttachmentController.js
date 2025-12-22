@@ -204,3 +204,121 @@ export const streamProjectAttachmentController = async (req, res) => {
 
 
 
+// Get all attachments (metadata) for a project
+export const getAllProjectAttachmentsController = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(projectId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid project ID",
+            });
+        }
+
+        const attachments = await ProjectAttachment.find({ projectId })
+            .sort({ createdAt: -1 })
+            .select("_id projectId originalName filename fileType fileSize createdAt updatedAt");
+
+        const data = attachments.map((a) => ({
+            ...a.toObject(),
+            fileUrl: `/api/v1/projects/${projectId}/attachments/file/${a._id}`,
+        }));
+
+        return res.status(200).json({
+            success: true,
+            count: data.length,
+            data,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Error fetching attachments",
+            error: error.message,
+        });
+    }
+};
+
+
+
+// Delete one attachment (metadata + file)
+export const deleteProjectAttachmentController = async (req, res) => {
+    try {
+        const { projectId, attachmentId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(projectId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid project ID",
+            });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(attachmentId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid attachment ID",
+            });
+        }
+
+        // Find attachment by both ids to ensure it belongs to the project
+        const attachment = await ProjectAttachment.findOneAndDelete({ 
+            _id: attachmentId, 
+            projectId 
+        }).select("filePath originalName");
+
+        if (!attachment) {
+            return res.status(404).json({
+                success: false,
+                message: "Attachment not found",
+            });
+        }
+
+        // Resolve safe absolute path (prevent path traversal)
+        let absPath;
+        try {
+            absPath = resolveSafeUploadPath(attachment.filePath);
+        } catch (e) {
+            return res.status(400).json({
+                success: false,
+                message: e.message,
+            });
+        }
+
+        // 1) Delete file (if missing, continue and still delete DB metadata)
+        try {
+            await fs.promises.unlink(absPath);
+        } catch (error) {
+            if (error.code !== "ENOENT") throw err;
+        }
+
+        // 2) Delete MongoDB metadata
+        await attachment.deleteOne();
+
+        // 3) If this was the last attachment, delete the project folder
+        const remaining = await ProjectAttachment.countDocuments({ projectId });
+
+        if (remaining === 0) {
+            const projectDir = path.resolve(UPLOADS_ROOT, "projects", String(projectId));
+            
+            // ensure the dir is inside uploads
+            const rel = path.relative(UPLOADS_ROOT, projectDir);
+            const isInsideUploads = rel && !rel.startsWith("..") && !path.isAbsolute(rel);
+
+            if (isInsideUploads) {
+                // remove folder 
+                await fs.promises.rm(projectDir, { recursive: true, force: true });
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Attachment deleted successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Error deleting attachment",
+            error: error.message,
+        });
+    }
+}
