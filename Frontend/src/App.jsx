@@ -27,6 +27,7 @@ import AdminReport from "./pages/reportAnalytics/AdminReport";
 import { useState } from 'react';
 import Sidebar from './components/sidebar/Sidebar';
 import Dashboard from './Dashboard';
+import ProjectDetails from "./pages/employee/ProjectDetails";
 
 
 function App() {
@@ -64,6 +65,7 @@ function App() {
         <Route path="/user/reports" element={<UserReports />} />
         <Route path="/user/announcements" element={<UserAnnouncements />} />
         <Route path="/user/leave-request" element={<LeaveRequest />} />
+        <Route path="/user/project-team/:id" element={<ProjectDetails />} />
 
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />

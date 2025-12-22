@@ -2,17 +2,15 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import React from "react";
 import Sidebar from "../../components/sidebar/Sidebar";
-import ProjectCard from "./ProjectCard";
 import jwtDecode from "jwt-decode";
-import { useAsyncError } from "react-router-dom";
+import ProjectCard from "../../components/reportAnalytics/charts/ProjectCard";
 
 const ProjectTeam = () => {
 
-  // const currentUser = { name: "Jeyson" }; // example user
     const [projects, setProjects] = useState([]);
     const [statusFilter, setStatusFilter] = useState("all");
     const [loading, setLoading] = useState(true);
-    const [userid,setUserId] = useState("");
+
     const URL_API = "http://localhost:8090";
 
     useEffect(()=>{
@@ -31,14 +29,13 @@ const ProjectTeam = () => {
         console.log("Decoded JWT:", decoded);
         userId = decoded.userid;
         console.log(userId);
-        setUserId(userId);
+
       } catch(err){
         console.warn("Failed to decode JWT:", err);
         setLoading(false);
         return;
       }
 
-      // const user = JSON.parse(userData);
 
       if (!userId){
         console.warn("User ID missing in token.");
@@ -46,39 +43,35 @@ const ProjectTeam = () => {
         return;
       }
         
-
       //fetch projects
-      fetchProjects();
-      
-
-      // const res = axios.get(`${URL_API}/api/v1/project-team/getProjects/${userId}`)
-      // console.log("response : ",res);
-      // setProjects(res.data);
-
+      fetchProjects(userId);
 
     },[]);
 
-    const fetchProjects = async() =>{
+    const fetchProjects = async(userId) =>{
       //Fetch projects
       try {
         const res = await axios.get(  
-          `${URL_API}/api/v1/project-team/getProjects`,
+          `${URL_API}/api/v1/project-team/getProjects/${userId}`,
           {
             withCredentials:true
           } ) ;
-          // need to replace with API route
-        // .then((res)=>{
-        //   // console.log("Porject Response: ", res.data);
-        //   setProjects(res.data.projects || res.data);
-        //   setLoading(false);
-        // })  
-        // .catch((err)=>{
-        //   console.error("Error fetching projects", err);
-        //   setLoading(false);
-        // });
-        console.log("response : ", res.data.data);
-        const projectsArray = Array.isArray(res.data.data) ? res.data.data : [];
-        setProjects(res.data.projects || res.data);
+
+          const projectsArray = Array.isArray(res.data.data)
+            ? res.data.data.map((p) => ({
+                id: p.projectId._id,                      // for navigation
+                name: p.projectId.name,
+                role: p.assignedRole,            // maps to ProjectCard role
+                description: p.projectId.description,
+                progress: 0,                     // default if not in API
+                deadline: "-",                   // default if not in API
+                status: "active"                 // default if not in API
+              }))
+            : [];
+      
+        console.log("Full response:", res.data);
+        setProjects(projectsArray);
+        console.log("Mapped projects:", projectsArray);
 
       } catch (error) {
         console.error("Error fetching projects:", error.response?.data || error);
@@ -91,7 +84,7 @@ const ProjectTeam = () => {
     const filteredProjects = Array.isArray(projects)
   ? projects.filter((project) => {
       // example: filter by assignedRole
-      return statusFilter === "all" || project.assignedRole === statusFilter;
+      return statusFilter === "all" || project.status === statusFilter;
     })
   : [];
 
@@ -106,7 +99,7 @@ const ProjectTeam = () => {
         <div className="flex flex-wrap justify-start gap-4 mb-6 ml-8 mx-auto">
 
         {/* Status Dropdown */}
-        <div className="relative w-34">
+        <div className="relative w-34 m-6">
             <select
             value={statusFilter}
             onChange={(e)=> setStatusFilter(e.target.value)}
@@ -124,8 +117,8 @@ const ProjectTeam = () => {
         {loading ? (
           <p className="text-center col-span-2">Loading projects...</p>
         ): filteredProjects.length > 0 ? (
-            filteredProjects.map((project) => (
-                <ProjectCard key={project._id} project={project} />
+          filteredProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
               ))
         ): (<p className="text-center text-gray-500 col-span-2">No projects found.</p>)}
         
