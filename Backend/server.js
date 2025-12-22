@@ -1,6 +1,9 @@
 import express from "express";
 import colors from "colors";
 import dotenv from "dotenv";
+import helmet from "helmet";
+import MongoSanitize from "express-mongo-sanitize";
+import xss from "xss-clean";
 import connectDB from "./config/db.js";
 // import app from "./app.js";
 import morgan from "morgan";
@@ -28,8 +31,9 @@ const app = express();
 
 // Middlewares
 app.use(cors());
+app.use(helmet());
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 app.use(cookieParser());
 
 //routes
@@ -44,7 +48,10 @@ app.use("/api/v1/project-team", projectTeamRoutes);
 app.use("/api/v1/millestone", milestoneRoutes);
 app.use("/api/v1/AnnouncemetAttachmet", AnnouncemetAttachmetRoutes);
 
-
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 
 app.get("/", (req, res) => {
     res.send({
