@@ -26,7 +26,7 @@ import AdminReport from "./pages/reportAnalytics/AdminReport";
 import { useState } from 'react';
 import EmployeeList from './pages/admin/EmployeeList';
 import Sidebar from './components/sidebar/Sidebar';
-import Dashboard from './Dashboard';
+import DashboardUI from './components/DashboardUI';
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -67,6 +67,7 @@ function App() {
         <Route path="/user/reports" element={<UserReports />} />
         <Route path="/user/announcements" element={<UserAnnouncements />} />
         <Route path="/user/leave-request" element={<LeaveRequest />} />
+        <Route path="/user/user-dashboard" element={<DashboardUI />} />
 
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />
