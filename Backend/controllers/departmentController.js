@@ -50,40 +50,36 @@ export const createDepartment = async (req, res) => {
         .json({ message: "Department code already exists" });
     }
 
-    // Validate department head
-    if (!departmentHead || departmentHead.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "Department head is required",
-      });
-    }
-
-    //validate if department head exists in User collection
-    if (departmentHead) {
-      if (!mongoose.Types.ObjectId.isValid(departmentHead)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid department head ID",
+    // Validate department head (now by name instead of ID, but allow empty)
+    let employeeId = undefined;
+    if (departmentHead !== undefined) {
+      if (!departmentHead || departmentHead.trim() === "") {
+        employeeId = null; // No department head assigned
+      } else {
+        // Find user by name (case-insensitive)
+        const employee = await User.findOne({
+          name: { $regex: new RegExp(`^${departmentHead.trim()}$`, "i") },
         });
-      }
 
-      const employee = await User.findById(departmentHead);
-      if (!employee) {
-        return res.status(400).json({
-          success: false,
-          message: "Selected employee not found",
-        });
-      }
+        if (!employee) {
+          return res.status(400).json({
+            success: false,
+            message: "User with this name not found",
+          });
+        }
 
-      // Check if employee is already a department head
-      const existingHead = await Department.findOne({
-        departmentHead: departmentHead,
-      });
-      if (existingHead) {
-        return res.status(400).json({
-          success: false,
-          message: "This employee is already assigned as a department head",
+        employeeId = employee._id;
+
+        // Check if employee is already a department head
+        const existingHead = await Department.findOne({
+          departmentHead: employeeId,
         });
+        if (existingHead) {
+          return res.status(400).json({
+            success: false,
+            message: "This employee is already assigned as a department head",
+          });
+        }
       }
     }
 
@@ -141,19 +137,22 @@ export const createDepartment = async (req, res) => {
       });
     }
 
-    // Create new department
+    // Create new department (store the ObjectId we found)
     const department = new Department({
       name: name.trim(),
       departmentCode: departmentCode.trim(),
-      departmentHead,
+      departmentHead: employeeId, // Store the ObjectId
       capacity,
-      status: status ? status : "active",
+      status: status ? status : "Active",
       location: location.trim(),
       email: email.trim().toLowerCase(),
       conactNumber: number.trim(),
       description: description ? description.trim() : "",
     });
     await department.save();
+
+    // Populate the department head before sending response
+    await department.populate("departmentHead", "name email role");
 
     res.status(201).json({
       success: true,
@@ -202,16 +201,19 @@ export const updateDepartment = async (req, res) => {
           message: "Department name cannot be empty",
         });
       }
-      // Check if department name already exists (excluding current department)
-      const existingDeptName = await Department.findOne({
-        name: { $regex: new RegExp(`^${name}$`, "i") },
-        _id: { $ne: id },
-      });
-      if (existingDeptName) {
-        return res.status(400).json({
-          success: false,
-          message: "Department name already exists",
+
+      // Only check for duplicates if the name is actually changing
+      if (name.trim().toLowerCase() !== department.name.toLowerCase()) {
+        const existingDeptName = await Department.findOne({
+          name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+          _id: { $ne: id },
         });
+        if (existingDeptName) {
+          return res.status(400).json({
+            success: false,
+            message: "Department name already exists",
+          });
+        }
       }
     }
 
@@ -223,51 +225,59 @@ export const updateDepartment = async (req, res) => {
           message: "Department code cannot be empty",
         });
       }
-      // Check if department code already exists (excluding current department)
-      const existingDeptCode = await Department.findOne({
-        departmentCode: { $regex: new RegExp(`^${departmentCode}$`, "i") },
-        _id: { $ne: id },
-      });
-      if (existingDeptCode) {
-        return res.status(400).json({
-          success: false,
-          message: "Department code already exists",
+
+      // Only check for duplicates if the code is actually changing
+      if (
+        departmentCode.trim().toLowerCase() !==
+        department.departmentCode.toLowerCase()
+      ) {
+        const existingDeptCode = await Department.findOne({
+          departmentCode: {
+            $regex: new RegExp(`^${departmentCode.trim()}$`, "i"),
+          },
+          _id: { $ne: id },
         });
+        if (existingDeptCode) {
+          return res.status(400).json({
+            success: false,
+            message: "Department code already exists",
+          });
+        }
       }
     }
 
-    // Validate department head if provided
+    // Validate department head if provided (by name)
+    let employeeId = undefined;
     if (departmentHead !== undefined) {
+      // Allow null or empty string to remove department head
       if (!departmentHead || departmentHead.trim() === "") {
-        return res.status(400).json({
-          success: false,
-          message: "Department head cannot be empty",
+        employeeId = null; // This will set departmentHead to null
+      } else {
+        // Find user by name (case-insensitive)
+        const employee = await User.findOne({
+          name: { $regex: new RegExp(`^${departmentHead.trim()}$`, "i") },
         });
-      }
-      if (!mongoose.Types.ObjectId.isValid(departmentHead)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid department head ID",
-        });
-      }
-      const employee = await User.findById(departmentHead);
-      if (!employee) {
-        return res.status(400).json({
-          success: false,
-          message: "Selected employee not found",
-        });
-      }
 
-      // Check if employee is already a department head in another department
-      const existingHead = await Department.findOne({
-        departmentHead: departmentHead,
-        _id: { $ne: id }, // Exclude current department
-      });
-      if (existingHead) {
-        return res.status(400).json({
-          success: false,
-          message: "This employee is already assigned as a department head",
+        if (!employee) {
+          return res.status(400).json({
+            success: false,
+            message: "User with this name not found",
+          });
+        }
+
+        employeeId = employee._id;
+
+        // Only check if employee is already a department head in ANOTHER department
+        const existingHead = await Department.findOne({
+          departmentHead: employeeId,
+          _id: { $ne: id },
         });
+        if (existingHead) {
+          return res.status(400).json({
+            success: false,
+            message: "This employee is already assigned as a department head",
+          });
+        }
       }
     }
 
@@ -304,34 +314,51 @@ export const updateDepartment = async (req, res) => {
 
     // Validate email if provided
     if (email !== undefined) {
+      if (!email || email.trim() === "") {
+        return res.status(400).json({
+          success: false,
+          message: "Email cannot be empty",
+        });
+      }
+
       const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-      if (!email || !emailRegex.test(email)) {
+      if (!emailRegex.test(email)) {
         return res.status(400).json({
           success: false,
           message: "A valid email address is required",
         });
       }
-      // Check email uniqueness (excluding current department)
-      const existingEmail = await Department.findOne({
-        email: { $regex: new RegExp(`^${email}$`, "i") },
-        _id: { $ne: id },
-      });
-      if (existingEmail) {
-        return res.status(400).json({
-          success: false,
-          message: "Email already exists",
+
+      // Only check for duplicates if the email is actually changing
+      if (email.trim().toLowerCase() !== department.email.toLowerCase()) {
+        const existingEmail = await Department.findOne({
+          email: { $regex: new RegExp(`^${email.trim()}$`, "i") },
+          _id: { $ne: id },
         });
+        if (existingEmail) {
+          return res.status(400).json({
+            success: false,
+            message: "Email already exists",
+          });
+        }
       }
     }
 
     // Validate contact number if provided
     if (number !== undefined) {
-      const phoneRegex =
-        /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
-      if (!number || number.trim() === "" || !phoneRegex.test(number)) {
+      if (!number || number.trim() === "") {
         return res.status(400).json({
           success: false,
-          message: "Contact number is required and must be valid",
+          message: "Contact number cannot be empty",
+        });
+      }
+
+      const phoneRegex =
+        /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
+      if (!phoneRegex.test(number)) {
+        return res.status(400).json({
+          success: false,
+          message: "Contact number must be valid",
         });
       }
     }
@@ -344,18 +371,22 @@ export const updateDepartment = async (req, res) => {
       });
     }
 
-    // Update department fields
-    if (name) department.name = name.trim();
-    if (departmentCode) department.departmentCode = departmentCode.trim();
-    if (departmentHead) department.departmentHead = departmentHead;
-    if (capacity) department.capacity = capacity;
-    if (status) department.status = status;
-    if (location) department.location = location.trim();
-    if (email) department.email = email.trim().toLowerCase();
-    if (number) department.conactNumber = number.trim();
+    // Update department fields (only if provided)
+    if (name !== undefined) department.name = name.trim();
+    if (departmentCode !== undefined)
+      department.departmentCode = departmentCode.trim();
+    if (employeeId !== undefined) department.departmentHead = employeeId;
+    if (capacity !== undefined) department.capacity = capacity;
+    if (status !== undefined) department.status = status;
+    if (location !== undefined) department.location = location.trim();
+    if (email !== undefined) department.email = email.trim().toLowerCase();
+    if (number !== undefined) department.conactNumber = number.trim();
     if (description !== undefined) department.description = description.trim();
 
     await department.save();
+
+    // Populate the department head before sending response
+    await department.populate("departmentHead", "name email role");
 
     res.status(200).json({
       success: true,
