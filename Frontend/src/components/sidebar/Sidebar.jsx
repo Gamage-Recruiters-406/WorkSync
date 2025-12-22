@@ -149,6 +149,16 @@ const sidebarContent = {
       },
     ],
   },
+  manager: {
+    main: [
+      {
+        key: "dashboard",
+        label: "Dashboard",
+        icon: HouseIcon,
+        path: "/manager/dashboard",
+      },
+    ],
+  },
 };
 
 function Sidebar() {
@@ -156,7 +166,8 @@ function Sidebar() {
 
   const user = {
     // role: "employee",
-    role: "admin",
+    // role: "admin",
+    role: "manager",
   };
   const menumainItems = sidebarContent[user.role].main || [];
   const menufooterItems = sidebarContent[user.role].footer || [];

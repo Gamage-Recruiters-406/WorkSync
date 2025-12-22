@@ -1,8 +1,10 @@
 // src/App.js
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+// Admin imports
+
 import AdminAttendance from "./pages/admin/AdminAttendance";
-import UserAttendance from "./pages/employee/UserAttendance";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AssignTask from "./pages/admin/AssignTask";
 import Users from "./pages/admin/Users";
@@ -11,22 +13,29 @@ import AdminReports from "./pages/admin/AdminReports";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import Departments from "./pages/admin/Departments";
 import Projects from "./pages/admin/Projects";
+import AdminReport from "./pages/reportAnalytics/AdminReport";
+import EmployeeList from "./pages/admin/EmployeeList";
+
+// Employee imports
+import UserAttendance from "./pages/employee/UserAttendance";
 import UserDashboard from "./pages/employee/UserDashboard";
 import ProjectTeam from "./pages/employee/ProjectTeam";
 import Task from "./pages/employee/Task";
 import UserReports from "./pages/employee/UserReports";
 import LeaveRequest from "./pages/employee/LeaveRequest";
 import UserAnnouncements from "./pages/employee/UserAnnouncements";
-import CreateTaskForm from "./pages/TeamLeader/CreateTaskForm";
-import TaskHistory from "./pages/TeamLeader/TaskHistory";
-import Login from "./Pages/Login";
-import SignUp from "./Pages/Signup";
+
+// Team Leader imports
+import CreateTaskForm from "./pages/teamleader/CreateTaskForm";
+import TaskHistory from "./pages/teamleader/TaskHistory";
+
+// Manager imports
+import ManagerDashboard from "./pages/manager/managerDashboard";
+
+import Login from "./pages/Login";
+import SignUp from "./pages/Signup";
 import { Navigate } from "react-router-dom";
-import AdminReport from "./pages/reportAnalytics/AdminReport";
-import { useState } from 'react';
-import EmployeeList from './pages/admin/EmployeeList';
-import Sidebar from './components/sidebar/Sidebar';
-import Dashboard from './Dashboard';
+import { useState } from "react";
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -34,16 +43,16 @@ function App() {
   return (
     <Router>
       <Routes>
-         {/* Default route - redirect to login */}
+        {/* Default route - redirect to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-        
+
         {/* Authentication routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
 
         {/* Dashboard routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} /> 
-        
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
         <Route path="*" element={<Navigate to="/login" replace />} />
 
         {/* Admin Routes */}
@@ -72,6 +81,9 @@ function App() {
         <Route path="/create-task" element={<CreateTaskForm />} />
         <Route path="/edit-task/:taskId" element={<CreateTaskForm />} />
         <Route path="/task-history" element={<TaskHistory />} />
+
+        {/* Manager Routes */}
+        <Route path="/manager/dashboard" element={<ManagerDashboard />} />
       </Routes>
     </Router>
   );
