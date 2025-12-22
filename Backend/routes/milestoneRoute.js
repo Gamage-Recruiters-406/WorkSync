@@ -7,32 +7,32 @@ import {
     updateMilestone,
     updateMilestoneStatus,
     deleteMilestone
-} from "../controllers/milestoneController.js"
+} from "../controllers/milestoneController.js";
 
 //create route object 
 const router = express.Router();
 
-const { protect, authorize } = require('../middleware/authMiddleware');
+import { requiredSignIn, isManagerOrAdmin } from '../middlewares/AuthMiddleware.js';
 
 // Create Milestone (Admin/Manager only)
-router.post('/createMilestone', protect, authorize('admin', 'manager'), createMilestone);
+router.post('/createMilestone', requiredSignIn, isManagerOrAdmin, createMilestone);
 
 // Get all milestones
-router.get('/getAllMilestones/:pid', protect, getAllMilestones);
+router.get('/getAllMilestones/:pid', requiredSignIn, getAllMilestones);
 
 // Get single milestone
-router.get('/getMilestone/:id', protect, getMilestone);
+router.get('/getMilestone/:id', requiredSignIn, getMilestone);
 
 // Get milestone details
-router.get('/getMilestoneDetails/:id', protect, getMilestoneDetails);
+router.get('/getMilestoneDetails/:id', requiredSignIn, getMilestoneDetails);
 
 // Update milestones (Admin/Manager only)
-router.put('/updateMilestone/:id', protect, authorize('admin', 'manager'), updateMilestone);
+router.put('/updateMilestone/:id', requiredSignIn, isManagerOrAdmin, updateMilestone);
 
 // Update milestone status (All authenticated users)
-router.patch('/updateMilestoneStatus/:id', protect, updateMilestoneStatus);
+router.patch('/updateMilestoneStatus/:id', requiredSignIn, updateMilestoneStatus);
 
 // Delete milestone (Admin/Manager only)
-router.delete('/deleteMilestone/:id', protect, authorize('admin', 'manager'), deleteMilestone);
+router.delete('/deleteMilestone/:id', requiredSignIn, isManagerOrAdmin, deleteMilestone);
 
 export default router;
