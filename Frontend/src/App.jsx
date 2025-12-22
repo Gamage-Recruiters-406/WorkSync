@@ -25,6 +25,8 @@ import { Navigate } from "react-router-dom";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
 import { useState } from 'react';
 import EmployeeList from './pages/admin/EmployeeList';
+import Sidebar from './components/Sidebar';
+import Dashboard from './Dashboard';
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
