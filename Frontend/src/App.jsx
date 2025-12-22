@@ -1,3 +1,4 @@
+
 // src/App.js
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -27,6 +28,7 @@ import { useState } from 'react';
 import EmployeeList from './pages/admin/EmployeeList';
 import Sidebar from './components/sidebar/Sidebar';
 import DashboardUI from './components/DashboardUI';
+import ProjectDetails from "./pages/employee/ProjectDetails";
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -35,7 +37,7 @@ function App() {
     <Router>
       <Routes>
          {/* Default route - redirect to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
         
         {/* Authentication routes */}
         <Route path="/login" element={<Login />} />
@@ -68,12 +70,14 @@ function App() {
         <Route path="/user/announcements" element={<UserAnnouncements />} />
         <Route path="/user/leave-request" element={<LeaveRequest />} />
         <Route path="/user/user-dashboard" element={<DashboardUI />} />
+        <Route path="/user/project-team/:id" element={<ProjectDetails />} />
 
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />
         <Route path="/edit-task/:taskId" element={<CreateTaskForm />} />
         <Route path="/task-history" element={<TaskHistory />} />
       </Routes>
+
     </Router>
   );
 }
