@@ -1,49 +1,116 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "../../components/sidebar/Sidebar";
-import { useState, useEffect } from "react";
 import KpiCards from "../../components/reportAnalytics/kpi/KpiCards";
+import AttendanceBarChart from "../../components/reportAnalytics/charts/AttendanceBarChart";
+import TaskDonutChart from "../../components/reportAnalytics/charts/TaskDonutChart";
 import AttendanceTable from "../../components/reportAnalytics/tables/AttendanceTable";
 import TaskTable from "../../components/reportAnalytics/tables/TaskTable";
-import ProjectTable from "../../components/reportAnalytics/tables/ProjectTable";
+import LeaveTable from "../../components/reportAnalytics/tables/LeaveTable";
+
+// Backend API imports
+import {
+  getSingleUserAttendance,
+  getLeavesByUser,
+  getAllUserTasks,
+  getTaskReport,
+} from "../../services/adminReportsApi";
 
 export default function UserReports({ userId }) {
   const [kpis, setKpis] = useState({
-    presentToday: 0,
-    tasksPending: 0,
-    leavesPending: 0,
+    totalAttendance: 0,
+    totalTasks: 0,
+    totalLeaves: 0,
   });
+
+  const [chartData, setChartData] = useState({
+    attendance: [],
+    tasks: [],
+  });
+
   const [attendanceData, setAttendanceData] = useState([]);
   const [taskData, setTaskData] = useState([]);
-  const [projectData, setProjectData] = useState([]);
+  const [leaveData, setLeaveData] = useState([]);
 
+  // --- Load User Tables & KPI ---
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const [attendanceRes, tasksRes, projectsRes] = await Promise.all([
-          getUserAttendance(userId),
-          getUserTasks(userId),
-          getUserProjects(userId),
-        ]);
-
+        // Attendance
+        const attendanceRes = await getSingleUserAttendance(userId);
         const attendance = attendanceRes?.data || [];
-        const tasks = tasksRes?.data || [];
-        const projects = projectsRes?.data || [];
 
+        // Tasks
+        const tasksRes = await getAllUserTasks();
+        const tasks = (tasksRes?.data?.tasks || []).filter(
+          (t) => t.userId === userId
+        );
+
+        // Leaves
+        const leavesRes = await getLeavesByUser(userId);
+        const leaves = leavesRes?.data || [];
+
+        // KPI
+        setKpis({
+          totalAttendance: attendance.length,
+          totalTasks: tasks.length,
+          totalLeaves: leaves.length,
+        });
+
+        // Table Data
         setAttendanceData(attendance);
         setTaskData(tasks);
-        setProjectData(projects);
-
-        setKpis({
-          presentToday: attendance.filter((a) => a.status === "Present").length,
-          tasksPending: tasks.filter((t) => t.status === "Pending").length,
-          leavesPending: 0, // if user leave API exists
-        });
+        setLeaveData(leaves);
       } catch (err) {
-        console.error("Error loading user report:", err);
+        console.error("Error loading user data:", err);
       }
     };
 
     loadUserData();
+  }, [userId]);
+
+  // --- Load Charts ---
+  useEffect(() => {
+    const loadUserCharts = async () => {
+      try {
+        const attendanceRes = await getSingleUserAttendance(userId);
+        const attendance = attendanceRes?.data || [];
+
+        const attendanceChartData = [
+          {
+            label: "Present",
+            value: attendance.filter((a) => a.status === "Present").length,
+          },
+          {
+            label: "Absent",
+            value: attendance.filter((a) => a.status === "Absent").length,
+          },
+        ];
+
+        const taskRes = await getTaskReport();
+        const tasks = (taskRes?.data?.tasks || []).filter(
+          (t) => t.userId === userId
+        );
+        const taskChartData = [
+          {
+            label: "Completed",
+            value: tasks.filter((t) => t.status === "Completed").length,
+          },
+          {
+            label: "Pending",
+            value: tasks.filter((t) => t.status !== "Completed").length,
+          },
+        ];
+
+        setChartData({
+          attendance: attendanceChartData,
+          tasks: taskChartData,
+        });
+      } catch (err) {
+        console.error("Error loading user charts:", err);
+      }
+    };
+
+    loadUserCharts();
   }, [userId]);
 
   return (
@@ -52,15 +119,23 @@ export default function UserReports({ userId }) {
       <main className="flex-1 p-6 bg-gray-100">
         <h1 className="text-2xl font-bold mb-6">User Report & Analytics</h1>
 
+        {/* KPI GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <KpiCards title="Present Today" value={kpis.presentToday} />
-          <KpiCards title="Pending Tasks" value={kpis.tasksPending} />
-          <KpiCards title="Pending Leaves" value={kpis.leavesPending} />
+          <KpiCards title="Total Attendance" value={kpis.totalAttendance} />
+          <KpiCards title="Total Tasks" value={kpis.totalTasks} />
+          <KpiCards title="Total Leaves" value={kpis.totalLeaves} />
         </div>
 
+        {/* CHARTS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <AttendanceBarChart data={chartData.attendance} />
+          <TaskDonutChart data={chartData.tasks} />
+        </div>
+
+        {/* TABLES */}
         <AttendanceTable data={attendanceData} />
         <TaskTable data={taskData} />
-        <ProjectTable data={projectData} />
+        <LeaveTable data={leaveData} />
       </main>
     </div>
   );
