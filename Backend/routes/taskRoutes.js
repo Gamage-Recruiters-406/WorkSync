@@ -1,3 +1,4 @@
+import fs from "fs"; 
 import express from "express";
 import mongoose from "mongoose";
 import {
@@ -7,55 +8,149 @@ import {
     getAllTasks,
     getAllUserTasks,
     updateTaskStatus,
-    markDone,
-    inProgress,
-    filterProjectTasks,
-    getTasksByProject
+    getTaskDetails,
+    downloadTaskAttachment,
+    previewTaskAttachment,
+    taskReport,          // ⬅️ report function (assume)
 } from "../controllers/taskController.js";
-import { requiredSignIn, isEmployee, isAdmin } from "../middlewares/AuthMiddleware.js";
+
+import {
+    requiredSignIn,
+    isEmployee,
+    isAdmin,
+} from "../middlewares/AuthMiddleware.js";
+
 import { createDiskUploader } from "../middlewares/uploadFactory.js";
 
 const router = express.Router();
 
-// For createTask with attachments: generate task id before multer decides folder
+/* =========================
+   PREPARE TASK ID (uploads)
+========================= */
 const prepareCreateTask = (req, res, next) => {
     req.generatedTaskId = new mongoose.Types.ObjectId();
     next();
 };
 
 const createTaskUploader = createDiskUploader({
-    getDestination: (req) => `uploads/tasks/${req.generatedTaskId?.toString?.() || "unknown"}`,
-    maxFileSizeMB: 10,
+  getDestination: (req) => {
+    const dir = `uploads/tasks/${req.generatedTaskId?.toString() || "unknown"}`;
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    return dir;
+  },
+  maxFileSizeMB: 10,
 });
 
-// CREATE TASK
-router.post("/createTask",requiredSignIn,isEmployee,prepareCreateTask,createTaskUploader.array("attachments", 5),createTask);
 
-// UPDATE TASK
-router.put("/updateTask/:id", requiredSignIn, isEmployee, updateTask);
+/* =========================
+   CREATE TASK
+   POST /createTask
+========================= */
+router.post(
+    "/createTask",
+    requiredSignIn,
+    isEmployee,
+    prepareCreateTask,
+    createTaskUploader.array("attachments", 5),
+    createTask
+);
 
-// DELETE TASK
-router.delete("/deleteTask/:id", requiredSignIn, isEmployee, deleteTask);
+/* =========================
+   LIST ALL TASKS (ADMIN / TL)
+   GET /getAllTasks
+========================= */
+router.get(
+    "/getAllTasks",
+    requiredSignIn,
+    isAdmin,
+    getAllTasks
+);
 
-// GET ALL USER TASKS
-router.get("/getAllTasks", requiredSignIn, isAdmin, getAllTasks);
-// GET SINGLE TASK
-router.get("/getAllUserTasks/:id", requiredSignIn, isEmployee, getAllUserTasks);
+/* =========================
+   LIST USER TASKS
+   GET /getAllUserTasks
+========================= */
+router.get(
+    "/getAllUserTasks",
+    requiredSignIn,
+    isEmployee,
+    getAllUserTasks
+);
 
+/* =========================
+   UPDATE TASK
+   PUT /updateTask/:id
+========================= */
+router.put(
+    "/updateTask/:id",
+    requiredSignIn,
+    isEmployee,
+    updateTask
+);
 
-// UPDATE STATUS
-router.patch("/updateStatus/:id", requiredSignIn, isEmployee, updateTaskStatus);
+/* =========================
+   UPDATE TASK STATUS
+   PATCH /updateTaskStatus/:id
+========================= */
+router.patch(
+    "/updateTaskStatus/:id",
+    requiredSignIn,
+    isEmployee,
+    updateTaskStatus
+);
 
-// MARK TASK AS DONE
-router.patch("/markDone/:id", requiredSignIn, isEmployee, markDone);
+/* =========================
+   DELETE TASK
+   DELETE /deleteTask/:id
+========================= */
+router.delete(
+    "/deleteTask/:id",
+    requiredSignIn,
+    isEmployee,
+    deleteTask
+);
 
-// IN PROGRESS TASKS DONE
-router.patch("/inProgress/:id", requiredSignIn, isEmployee, inProgress);
+/* =========================
+   TASK REPORT
+   GET /taskReport
+========================= */
+router.get(
+    "/taskReport",
+    requiredSignIn,
+    isAdmin,
+    taskReport
+);
 
-// GET TASKS BY PROJECT
-router.get("/project/:projectId", requiredSignIn, isEmployee, getTasksByProject);
+/* =========================
+   TASK DETAILS
+========================= */
+router.get(
+    "/taskDetails/:id",
+    requiredSignIn,
+    isEmployee,
+    getTaskDetails
+);
 
-// FILTER PROJECT TASKS
-router.get("/project/:projectId/filter", requiredSignIn, isEmployee, filterProjectTasks);
+/* =========================
+   ATTACHMENT DOWNLOAD
+========================= */
+router.get(
+    "/:taskId/attachments/:attachmentId/download",
+    requiredSignIn,
+    isEmployee,
+    downloadTaskAttachment
+);
+
+/* =========================
+   ATTACHMENT PREVIEW
+========================= */
+router.get(
+    "/:taskId/attachments/:attachmentId/preview",
+    requiredSignIn,
+    isEmployee,
+    previewTaskAttachment
+);
 
 export default router;

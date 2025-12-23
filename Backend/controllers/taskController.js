@@ -1,7 +1,12 @@
 import fs from "fs";
+import path from "path";
 import mongoose from "mongoose";
 import Task from "../models/Task.js";
 import TaskAttachment from "../models/TaskAttachmentModel.js";
+import Milestone from "../models/milestoneModel.js";
+import User from "../models/User.js";
+import PDFDocument from "pdfkit";
+import ExcelJS from "exceljs";
 
 const formatTaskForClient = (taskDoc) => {
     if (!taskDoc) return taskDoc;
@@ -22,20 +27,120 @@ const cleanupFiles = async (files = []) => {
     await Promise.allSettled(files.map((f) => fs.promises.unlink(f.path).catch(() => null)));
 };
 
+// REPORT TASKS (PDF / EXCEL)
+export const taskReport = async (req, res) => {
+    try {
+        const { format } = req.query;
+
+        const tasks = await Task.find()
+            .populate("assignedTo", "name")
+            .populate("milestone", "milestoneName");
+
+        /* =====================
+           PDF FORMAT
+        ===================== */
+        if (format === "pdf") {
+            const doc = new PDFDocument({ margin: 30, size: "A4" });
+
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader(
+                "Content-Disposition",
+                "attachment; filename=task-report.pdf"
+            );
+
+            doc.pipe(res);
+
+            doc.fontSize(18).text("Task Report", { align: "center" });
+            doc.moveDown();
+
+            tasks.forEach((task, index) => {
+                doc
+                    .fontSize(12)
+                    .text(`${index + 1}. ${task.title}`)
+                    .text(`Status: ${task.status}`)
+                    .text(`Priority: ${task.priority}`)
+                    .text(
+                        `Assigned To: ${task.assignedTo.map(u => u.name).join(", ")}`
+                    )
+                    .text(`Milestone: ${task.milestone?.milestoneName || "-"}`)
+                    .text(`Deadline: ${task.deadline || "-"}`)
+                    .moveDown();
+            });
+
+            doc.end();
+            return;
+        }
+
+        /* =====================
+           EXCEL FORMAT
+        ===================== */
+        if (format === "excel") {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet("Task Report");
+
+            worksheet.columns = [
+                { header: "Title", key: "title", width: 30 },
+                { header: "Status", key: "status", width: 15 },
+                { header: "Priority", key: "priority", width: 15 },
+                { header: "Assigned To", key: "assignedTo", width: 30 },
+                { header: "Milestone", key: "milestone", width: 20 },
+                { header: "Deadline", key: "deadline", width: 20 },
+            ];
+
+            tasks.forEach(task => {
+                worksheet.addRow({
+                    title: task.title,
+                    status: task.status,
+                    priority: task.priority,
+                    assignedTo: task.assignedTo.map(u => u.name).join(", "),
+                    milestone: task.milestone?.milestoneName || "-",
+                    deadline: task.deadline || "-",
+                });
+            });
+
+            res.setHeader(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            );
+            res.setHeader(
+                "Content-Disposition",
+                "attachment; filename=task-report.xlsx"
+            );
+
+            await workbook.xlsx.write(res);
+            res.end();
+            return;
+        }
+
+        /* =====================
+           INVALID FORMAT
+        ===================== */
+        return res.status(400).json({
+            success: false,
+            message: "Invalid format. Use ?format=pdf or ?format=excel",
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to generate task report",
+            error: error.message,
+        });
+    }
+};
+
+
 // CREATE TASK
 export const createTask = async (req, res) => {
     try {
         const {
             title,
             description,
-            assignedTo,
+            assignedTo,   // can be name or id
             deadline,
             priority,
-            milestone
+            milestone     // can be name or id
         } = req.body || {};
-        console.log("BODY:", req.body);
-        console.log("FILES:", req.files);
-
 
         const incomingFiles = req.files || [];
         if (incomingFiles.length > 5) {
@@ -46,52 +151,75 @@ export const createTask = async (req, res) => {
             });
         }
 
-        const taskId = req.generatedTaskId && mongoose.Types.ObjectId.isValid(req.generatedTaskId)
-            ? req.generatedTaskId
-            : undefined;
+        const taskId =
+            req.generatedTaskId && mongoose.Types.ObjectId.isValid(req.generatedTaskId)
+                ? req.generatedTaskId
+                : undefined;
 
-        const normalizedAssignedTo = assignedTo === undefined
-            ? undefined
-            : Array.isArray(assignedTo)
-                ? assignedTo
-                : [assignedTo];
+        /* =========================
+           USER NAME → OBJECT ID
+        ========================= */
+        let assignedUserIds = [];
+        if (assignedTo) {
+            const names = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
+
+            const users = await User.find({ name: { $in: names } }, "_id");
+            assignedUserIds = users.map((u) => u._id);
+        }
+
+        /* =========================
+           MILESTONE NAME → OBJECT ID
+        ========================= */
+        let milestoneId = null;
+        if (milestone) {
+            if (mongoose.Types.ObjectId.isValid(milestone)) {
+                milestoneId = milestone;
+            } else {
+                const ms = await Milestone.findOne({ milestoneName: milestone });
+                if (!ms) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Milestone '${milestone}' not found`,
+                    });
+                }
+                milestoneId = ms._id;
+            }
+        }
 
         const created = await Task.create({
             ...(taskId ? { _id: taskId } : {}),
             title,
             description,
-            assignedTo: normalizedAssignedTo,
+            assignedTo: assignedUserIds,
             deadline,
             priority,
-            milestone,
+            milestone: milestoneId,
             status: "Pending",
         });
 
-        // If attachments were included in the same request, create TaskAttachment docs now
-        if (incomingFiles.length) {
-            try {
-                const docs = incomingFiles.map((file) => ({
-                    taskId: created._id,
-                    originalName: file.originalname,
-                    filename: file.filename,
-                    fileType: file.mimetype,
-                    fileSize: file.size,
-                    filePath: file.path.replace(/\\/g, "/"),
-                }));
+        /* =========================
+   ATTACHMENTS
+========================= */
+let savedAttachments = [];
+if (incomingFiles.length) {
+    try {
+        const docs = incomingFiles.map((file) => ({
+            taskId: created._id,
+            originalName: file.originalname,
+            filename: file.filename,
+            fileType: file.mimetype,
+            fileSize: file.size,
+filePath: `uploads/tasks/${created._id.toString()}/${file.filename}` // fixed
+        }));
 
-                await TaskAttachment.insertMany(docs, { ordered: true });
-            } catch (attachmentError) {
-                // Roll back task if attachments fail; also clean up stored files
-                await cleanupFiles(incomingFiles);
-                await Task.findByIdAndDelete(created._id).catch(() => null);
+        savedAttachments = await TaskAttachment.insertMany(docs);
 
-                return res.status(500).json({
-                    success: false,
-                    message: "Error creating task attachments",
-                    error: attachmentError.message,
-                });
-            }
-        }
+    } catch (err) {
+        await cleanupFiles(incomingFiles);
+        await Task.findByIdAndDelete(created._id);
+        throw err;
+    }
+}
 
         const task = await Task.findById(created._id)
             .populate("assignedTo", "name")
@@ -100,17 +228,20 @@ export const createTask = async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Task created successfully",
-            data: formatTaskForClient(task)
+            data: formatTaskForClient(task),
+                    attachments: savedAttachments.map(att => att._id) // only IDs
+
         });
     } catch (error) {
         if (req.files?.length) await cleanupFiles(req.files);
         res.status(500).json({
             success: false,
             message: "Error creating task",
-            error: error.message
+            error: error.message,
         });
     }
 };
+
 
 // DELETE TASK
 export const deleteTask = async (req, res) => {
@@ -135,7 +266,15 @@ export const deleteTask = async (req, res) => {
 export const updateTask = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, assignedTo, deadline, priority, status, milestone } = req.body;
+        const {
+            title,
+            description,
+            assignedTo,   // name or id
+            deadline,
+            priority,
+            status,
+            milestone     // name or id
+        } = req.body;
 
         const task = await Task.findById(id);
         if (!task) {
@@ -147,52 +286,97 @@ export const updateTask = async (req, res) => {
         if (deadline !== undefined) task.deadline = deadline;
         if (priority !== undefined) task.priority = priority;
         if (status !== undefined) task.status = status;
-        if (milestone !== undefined) task.milestone = milestone;
 
+        /* =========================
+           UPDATE ASSIGNED USERS
+        ========================= */
         if (assignedTo !== undefined) {
-            task.assignedTo = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
+            const names = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
+            const users = await User.find({ name: { $in: names } }, "_id");
+            task.assignedTo = users.map((u) => u._id);
+        }
+
+        /* =========================
+           UPDATE MILESTONE
+        ========================= */
+        if (milestone !== undefined) {
+            if (mongoose.Types.ObjectId.isValid(milestone)) {
+                task.milestone = milestone;
+            } else {
+                const ms = await Milestone.findOne({ milestoneName: milestone });
+                if (!ms) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Milestone '${milestone}' not found`,
+                    });
+                }
+                task.milestone = ms._id;
+            }
         }
 
         await task.save();
+
         const populated = await Task.findById(task._id)
             .populate("assignedTo", "name")
             .populate("milestone", "milestoneName");
 
-        res.status(200).json({ success: true, message: "Task updated successfully", data: formatTaskForClient(populated) });
+        res.status(200).json({
+            success: true,
+            message: "Task updated successfully",
+            data: formatTaskForClient(populated),
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: "Error updating task", error: error.message });
+        res.status(500).json({
+            success: false,
+            message: "Error updating task",
+            error: error.message,
+        });
     }
 };
+
 
 // GET ALL TASKS FOR USER
 export const getAllTasks = async (req, res) => {
 
+     const query = {};
+
+  if (req.user.role === "User") {
+    query.assignedTo = req.user._id;
+  }
+
+  if (req.query.projectId) query.project = req.query.projectId;
+  if (req.query.status) query.status = req.query.status;
+  if (req.query.priority) query.priority = req.query.priority;
+  if (req.query.assignedTo && req.user.role === "TeamLeader") {
+    query.assignedTo = req.query.assignedTo;
+  }
+
+  const tasks = await Task.find(query)
+    .populate("assignedTo", "name")
+    .populate("milestone", "milestoneName")
+    .sort({ createdAt: -1 });
+
+  res.json({ success: true, data: tasks.map(formatTaskForClient) });
+};
+
+// GET ALL TASKS ASSIGNED TO THE LOGGED-IN USER
+export const getAllUserTasks = async (req, res) => {
     try {
-        const tasks = await Task.find()
+        // ⚡ Use 'new' when creating ObjectId
+        const userId = new mongoose.Types.ObjectId(req.user._id);
+
+        const tasks = await Task.find({ assignedTo: userId })
             .populate("assignedTo", "name")
             .populate("milestone", "milestoneName")
             .sort({ createdAt: -1 });
 
         res.status(200).json({ success: true, data: tasks.map(formatTaskForClient) });
     } catch (error) {
-        res.status(500).json({ success: false, message: "Failed to fetch tasks", error: error.message });
+        console.error(error);
+        res.status(500).json({ success: false, message: "Error fetching user tasks", error: error.message });
     }
 };
 
-// GET SINGLE TASK
-export const getAllUserTasks = async (req, res) => {
-    try {
-        const task = await Task.findById(req.params.id)
-            .populate("assignedTo", "name")
-            .populate("milestone", "milestoneName");
-        if (!task) {
-            return res.status(404).json({ success: false, message: "Task not found" });
-        }
-        res.status(200).json({ success: true, data: formatTaskForClient(task) });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Error fetching task", error: error.message });
-    }
-};
 
 // UPDATE STATUS
 export const updateTaskStatus = async (req, res) => {
@@ -213,42 +397,6 @@ export const updateTaskStatus = async (req, res) => {
         res.status(500).json({ success: false, message: "Error updating task status", error: error.message });
     }
 };
-
-// MARK TASK AS DONE
-export const markDone = async (req, res) => {
-    try {
-        const task = await Task.findById(req.params.id);
-        if (!task) {
-            return res.status(404).json({ success: false, message: "Task not found" });
-        }
-
-        task.status = "Completed";
-        await task.save();
-        const populated = await Task.findById(task._id)
-            .populate("assignedTo", "name")
-            .populate("milestone", "milestoneName");
-        res.status(200).json({ success: true, message: "Task marked as completed", data: formatTaskForClient(populated) });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Error marking task as done", error: error.message });
-    }
-};
-
-// MARK IN PROGRESS
-export const inProgress = async (req, res) => {
-    try {
-        const task = await Task.findById(req.params.id);
-        if (!task) {
-            return res.status(404).json({ success: false, message: "Task not found" });
-        }
-
-        task.status = "In Progress";
-        await task.save();
-        res.status(200).json({ success: true, message: "Task marked as in progress", data: task });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Error marking task as in progress", error: error.message });
-    }
-};
-
 
 // FILTER TASKS BY PROJECT
 export const filterProjectTasks = async (req, res) => {
@@ -274,17 +422,151 @@ export const filterProjectTasks = async (req, res) => {
     }
 };
 
-// GET TASKS BY PROJECT
-export const getTasksByProject = async (req, res) => {
+// GET SINGLE TASK WITH FULL DETAILS INCLUDING ATTACHMENTS
+export const getTaskDetails = async (req, res) => {
     try {
-        const { projectId } = req.params;
-        const tasks = await Task.find({ project: projectId })
-            .populate("assignedTo", "name")
-            .populate("milestone", "milestoneName")
-            .sort({ createdAt: -1 });
+        const { id } = req.params;
+        
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "Invalid task ID" });
+        }
 
-        res.status(200).json({ success: true, data: tasks.map(formatTaskForClient) });
+        const task = await Task.findById(id)
+            .populate("assignedTo", "name email")
+            .populate("milestone", "milestoneName");
+
+        if (!task) {
+            return res.status(404).json({ success: false, message: "Task not found" });
+        }
+
+        // Fetch attachments for this task
+        const attachments = await TaskAttachment.find({ taskId: id });
+
+        // Calculate progress percentage based on status
+        let progressPercentage = 0;
+        if (task.status === "In Progress") {
+            progressPercentage = 50;
+        } else if (task.status === "Completed") {
+            progressPercentage = 100;
+        }
+
+        const taskDetails = {
+            _id: task._id,
+            title: task.title,
+            description: task.description,
+            assignedTo: task.assignedTo,
+            deadline: task.deadline,
+            priority: task.priority,
+            status: task.status,
+            milestone: task.milestone,
+            progressPercentage,
+            attachments: attachments.map(att => ({
+                _id: att._id,
+                filename: att.filename,
+                originalName: att.originalName,
+                fileType: att.fileType,
+                fileSize: att.fileSize,
+            })),
+            createdAt: task.createdAt,
+            updatedAt: task.updatedAt,
+        };
+
+        res.status(200).json({ success: true, data: taskDetails });
     } catch (error) {
-        res.status(500).json({ success: false, message: "Failed to fetch project tasks", error: error.message });
+        res.status(500).json({ success: false, message: "Error fetching task details", error: error.message });
+    }
+};
+
+// DOWNLOAD TASK ATTACHMENT
+export const downloadTaskAttachment = async (req, res) => {
+    try {
+        const { taskId, attachmentId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(taskId) || !mongoose.Types.ObjectId.isValid(attachmentId)) {
+            return res.status(400).json({ success: false, message: "Invalid ID provided" });
+        }
+
+        // Verify the task exists
+        const task = await Task.findById(taskId);
+        if (!task) {
+            return res.status(404).json({ success: false, message: "Task not found" });
+        }
+
+        // Find the attachment
+        const attachment = await TaskAttachment.findOne({ _id: attachmentId, taskId: taskId });
+        if (!attachment) {
+            return res.status(404).json({ success: false, message: "Attachment not found" });
+        }
+
+        const filePath = path.resolve(attachment.filePath);
+
+        // Check if file exists
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ success: false, message: "File not found on server" });
+        }
+
+        // Set headers for download
+        res.setHeader("Content-Disposition", `attachment; filename="${attachment.originalName}"`);
+        res.setHeader("Content-Type", attachment.fileType);
+
+        // Stream the file
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+
+        fileStream.on("error", (err) => {
+            console.error("File stream error:", err);
+            if (!res.headersSent) {
+                res.status(500).json({ success: false, message: "Error streaming file" });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error downloading attachment", error: error.message });
+    }
+};
+
+// PREVIEW TASK ATTACHMENT (for viewing in browser without forcing download)
+export const previewTaskAttachment = async (req, res) => {
+    try {
+        const { taskId, attachmentId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(taskId) || !mongoose.Types.ObjectId.isValid(attachmentId)) {
+            return res.status(400).json({ success: false, message: "Invalid ID provided" });
+        }
+
+        // Verify the task exists
+        const task = await Task.findById(taskId);
+        if (!task) {
+            return res.status(404).json({ success: false, message: "Task not found" });
+        }
+
+        // Find the attachment
+        const attachment = await TaskAttachment.findOne({ _id: attachmentId, taskId: taskId });
+        if (!attachment) {
+            return res.status(404).json({ success: false, message: "Attachment not found" });
+        }
+
+        const filePath = path.resolve(attachment.filePath);
+
+        // Check if file exists
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ success: false, message: "File not found on server" });
+        }
+
+        // Set headers for inline viewing (not download)
+        res.setHeader("Content-Disposition", `inline; filename="${attachment.originalName}"`);
+        res.setHeader("Content-Type", attachment.fileType);
+
+        // Stream the file
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+
+        fileStream.on("error", (err) => {
+            console.error("File stream error:", err);
+            if (!res.headersSent) {
+                res.status(500).json({ success: false, message: "Error streaming file" });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error previewing attachment", error: error.message });
     }
 };
