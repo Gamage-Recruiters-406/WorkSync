@@ -42,22 +42,37 @@ export const clockInController = async (req, res) => {
         const { date } = req.body; 
         const userId = req.user.userid; 
 
-        if (!date) {
-            return res.status(400).send({ message: "Date is required" });
+        if (!date) return res.status(400).send({ message: "Date is required" });
+
+        // Check if a record exists
+        let attendance = await attendanceModel.findOne({ userId, date });
+
+        // Logic to determine status based on time
+        const calculatedStatus = determineStatus(); // Returns Present, Late, or Absent
+
+        if (attendance) {
+            if (attendance.inTime === null || attendance.status === 'Absent') {
+                
+                attendance.inTime = new Date(); 
+                attendance.status = calculatedStatus; 
+
+                await attendance.save();
+
+                return res.status(200).send({
+                    success: true,
+                    message: `Check In Successful (Overwrote Absent). Status: ${calculatedStatus}`,
+                    attendance
+                });
+            } else {
+                // Real duplicate check-in (they actually clocked in earlier)
+                return res.status(400).send({
+                    success: false,
+                    message: "You have already clocked in for this date."
+                });
+            }
         }
 
-        const existingAttendance = await attendanceModel.findOne({ userId, date });
-
-        if (existingAttendance) {
-            return res.status(400).send({
-                success: false,
-                message: "You have already clocked in for this date."
-            });
-        }
-
-        // Calculate Status Automatically
-        const calculatedStatus = determineStatus();
-
+        // Normal First Time Check In (Before 10 AM)
         const newAttendance = new attendanceModel({
             userId,  
             date,
@@ -515,16 +530,51 @@ export const approveCorrectionController = async (req, res) => {
             return res.status(200).send({ success: true, message: "Request Rejected" });
         }
 
+
         if (action === "Approve") {
+            // Update the times based on the request
             if (attendance.correction.requestType === "CheckIn") {
                 attendance.inTime = attendance.correction.requestedTime;
             } else if (attendance.correction.requestType === "CheckOut") {
                 attendance.outTime = attendance.correction.requestedTime;
             }
 
+            // Ensure In-Time is before Out-Time
+            if (attendance.inTime && attendance.outTime) {
+                const start = new Date(attendance.inTime);
+                const end = new Date(attendance.outTime);
+                
+                if (start > end) {
+                    return res.status(400).send({ 
+                        success: false, 
+                        message: "Error: Check-In time cannot be after Check-Out time!" 
+                    });
+                }
+            }
+
+            //  Recalculate Status (Present/Late/Absent)
+            if (attendance.inTime) {
+                const inTimeSL = new Date(attendance.inTime).toLocaleString("en-US", { timeZone: "Asia/Colombo" });
+                const inHour = new Date(inTimeSL).getHours();
+
+                if (inHour < 9) {
+                    attendance.status = "Present";
+                } else if (inHour === 9) {
+                    attendance.status = "Late";
+                } else {
+                    attendance.status = "Absent";
+                }
+            }
+
+            //  Final Save
             attendance.correction.status = "Approved";
             await attendance.save();
-            return res.status(200).send({ success: true, message: "Request Approved & Attendance Updated", attendance });
+            
+            return res.status(200).send({ 
+                success: true, 
+                message: "Request Approved & Attendance Updated", 
+                attendance 
+            });
         }
 
     } catch (error) {
@@ -532,6 +582,8 @@ export const approveCorrectionController = async (req, res) => {
         res.status(500).send({ success: false, message: "Error processing request", error });
     }
 };
+
+
 
 // 10. GET USER ATTENDANCE HISTORY (for User side)
 export const getMyAttendanceHistoryController = async (req, res) => {
@@ -564,5 +616,149 @@ export const getMyAttendanceHistoryController = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(500).send({ success: false, message: "Error fetching history", error });
+    }
+};
+
+
+
+// 11. GET DASHBOARD STATS (Total, Present, Late, Absent)
+export const getDashboardStatsController = async (req, res) => {
+    try {
+        //  Get Today's Date (SL Time)
+        const now = new Date();
+        const slTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
+        const todayStr = slTime.toISOString().split("T")[0];
+
+        //  Get Total Employees (Role 1)
+        const totalEmployees = await User.countDocuments({ role: 1 });
+
+        //  Get Today's Attendance Records
+        const todayAttendance = await attendanceModel.find({ date: todayStr });
+
+        //  Calculate Counts
+        const presentCount = todayAttendance.filter(doc => doc.status === "Present").length;
+        
+        const lateCount = todayAttendance.filter(doc => doc.status === "Late").length;
+        
+        const absentCount = todayAttendance.filter(doc => doc.status === "Absent").length;
+
+        res.status(200).send({
+            success: true,
+            stats: {
+                totalEmployees,
+                present: presentCount,
+                late: lateCount,
+                absent: absentCount 
+            }
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false, message: "Error fetching dashboard stats", error });
+    }
+};
+
+
+
+// 12. GET ANALYTICS REPORT
+export const getAnalyticsReportController = async (req, res) => {
+    try {
+        const { type, date } = req.query; 
+
+        // Calculate Start and End Dates
+        const targetDate = date ? new Date(date) : new Date();
+        let startDate, endDate;
+
+        if (type === 'month') {
+            startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+            endDate = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
+        } else {
+            const day = targetDate.getDay();
+            const diff = targetDate.getDate() - day + (day === 0 ? -6 : 1); 
+            startDate = new Date(targetDate.setDate(diff));
+            startDate.setHours(0,0,0,0);
+            
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            endDate.setHours(23,59,59,999);
+        }
+
+        //  Working Days 
+        let workingDaysCount = 0;
+        let loopDate = new Date(startDate);
+        while (loopDate <= endDate) {
+            const dayOfWeek = loopDate.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) workingDaysCount++;
+            loopDate.setDate(loopDate.getDate() + 1);
+        }
+
+        //  Fetch Data
+        const employees = await User.find({ role: 1 }).select('_id name employeeId');
+        const attendanceRecords = await attendanceModel.find({
+            date: {
+                $gte: startDate.toISOString().split('T')[0],
+                $lte: endDate.toISOString().split('T')[0]
+            }
+        });
+
+        //  Process Data 
+        let mostLateUser = { name: "None", count: -1 };
+        let mostAbsentUser = { name: "None", count: -1 };
+        let mostPresentUser = { name: "None", count: -1 }; 
+
+        const reportData = employees.map(emp => {
+            const empRecords = attendanceRecords.filter(r => r.userId.toString() === emp._id.toString());
+
+            let daysPresent = 0;
+            let daysAbsent = 0;
+            let lateCount = 0;
+            let totalMs = 0;
+
+            empRecords.forEach(record => {
+                // Count 
+                if (record.status === 'Present' || record.status === 'Late') daysPresent++;
+                if (record.status === 'Absent') daysAbsent++;
+                if (record.status === 'Late') lateCount++;
+
+                if (record.inTime && record.outTime) {
+                    totalMs += (new Date(record.outTime) - new Date(record.inTime));
+                }
+            });
+
+            
+            if (lateCount > mostLateUser.count) mostLateUser = { name: emp.name, count: lateCount };
+            if (daysAbsent > mostAbsentUser.count) mostAbsentUser = { name: emp.name, count: daysAbsent };
+            if (daysPresent > mostPresentUser.count) mostPresentUser = { name: emp.name, count: daysPresent };
+
+            const totalHours = Math.floor(totalMs / (1000 * 60 * 60));
+            const totalMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+
+            return {
+                id: emp._id,
+                employeeId: emp.employeeId || "EMP000",
+                name: emp.name,
+                daysPresent,
+                daysAbsent,
+                lateCount,
+                totalHours: `${totalHours}h ${totalMinutes}m`
+            };
+        });
+
+        // Send Response
+        res.status(200).send({
+            success: true,
+            summary: {
+                totalEmployees: employees.length,
+                workingDays: workingDaysCount,
+                mostLate: mostLateUser.count > 0 ? mostLateUser.name : "-",
+                mostAbsent: mostAbsentUser.count > 0 ? mostAbsentUser.name : "-",
+                mostPresent: mostPresentUser.count > 0 ? mostPresentUser.name : "-"
+            },
+            report: reportData
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false, message: "Error generating analytics", error });
     }
 };
