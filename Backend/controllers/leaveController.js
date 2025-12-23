@@ -10,6 +10,7 @@ import {
   handleControllerError,
   validateLeaveRequest
 } from "../helpers/leaveRequestHelper.js";
+import { sendLeaveStatusEmail } from "../helpers/emailHelper.js";
 
 // LEAVE POLICY (YEARLY)
 const LEAVE_POLICY = {
@@ -112,13 +113,16 @@ export const updateLeaveRequest = async (req, res) => {
   }
 };
 
+
 // Update Leave Status (PATCH) - Manager/Admin only
 export const updateLeaveStatus = async (req, res) => {
+
   try {
     validateUserIdFromToken(req.user?.userid);
 
     const { id } = req.params;
     const { sts } = req.body;
+
 
     // Validate status
     if (!["approved", "rejected", "pending"].includes(sts)) {
@@ -138,12 +142,23 @@ export const updateLeaveStatus = async (req, res) => {
         ? req.user?.userid
         : null;
 
+
+
     await leaveRequest.save();
 
     const populatedLeave = await populateLeaveRequestDetails(
       leaveRequest._id,
       LeaveRequest
     );
+
+    // Send email notification
+    if (populatedLeave.requestedBy && populatedLeave.requestedBy.email && (sts === "approved" || sts === "rejected")) {
+      await sendLeaveStatusEmail(
+        populatedLeave.requestedBy.email,
+        populatedLeave.requestedBy.name,
+        sts
+      );
+    }
 
     res.json({
       success: true,
@@ -154,6 +169,9 @@ export const updateLeaveStatus = async (req, res) => {
     handleControllerError(error, res);
   }
 };
+
+
+
 
 // Get all leaves of a user
 export const getLeavesByUser = async (req, res) => {

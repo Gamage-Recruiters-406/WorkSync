@@ -69,8 +69,8 @@ export const canDeleteLeaveRequest = (status) => {
 // Population helper
 export const populateLeaveRequestDetails = async (leaveRequestId) => {
   return await LeaveRequest.findById(leaveRequestId)
-    .populate("requestedBy", "username fullName email department")
-    .populate("approvedBy", "username fullName email");
+    .populate("requestedBy", "username name email department")
+    .populate("approvedBy", "username name email");
 };
 
 // Error handler
@@ -104,13 +104,13 @@ export const validateLeaveRequest = (leaveData) => {
 
   // Validate required fields
   if (!leaveType) errors.push("leaveType is required");
-  
+
   if (!reason || reason.trim().length === 0) {
     errors.push("Reason is required");
   } else if (reason.length < 10) {
     errors.push("Reason must be at least 10 characters");
   }
-  
+
   if (!startDate) errors.push("startDate is required");
   if (!endDate) errors.push("endDate is required");
 

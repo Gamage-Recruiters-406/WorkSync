@@ -22,7 +22,7 @@ import { startAutoCheckoutJob } from "./helpers/autoCheckoutHelper.js";
 // Configure environment
 import { autoDeleteExpiredAnnouncements } from "./middlewares/announcementExpirymiddleware.js";
 import AnnouncemetAttachmetRoutes from "./routes/AnnouncemetAttachmetRoutes.js";
-import EmployeeRoute from "./routes/EmployeeRoute.js";
+// import EmployeeRoute from "./routes/EmployeeRoute.js";
 
 // Configure environment
 
@@ -65,7 +65,7 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
 app.use("/api/v1/millestone", milestoneRoutes);
-app.use("/api/v1/employee", EmployeeRoute);
+// app.use("/api/v1/employee", EmployeeRoute);
 
 app.use(cors({
   origin: 'http://localhost:5173',
@@ -80,12 +80,12 @@ app.get("/", (req, res) => {
 
 
 // For Auto-Checkout Timer
-startAutoCheckoutJob(); 
+startAutoCheckoutJob();
 
 const PORT = process.env.PORT || 8090;
 
 app.listen(PORT, () => {
-    console.log(`Server Running on ${process.env.DEV_MODE} mode`.bgCyan.white);
-    console.log(`Server is running on port ${PORT}`.bgCyan.white)
+  console.log(`Server Running on ${process.env.DEV_MODE} mode`.bgCyan.white);
+  console.log(`Server is running on port ${PORT}`.bgCyan.white)
 });
 
