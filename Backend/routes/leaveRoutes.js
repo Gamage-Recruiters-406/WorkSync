@@ -4,7 +4,11 @@ import {
   createLeaveRequest,
   deleteLeaveRequest,
   updateLeaveRequest,
-  updateLeaveStatus
+  updateLeaveStatus,
+  getLeavesByUser,
+  getSingleLeave,
+  getAllLeaves,
+  getLeaveBalance
 } from "../controllers/leaveController.js";
 
 const router = express.Router();
@@ -26,6 +30,16 @@ router.patch(
   isManagerOrAdmin,
   updateLeaveStatus
 );
+
+// Employee routes
+router.get("/getLeave/:uid", getLeavesByUser);
+router.get("/getUserLeave/:id", getSingleLeave);
+
+// Manager / Admin routes
+router.get("/getAllLeaves", isManagerOrAdmin, getAllLeaves);
+
+//Get leave balance for logged-in user**
+router.get("/leave-balance", getLeaveBalance);
 
 // DELETE /api/v1/leave-request/deleteLeave/:id - Delete leave request
 router.delete("/deleteLeave/:id", deleteLeaveRequest);
