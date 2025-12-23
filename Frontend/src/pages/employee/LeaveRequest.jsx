@@ -227,7 +227,7 @@ const LeaveRequest = () => {
     <div className="flex h-screen">
       <Sidebar />
 
-      <div className="flex-1 p-6 space-y-6 border rounded-3xl bg-white">
+      <div className="flex-1 p-6 space-y-6 border rounded-3xl bg-white overflow-y-auto">
         {/* Top Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Leave Request Form */}
@@ -242,12 +242,12 @@ const LeaveRequest = () => {
             >
               <div className="space-y-3">
                 <div>
-                  <label className="text-gray-600">Leave Type</label>
+                  <label className="text-gray-600 text text-sm">Leave Type</label>
                   <select
                     name="leaveType"
                     value={formData.leaveType}
                     onChange={handleChange}
-                    className="w-full border rounded-lg p-2 mt-2"
+                    className="w-full border rounded-lg p-2 mt-2  text-sm"
                     required
                   >
                     <option value="">Select Type</option>
@@ -258,13 +258,25 @@ const LeaveRequest = () => {
                 </div>
 
                 <div>
-                  <label className="text-gray-600">Start Date</label>
+                  <label className="text-gray-600 text text-sm">Start Date</label>
                   <input
                     type="date"
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleChange}
-                    className="w-full border rounded-lg p-2 mt-2"
+                    className="w-full border rounded-lg p-2 mt-2 text-sm"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-gray-600 text text-sm">End Date</label>
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg p-2 mt-2 text-sm"
                     required
                   />
                 </div>
@@ -272,25 +284,13 @@ const LeaveRequest = () => {
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-gray-600">End Date</label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-2 mt-2"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-gray-600">Reason</label>
+                  <label className="text-gray-600 text text-sm">Reason</label>
                   <textarea
                     name="reason"
                     value={formData.reason}
                     onChange={handleChange}
                     rows="4"
-                    className="w-full h-32 border rounded-lg p-2 mt-2"
+                    className="w-full h-32 border rounded-lg p-2 mt-2 text-sm resize-none"
                     required
                   />
                 </div>
@@ -381,36 +381,36 @@ const LeaveRequest = () => {
         </div>
 
         {/* Leave History Table */}
-        <div className="bg-white rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4 overflow-y-auto max-h-[350px]">
           <h2 className="text-lg font-medium mb-4">Leave History</h2>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[800px]">
               <thead className="bg-[#087990] text-white">
                 <tr>
-                  <th className="py-3 px-2 text-center border-r border-white">Leave ID</th>
-                  <th className="text-center border-r border-white">Leave Type</th>
-                  <th className="text-center border-r border-white">Start Date</th>
-                  <th className="text-center border-r border-white">End Date</th>
-                  <th className="text-center border-r border-white">Reason</th>
-                  <th className="text-center border-r border-white">Status</th>
-                  <th className="text-center border-r border-white">Approved By</th>
-                  <th className="text-center border-r border-white">Actions</th>
+                  <th className="py-3 px-2 text-center border-r border-white whitespace-nowrap">Leave ID</th>
+                  <th className="text-center border-r border-white whitespace-nowrap">Leave Type</th>
+                  <th className="text-center border-r border-white whitespace-nowrap">Start Date</th>
+                  <th className="text-center border-r border-white whitespace-nowrap">End Date</th>
+                  <th className="text-center border-r border-white whitespace-nowrap">Reason</th>
+                  <th className="text-center border-r border-white whitespace-nowrap">Status</th>
+                  <th className="text-center border-r border-white whitespace-nowrap">Approved By</th>
+                  <th className="text-center border-r border-white whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-[#E5E7EB] divide-y divide-x divide-white">
                 {leaveHistory.length > 0 ? (
                   leaveHistory.map((leave) => (
-                    <tr key={leave._id} className="hover:bg-gray-200 transition-colors duration-150">
-                      <td className="py-3 px-2 text-center border-r border-white">{leave.leaveId || leave._id}</td>
-                      <td className="text-center border-r border-white">{leave.leaveType}</td>
-                      <td className="text-center border-r border-white">
+                    <tr key={leave._id} className="hover:bg-gray-200 transition-colors duration-150 text-sm">
+                      <td className="py-3 px-2 text-center border-r border-white whitespace-nowrap">{leave.leaveId || leave._id}</td>
+                      <td className="text-center border-r border-white whitespace-nowrap">{leave.leaveType}</td>
+                      <td className="text-center border-r border-white whitespace-nowrap">
                         {leave.startDate ? new Date(leave.startDate).toLocaleDateString() : "-"}
                       </td>
-                      <td className="text-center border-r border-white">
+                      <td className="text-center border-r border-white whitespace-nowrap">
                         {leave.endDate ? new Date(leave.endDate).toLocaleDateString() : "-"}
                       </td>
-                      <td className="text-center border-r border-white max-w-xs truncate px-2">{leave.reason || "-"}</td>
-                      <td className="text-center border-r border-white">
+                      <td className="text-center border-r border-white whitespace-nowrap px-2">{leave.reason || "-"}</td>
+                      <td className="text-center border-r border-white whitespace-nowrap">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
                             leave.sts === "approved"
@@ -423,8 +423,8 @@ const LeaveRequest = () => {
                           {leave.sts ? leave.sts.charAt(0).toUpperCase() + leave.sts.slice(1) : "-"}
                         </span>
                       </td>
-                      <td className="text-center border-r border-white">{leave.approvedBy?.fullName || "-"}</td>
-                      <td className="text-center border-r border-white flex justify-center gap-2 items-center py-3">
+                      <td className="text-center border-r border-white whitespace-nowrap">{leave.approvedBy?.fullName || "-"}</td>
+                      <td className="text-center border-r border-white flex justify-center gap-2 items-center py-3 whitespace-nowrap">
                         <button 
                           onClick={() => handleEdit(leave)} 
                           className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors duration-150"
