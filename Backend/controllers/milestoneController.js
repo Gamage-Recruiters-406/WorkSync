@@ -1,5 +1,5 @@
 import milestone from "../models/milestoneModel.js";
-import Project from ('../models/ProjectModel.js');
+import Project from '../models/ProjectModel.js';
 
 // Create Milestone
 export const createMilestone = async (req, res) => {
@@ -58,7 +58,7 @@ export const createMilestone = async (req, res) => {
 };
 
 // Get all milestones
-exports.getAllMilestones = async (req, res) => {
+export const getAllMilestones = async (req, res) => {
     try {
         const { pid } = req.params;
 
@@ -82,7 +82,7 @@ exports.getAllMilestones = async (req, res) => {
 };
 
 // Get single milestone
-exports.getMilestone = async (req, res) => {
+export const getMilestone = async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -112,7 +112,7 @@ exports.getMilestone = async (req, res) => {
 };
 
 // Get milestone details
-exports.getMilestoneDetails = async (req, res) => {
+export const getMilestoneDetails = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.userId;
@@ -151,7 +151,7 @@ exports.getMilestoneDetails = async (req, res) => {
 };
 
 // Update Milestone
-exports.updateMilestone = async (req, res) => {
+export const updateMilestone = async (req, res) => {
     try {
         const { id } = req.params;
         const { milestoneName, Description, Start_Date, End_Date, Status, assignedTo } = req.body;
@@ -204,7 +204,7 @@ exports.updateMilestone = async (req, res) => {
 };
 
 // Update milestone status
-exports.updateMilestoneStatus = async (req, res) => {
+export const updateMilestoneStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { Status } = req.body;
@@ -256,7 +256,7 @@ exports.updateMilestoneStatus = async (req, res) => {
 };
 
 // Delete milestone
-exports.deleteMilestone = async (req, res) => {
+export const deleteMilestone = async (req, res) => {
     try {
         const { id } = req.params;
 
