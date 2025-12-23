@@ -22,6 +22,8 @@ import { startAutoCheckoutJob } from "./helpers/autoCheckoutHelper.js";
 // Configure environment
 import { autoDeleteExpiredAnnouncements } from "./middlewares/announcementExpirymiddleware.js";
 import AnnouncemetAttachmetRoutes from "./routes/AnnouncemetAttachmetRoutes.js";
+// import EmployeeRoute from "./routes/EmployeeRoute.js";
+
 // Configure environment
 
 dotenv.config();
@@ -36,13 +38,15 @@ const app = express();
 // app.use(MongoSanitize());
 // app.use(xss());
 app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true
+  origin: "http://localhost:5173", // FRONTEND URL
+  credentials: true,              // REQUIRED because you use withCredentials
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 
 // Middlewares
-app.use(cors());
+// app.use(cors());
 app.use(helmet());
 app.use(express.json());
 app.use(morgan("dev"));
@@ -61,6 +65,7 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
 app.use("/api/v1/millestone", milestoneRoutes);
+// app.use("/api/v1/employee", EmployeeRoute);
 
 app.use(cors({
   origin: 'http://localhost:5173',
