@@ -260,13 +260,17 @@ export const getLeaveBalance = async (req, res) => {
     const used = { sick: 0, annual: 0, casual: 0 };
     let approved = 0;
     let rejected = 0;
+     let pending = 0;
 
-    leaves.forEach((l) => {
+    leaves.forEach(l => {
       if (l.sts === "approved") {
         approved++;
         if (used[l.leaveType] !== undefined) used[l.leaveType]++;
+      } else if (l.sts === "rejected") {
+        rejected++;
+      } else if (l.sts === "pending") {
+        pending++;
       }
-      if (l.sts === "rejected") rejected++;
     });
 
     res.json({
@@ -279,6 +283,7 @@ export const getLeaveBalance = async (req, res) => {
       counts: {
         approved,
         rejected,
+        pending,
       },
     });
   } catch (error) {
