@@ -13,6 +13,7 @@ const LeaveRequest = () => {
 
   const [leaveHistory, setLeaveHistory] = useState([]);
   const [editingLeaveId, setEditingLeaveId] = useState(null);
+  const [leaveBalance, setLeaveBalance] = useState(null);
 
   // -------------------- Form change --------------------
   const handleChange = (e) => {
@@ -102,6 +103,24 @@ const LeaveRequest = () => {
       alert("Failed to delete leave");
     }
   };
+
+  // -------------------- Leave Balance --------------------
+
+  const fetchLeaveBalance = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:8090/api/v1/leave-request/leave-balance",
+        { withCredentials: true }
+      );
+      setLeaveBalance(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+  useEffect(() => {
+    fetchLeaveBalance();
+  }, []);
 
   // -------------------- UI --------------------
   return (
@@ -201,47 +220,66 @@ const LeaveRequest = () => {
           </div>
 
           {/* Leave Balance UI */}
-          <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
-            <h2 className="text-lg font-medium mb-4">Leave Balance</h2>
+          {leaveBalance && (
+            <div className="bg-white rounded-2xl shadow p-4 border border-gray-200 max-w-md">
+              <h2 className="text-lg font-medium mb-4">Leave Balance</h2>
 
-            {[
-              { label: "Annual Leave", used: 8, total: 20 },
-              { label: "Casual Leave", used: 4, total: 10 },
-              { label: "Sick Leave", used: 3, total: 10 },
-              { label: "Rejected Leave", used: 3, total: 10 },
-              { label: "Pending Leave", used: 3, total: 10 },
-            ].map((leave, index) => {
-              const percent = `${(leave.used / leave.total) * 100}%`;
+              {/* Leave Types with Bars */}
+              {[
+                { label: "Annual", value: leaveBalance.balance.annual, color: "bg-blue-500" },
+                { label: "Casual", value: leaveBalance.balance.casual, color: "bg-green-500" },
+                { label: "Sick", value: leaveBalance.balance.sick, color: "bg-purple-500" },
+              ].map((leave, idx) => {
+                let used = 0;
+                let total = 1;
 
-              // Progress bar color logic
-              const barColor =
-                leave.label === "Rejected Leave"
-                  ? "bg-red-500"
-                  : leave.label === "Pending Leave"
-                  ? "bg-orange-500"
-                  : "bg-[#087990]";
+                if (leave.value.includes("/")) {
+                  const parts = leave.value.split("/");
+                  used = Number(parts[0]);
+                  total = Number(parts[1]);
+                }
 
-              return (
-                <div key={index} className="mb-6">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>{leave.label}</span>
-                    <span className="font-semibold">
-                      {leave.used} / {leave.total} Days
-                    </span>
+                const percent = `${(used / total) * 100}%`;
+
+                return (
+                  <div key={idx} className="mb-6">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>{leave.label} Leave</span>
+                      <span className="font-semibold">{leave.value}</span>
+                    </div>
+                    <div className="w-full h-4 bg-gray-200 rounded-full">
+                      <div className={`${leave.color} h-4 rounded-full`} style={{ width: percent }}></div>
+                    </div>
                   </div>
+                );
+              })}
 
-                  <div className="w-full h-4 bg-gray-200 rounded-full">
-                    <div
-                      className={`${barColor} h-4 rounded-full`}
-                      style={{ width: percent }}
-                    ></div>
-                  </div>
+              <hr className="border-gray-200 mb-6" />
+
+              {/* Status Counts */}
+              <div className="flex justify-around text-center">
+                <div className="flex flex-col items-center">
+                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold">
+                    {leaveBalance.counts.approved}
+                  </span>
+                  <span className="text-gray-500 text-sm mt-1">Approved</span>
                 </div>
-              );
-            })}
-          </div>
-
-        </div>
+                <div className="flex flex-col items-center">
+                  <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full font-semibold">
+                    {leaveBalance.counts.pending}
+                  </span>
+                  <span className="text-gray-500 text-sm mt-1">Pending</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full font-semibold">
+                    {leaveBalance.counts.rejected}
+                  </span>
+                  <span className="text-gray-500 text-sm mt-1">Rejected</span>
+                </div>
+              </div>
+            </div>
+          )}
+      </div>
 
         {/* Leave History Table */}
         <div className="bg-white rounded-xl shadow p-4">
