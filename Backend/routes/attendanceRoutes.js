@@ -9,7 +9,9 @@ import {
     requestCorrectionController,
     getPendingCorrectionsController,
     approveCorrectionController,
-    getMyAttendanceHistoryController
+    getMyAttendanceHistoryController,
+    getDashboardStatsController,
+    getAnalyticsReportController
 } from "../controllers/attendanceController.js";
 
 import { requiredSignIn, isManagerOrAdmin } from "../middlewares/AuthMiddleware.js";
@@ -45,5 +47,11 @@ router.post("/approve-correction", requiredSignIn, isManagerOrAdmin, approveCorr
 
 // User Get Their Own History (For Personal Attendance Summary Dashboard)
 router.get("/my-history", requiredSignIn, getMyAttendanceHistoryController);
+
+// Dashboard Cards Route
+router.get("/dashboard-stats", requiredSignIn, isManagerOrAdmin, getDashboardStatsController);
+
+// Analytics Report Route
+router.get("/analytics-report", requiredSignIn, isManagerOrAdmin, getAnalyticsReportController);
 
 export default router;
