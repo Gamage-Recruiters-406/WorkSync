@@ -202,36 +202,34 @@ const UserAttendance = () => {
 
             {/* Correction Form */}
             <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
-              {/* Four Cards Section */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                {/* Date Card */}
-                <div className="bg-gray-100 rounded-lg p-4 text-center">
-                  <p className="text-sm text-gray-600 mb-1">Date</p>
-                  <p className="text-lg font-bold text-gray-900">
+              {/* 2x2 Grid Cards Section */}
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                {/* Row 1: Date and Status */}
+                <div className="bg-white border-2 border-gray-300 rounded-lg p-4 text-center">
+                  <p className="text-sm text-gray-600 mb-2">Date</p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {selectedDate?.date}
                   </p>
                 </div>
 
-                {/* Status Card */}
-                <div className="bg-gray-100 rounded-lg p-4 text-center">
-                  <p className="text-sm text-gray-600 mb-1">Status</p>
-                  <p className="text-lg font-bold text-gray-900">
+                <div className="bg-white border-2 border-gray-300 rounded-lg p-4 text-center">
+                  <p className="text-sm text-gray-600 mb-2">Status</p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {selectedDate?.status}
                   </p>
                 </div>
 
-                {/* Check In Time Card */}
-                <div className="bg-gray-100 rounded-lg p-4 text-center">
-                  <p className="text-sm text-gray-600 mb-1">Check In</p>
-                  <p className="text-lg font-bold text-gray-900">
+                {/* Row 2: Check In and Check Out */}
+                <div className="bg-white border-2 border-gray-300 rounded-lg p-4 text-center">
+                  <p className="text-sm text-gray-600 mb-2">Check In</p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {selectedDate?.checkIn}
                   </p>
                 </div>
 
-                {/* Check Out Time Card */}
-                <div className="bg-gray-100 rounded-lg p-4 text-center">
-                  <p className="text-sm text-gray-600 mb-1">Check Out</p>
-                  <p className="text-lg font-bold text-gray-900">
+                <div className="bg-white border-2 border-gray-300 rounded-lg p-4 text-center">
+                  <p className="text-sm text-gray-600 mb-2">Check Out</p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {selectedDate?.checkOut}
                   </p>
                 </div>
@@ -240,80 +238,68 @@ const UserAttendance = () => {
               {/* What do you need to Correct? Section */}
               <div className="border-t border-gray-200 pt-6 mb-8">
                 <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                  What do you need to Correct?
+                  What do you need to Correct ?
                 </h3>
 
-                <div className="flex gap-12">
-                  {/* Check In Time Rectangle */}
-                  <div
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Check In Time Button */}
+                  <button
                     onClick={() => setCorrectionType("checkIn")}
-                    className={`p-6 border-2 rounded-lg cursor-pointer transition text-center 
-                  w-56 h-32 flex items-center justify-center ${
-                    correctionType === "checkIn"
-                      ? "border-[#087990] bg-[#087990] text-white shadow-md"
-                      : "border-gray-300 text-gray-700 hover:border-gray-400 hover:shadow-sm"
-                  }`}
+                    className={`p-6 border-2 rounded-lg cursor-pointer transition text-center font-semibold text-lg ${
+                      correctionType === "checkIn"
+                        ? "border-[#087990] bg-[#087990] text-white shadow-md"
+                        : "border-gray-300 text-gray-700 bg-white hover:border-gray-400"
+                    }`}
                   >
-                    <span className="font-medium text-lg">Check in Time</span>
-                  </div>
+                    Check in Time
+                  </button>
 
-                  {/* Check Out Time Rectangle */}
-                  <div
+                  {/* Check Out Time Button */}
+                  <button
                     onClick={() => setCorrectionType("checkOut")}
-                    className={`p-6 border-2 rounded-lg cursor-pointer transition text-center 
-                  w-56 h-32 flex items-center justify-center ${
-                    correctionType === "checkOut"
-                      ? "border-[#087990] bg-[#087990] text-white shadow-md"
-                      : "border-gray-300 text-gray-700 hover:border-gray-400 hover:shadow-sm"
-                  }`}
+                    className={`p-6 border-2 rounded-lg cursor-pointer transition text-center font-semibold text-lg ${
+                      correctionType === "checkOut"
+                        ? "border-[#087990] bg-[#087990] text-white shadow-md"
+                        : "border-gray-300 text-gray-700 bg-white hover:border-gray-400"
+                    }`}
                   >
-                    <span className="font-medium text-lg">Check Out Time</span>
-                  </div>
+                    Check Out Time
+                  </button>
                 </div>
               </div>
 
-              {/* Original Time Section */}
+              {/* Original vs Requested Time Section */}
               <div className="border-t border-gray-200 pt-6 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-2 gap-8">
                   {/* Original Time Display */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <h3 className="text-base font-semibold text-gray-900 mb-3">
                       {correctionType === "checkIn"
                         ? "Original Check in Time"
                         : "Original Check Out Time"}
                     </h3>
-                    <div className="bg-gray-100 p-6 rounded-lg mb-2">
-                      <p className="text-xl font-bold text-gray-900 text-center">
+                    <div className="bg-white border border-gray-300 p-4 rounded-lg text-center">
+                      <p className="text-xl font-bold text-gray-900">
                         {getOriginalTime() || "-"}
                       </p>
                     </div>
-                    <p className="text-sm text-gray-600 text-center">
-                      Enter the correct time
-                    </p>
                   </div>
 
                   {/* Requested Time Input */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <h3 className="text-base font-semibold text-gray-900 mb-3">
                       Requested{" "}
                       {correctionType === "checkIn"
                         ? "Check in Time"
                         : "Check Out Time"}
                     </h3>
-                    <div className="relative">
-                      <input
-                        type="time"
-                        value={correctTime}
-                        onChange={(e) => setCorrectTime(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087990] focus:border-transparent text-center text-lg appearance-none"
-                        placeholder="--:--"
-                      />
-                      {!correctTime && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <span className="text-gray-400 text-lg">------</span>
-                        </div>
-                      )}
-                    </div>
+                    <input
+                      type="time"
+                      value={correctTime}
+                      onChange={(e) => setCorrectTime(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087990] focus:border-transparent text-center text-lg"
+                      placeholder="--:--"
+                    />
                   </div>
                 </div>
               </div>
@@ -354,10 +340,10 @@ const UserAttendance = () => {
               </div>
 
               {/* Submit Button */}
-              <div className="border-t border-gray-200 pt-6">
+              <div className="border-t border-gray-200 pt-6 flex justify-end">
                 <button
                   onClick={handleSubmitCorrection}
-                  className="w-full py-3 text-white rounded-lg hover:opacity-90 transition text-lg font-medium"
+                  className="px-8 py-3 text-white rounded-lg hover:opacity-90 transition text-lg font-medium"
                   style={{ backgroundColor: "#087990" }}
                 >
                   Request Correction
