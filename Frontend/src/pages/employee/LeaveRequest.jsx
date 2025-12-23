@@ -1,16 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../../components/sidebar/Sidebar";
+import { Edit2, Trash2 } from "lucide-react";
 
 const LeaveRequest = () => {
   const [formData, setFormData] = useState({
-    leaveId: "",
     leaveType: "",
     startDate: "",
     endDate: "",
     reason: "",
   });
 
+  const [leaveHistory, setLeaveHistory] = useState([]);
+  const [editingLeaveId, setEditingLeaveId] = useState(null);
+
+  // -------------------- Form change --------------------
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -18,36 +22,88 @@ const LeaveRequest = () => {
     });
   };
 
+  // -------------------- Fetch leave history --------------------
+  const fetchLeaveHistory = async () => {
+    try {
+      const userId = "6943b5b7c357c931da00fef2"; // TEMP
+      const res = await axios.get(
+        `http://localhost:8090/api/v1/leave-request/getLeave/${userId}`,
+        { withCredentials: true }
+      );
+      setLeaveHistory(res.data.data || []);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to fetch leave history");
+    }
+  };
+
+  useEffect(() => {
+    fetchLeaveHistory();
+  }, []);
+
+  // -------------------- Submit / Update --------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      const res = await axios.post(
-        "http://localhost:8090/api/v1/leave-request/addLeave",
-        formData,
-        {
-          withCredentials: true, // JWT cookie
-        }
-      );
+      if (editingLeaveId) {
+        await axios.put(
+          `http://localhost:8090/api/v1/leave-request/updateLeave/${editingLeaveId}`,
+          formData,
+          { withCredentials: true }
+        );
+        alert("Leave updated successfully");
+        setEditingLeaveId(null);
+      } else {
+        await axios.post(
+          "http://localhost:8090/api/v1/leave-request/addLeave",
+          formData,
+          { withCredentials: true }
+        );
+        alert("Leave request submitted successfully");
+      }
 
-      alert("Leave request submitted successfully");
-
-      // Clear form
       setFormData({
-        leaveId: "",
         leaveType: "",
         startDate: "",
         endDate: "",
         reason: "",
       });
 
-      console.log(res.data);
+      fetchLeaveHistory();
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.message || "Something went wrong");
     }
   };
 
+  // -------------------- Edit --------------------
+  const handleEdit = (leave) => {
+    setEditingLeaveId(leave._id);
+    setFormData({
+      leaveType: leave.leaveType,
+      startDate: leave.startDate?.split("T")[0],
+      endDate: leave.endDate?.split("T")[0],
+      reason: leave.reason,
+    });
+  };
+
+  // -------------------- Delete --------------------
+  const handleDelete = async (leaveId) => {
+    if (!window.confirm("Are you sure you want to delete this leave?")) return;
+    try {
+      await axios.delete(
+        `http://localhost:8090/api/v1/leave-request/deleteLeave/${leaveId}`,
+        { withCredentials: true }
+      );
+      alert("Leave deleted successfully");
+      fetchLeaveHistory();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete leave");
+    }
+  };
+
+  // -------------------- UI --------------------
   return (
     <div className="flex h-screen">
       <Sidebar />
@@ -58,28 +114,14 @@ const LeaveRequest = () => {
           {/* Leave Request Form */}
           <div className="lg:col-span-2 bg-white rounded-3xl shadow p-4 border border-gray-200">
             <h2 className="text-lg font-medium mb-4">
-              Leave Request Form
+              {editingLeaveId ? "Update Leave" : "Leave Request Form"}
             </h2>
 
             <form
               onSubmit={handleSubmit}
               className="grid grid-cols-1 md:grid-cols-2 gap-4"
             >
-              {/* Left Side */}
               <div className="space-y-3">
-                <div>
-                  <label className="text-gray-600">Leave ID</label>
-                  <input
-                    type="text"
-                    name="leaveId"
-                    value={formData.leaveId}
-                    onChange={handleChange}
-                    placeholder="FR-LV-001"
-                    className="w-full border rounded-lg p-2 mt-2"
-                    required
-                  />
-                </div>
-
                 <div>
                   <label className="text-gray-600">Leave Type</label>
                   <select
@@ -109,7 +151,6 @@ const LeaveRequest = () => {
                 </div>
               </div>
 
-              {/* Right Side */}
               <div className="space-y-3">
                 <div>
                   <label className="text-gray-600">End Date</label>
@@ -130,32 +171,27 @@ const LeaveRequest = () => {
                     value={formData.reason}
                     onChange={handleChange}
                     rows="4"
-                    placeholder="Reason for leave"
                     className="w-full h-32 border rounded-lg p-2 mt-2"
                     required
                   />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="submit"
-                    className="bg-[#087990] text-white px-4 py-2 w-40 rounded-lg hover:bg-[#065c6f]"
-                  >
-                    Submit
+                  <button className="bg-[#087990] text-white px-4 py-2 w-40 rounded-lg">
+                    {editingLeaveId ? "Update" : "Submit"}
                   </button>
-
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      setEditingLeaveId(null);
                       setFormData({
-                        leaveId: "",
                         leaveType: "",
                         startDate: "",
                         endDate: "",
                         reason: "",
-                      })
-                    }
-                    className="bg-white border-2 border-[#087990] text-gray-800 px-4 py-2 w-40 rounded-lg hover:bg-[#087990] hover:text-white"
+                      });
+                    }}
+                    className="border-2 border-[#087990] px-4 py-2 w-40 rounded-lg"
                   >
                     Cancel
                   </button>
@@ -164,97 +200,112 @@ const LeaveRequest = () => {
             </form>
           </div>
 
-          {/* Leave Balance */}
+          {/* Leave Balance UI */}
           <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
             <h2 className="text-lg font-medium mb-4">Leave Balance</h2>
 
             {[
-              { label: "Annual Leave", value: "12 / 20 Days", percent: "60%" },
-              { label: "Sick Leave", value: "5 / 10 Days", percent: "50%" },
-              { label: "Casual Leave", value: "6 / 10 Days", percent: "60%" },
-            ].map((item, index) => (
-              <div className="mb-4" key={index}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>{item.label}</span>
-                  <span className="font-semibold">{item.value}</span>
+              { label: "Annual Leave", used: 8, total: 20 },
+              { label: "Casual Leave", used: 4, total: 10 },
+              { label: "Sick Leave", used: 3, total: 10 },
+              { label: "Rejected Leave", used: 3, total: 10 },
+              { label: "Pending Leave", used: 3, total: 10 },
+            ].map((leave, index) => {
+              const percent = `${(leave.used / leave.total) * 100}%`;
+
+              // Progress bar color logic
+              const barColor =
+                leave.label === "Rejected Leave"
+                  ? "bg-red-500"
+                  : leave.label === "Pending Leave"
+                  ? "bg-orange-500"
+                  : "bg-[#087990]";
+
+              return (
+                <div key={index} className="mb-6">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>{leave.label}</span>
+                    <span className="font-semibold">
+                      {leave.used} / {leave.total} Days
+                    </span>
+                  </div>
+
+                  <div className="w-full h-4 bg-gray-200 rounded-full">
+                    <div
+                      className={`${barColor} h-4 rounded-full`}
+                      style={{ width: percent }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="w-full h-5 bg-gray-200 rounded-full">
-                  <div
-                    className="bg-[#087990] h-5 rounded-full"
-                    style={{ width: item.percent }}
-                  ></div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+
         </div>
 
-        {/* Leave History (static – next step backend) */}
+        {/* Leave History Table */}
         <div className="bg-white rounded-xl shadow p-4">
-          <h2 className="text-lg font-medium mb-4">
-              Leave History
-          </h2>
-
+          <h2 className="text-lg font-medium mb-4">Leave History</h2>
           <table className="w-full text-sm">
-              <thead className="bg-[#087990] text-white">
+            <thead className="bg-[#087990] text-white">
               <tr>
-                  <th className="py-3 px-2 text-center border-r border-white">Leave ID</th>
-                  <th className="text-center border-r border-white">Employee</th>
-                  <th className="text-center border-r border-white">Leave Type</th>
-                  <th className="text-center border-r border-white">Start Date</th>
-                  <th className="text-center border-r border-white">End Date</th>
-                  <th className="text-center border-r border-white">Reason</th>
-                  <th className="text-center border-r border-white">Status</th>
-                  <th className="text-center border-r border-white">Approved By</th>
+                <th className="py-3 px-2 text-center border-r border-white">Leave ID</th>
+                <th className="text-center border-r border-white">Leave Type</th>
+                <th className="text-center border-r border-white">Start Date</th>
+                <th className="text-center border-r border-white">End Date</th>
+                <th className="text-center border-r border-white">Reason</th>
+                <th className="text-center border-r border-white">Status</th>
+                <th className="text-center border-r border-white">Approved By</th>
+                <th className="text-center border-r border-white">Actions</th>
               </tr>
-              </thead>
-              <tbody className="bg-[#E5E7EB] divide-y divide-x divide-white">
-                <tr className="hover:bg-gray-200">
-                  <td className="py-3 px-2 text-center border-r border-white">FR-LV-001</td>
-                  <td className="text-center border-r border-white">Kasun Perera</td>
-                  <td className="text-center border-r border-white">Casual</td>
-                  <td className="text-center border-r border-white">2025-02-10</td>
-                  <td className="text-center border-r border-white">2025-02-11</td>
-                  <td className="text-center border-r border-white">Personal errands</td>
-                  <td className="text-center border-r border-white">
-                    <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs">
-                      Pending
-                    </span>
+            </thead>
+            <tbody className="bg-[#E5E7EB] divide-y divide-x divide-white">
+              {leaveHistory.length > 0 ? (
+                leaveHistory.map((leave) => (
+                  <tr key={leave._id} className="hover:bg-gray-200">
+                    <td className="py-3 px-2 text-center border-r border-white">
+                      {leave.leaveId || leave._id}
+                    </td>
+                    <td className="text-center border-r border-white">{leave.leaveType}</td>
+                    <td className="text-center border-r border-white">
+                      {leave.startDate ? new Date(leave.startDate).toLocaleDateString() : "-"}
+                    </td>
+                    <td className="text-center border-r border-white">
+                      {leave.endDate ? new Date(leave.endDate).toLocaleDateString() : "-"}
+                    </td>
+                    <td className="text-center border-r border-white">{leave.reason || "-"}</td>
+                    <td className="text-center border-r border-white">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          leave.sts === "approved"
+                            ? "bg-green-100 text-green-700"
+                            : leave.sts === "rejected"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {leave.sts ? leave.sts.charAt(0).toUpperCase() + leave.sts.slice(1) : "-"}
+                      </span>
+                    </td>
+                    <td className="text-center border-r border-white">{leave.approvedBy?.fullName || "-"}</td>
+                    <td className="text-center border-r border-white flex justify-center gap-2 items-center mt-3">
+                      <button onClick={() => handleEdit(leave)} className="text-blue-600 hover:text-blue-800">
+                        <Edit2 size={18} />
+                      </button>
+                      <button onClick={() => handleDelete(leave._id)} className="text-red-600 hover:text-red-800">
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="text-center py-4">
+                    No leave history found.
                   </td>
-                  <td className="text-center border-r border-white">-</td>
                 </tr>
-
-                <tr className="hover:bg-gray-200">
-                  <td className="py-3 px-2 text-center border-r border-white">FR-LV-002</td>
-                  <td className="text-center border-r border-white">Nimali Silva</td>
-                  <td className="text-center border-r border-white">Annual</td>
-                  <td className="text-center border-r border-white">2025-01-05</td>
-                  <td className="text-center border-r border-white">2025-01-10</td>
-                  <td className="text-center border-r border-white">Family vacation</td>
-                  <td className="text-center border-r border-white">
-                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">
-                      Approved
-                    </span>
-                  </td>
-                  <td className="text-center border-r border-white">Manager A</td>
-                </tr>
-
-                <tr className="hover:bg-gray-200">
-                  <td className="py-3 px-2 text-center border-r border-white">FR-LV-003</td>
-                  <td className="text-center border-r border-white">Chamod Fernando</td>
-                  <td className="text-center border-r border-white">Sick</td>
-                  <td className="text-center border-r border-white">2025-01-18</td>
-                  <td className="text-center border-r border-white">2025-01-19</td>
-                  <td className="text-center border-r border-white">Fever</td>
-                  <td className="text-center border-r border-white">
-                    <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs">
-                      Rejected
-                    </span>
-                  </td>
-                  <td className="text-center border-r border-white">Manager B</td>
-                </tr>
-              </tbody>
-
+              )}
+            </tbody>
           </table>
         </div>
       </div>
