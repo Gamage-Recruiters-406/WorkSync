@@ -10,7 +10,7 @@ import Users from "./pages/admin/Users";
 import ManageLeaves from "./pages/admin/ManageLeaves";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
-import Departments from "./pages/admin/Departments";
+import Departments from "./pages/admin/Department/Departments";
 import Projects from "./pages/admin/Projects";
 import UserDashboard from "./pages/employee/UserDashboard";
 import ProjectTeam from "./pages/employee/ProjectTeam";
@@ -26,9 +26,11 @@ import { Navigate } from "react-router-dom";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
 import { useState } from 'react';
 import EmployeeList from './pages/admin/EmployeeList';
-import Sidebar from './components/sidebar/Sidebar';
+import ApproveUser from "./pages/admin/ApproveUser";
+import Sidebar from './components/sidebar/Sidebar'; 
 import DashboardUI from './components/DashboardUI';
 import ProjectDetails from "./pages/employee/ProjectDetails";
+import DepartmentDetails from "./pages/admin/Department/ViewDepartment";
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -45,7 +47,7 @@ function App() {
 
         {/* Dashboard routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} /> 
-        
+
         <Route path="*" element={<Navigate to="/login" replace />} />
 
         {/* Admin Routes */}
@@ -60,6 +62,8 @@ function App() {
         <Route path="/admin/departments" element={<Departments />} />
         <Route path="/admin/projects" element={<Projects />} />
         <Route path="/admin/attendance" element={<AdminAttendance />} />
+         <Route path="/admin/Approve" element={<ApproveUser />} />
+        <Route path="/admin/D-details/:id" element={<DepartmentDetails />} />
 
         {/* Employee Routes */}
         <Route path="/user/dashboard" element={<UserDashboard />} />

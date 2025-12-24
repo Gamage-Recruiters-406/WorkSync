@@ -51,7 +51,8 @@ app.use("/api/v1/department", departmentRoutes);
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
-app.use("/api/v1/millestone", milestoneRoutes);
+ app.use("/api/v1/millestone", milestoneRoutes);
+app.use("/api/v1/AnnouncemetAttachmet", AnnouncemetAttachmetRoutes);
 
 
 app.get("/", (req, res) => {
