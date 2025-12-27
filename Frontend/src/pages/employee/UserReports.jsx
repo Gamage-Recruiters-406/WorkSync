@@ -15,7 +15,12 @@ import {
   getTaskReport,
 } from "../../services/adminReportsApi";
 
-export default function UserReports({ userId }) {
+export default function UserReports() {
+  const stored = localStorage.getItem("user");
+  const data = stored ? JSON.parse(stored) : null;
+
+  const userId = data?.userid;
+
   const [kpis, setKpis] = useState({
     totalAttendance: 0,
     totalTasks: 0,
@@ -35,58 +40,63 @@ export default function UserReports({ userId }) {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // Attendance
+        // --- Attendance ---
         const attendanceRes = await getSingleUserAttendance(userId);
-        const attendance = attendanceRes?.data || [];
 
-        // Tasks
-        const tasksRes = await getAllUserTasks();
+        const attendance = attendanceRes?.data?.attendance || [];
+
+        // --- Tasks ---
+        // const tasksRes = await getAllUserTasks();
+        const tasksRes = [];
         const tasks = (tasksRes?.data?.tasks || []).filter(
           (t) => t.userId === userId
         );
 
-        // Leaves
+        // --- Leaves ---
         const leavesRes = await getLeavesByUser(userId);
-        const leaves = leavesRes?.data || [];
+        console.log(leavesRes.data.data);
+        const leaves = leavesRes.data.data || [];
 
-        // KPI
+        // --- KPI ---
         setKpis({
           totalAttendance: attendance.length,
           totalTasks: tasks.length,
           totalLeaves: leaves.length,
         });
 
-        // Table Data
+        // --- Tables ---
         setAttendanceData(attendance);
-        setTaskData(tasks);
+        // setTaskData(tasks);
         setLeaveData(leaves);
       } catch (err) {
         console.error("Error loading user data:", err);
       }
     };
 
-    loadUserData();
-  }, [userId]);
+    if (userId) loadUserData();
+  }, []);
 
   // --- Load Charts ---
   useEffect(() => {
     const loadUserCharts = async () => {
       try {
         const attendanceRes = await getSingleUserAttendance(userId);
-        const attendance = attendanceRes?.data || [];
+
+        const attendance = attendanceRes.data.attendance || [];
 
         const attendanceChartData = [
-          {
-            label: "Present",
-            value: attendance.filter((a) => a.status === "Present").length,
-          },
-          {
-            label: "Absent",
-            value: attendance.filter((a) => a.status === "Absent").length,
-          },
+          // {
+          //   label: "Present",
+          //   value: attendance.filter((a) => a.status === "Present").length,
+          // },
+          // {
+          //   label: "Absent",
+          //   value: attendance.filter((a) => a.status === "Absent").length,
+          // },
         ];
 
-        const taskRes = await getTaskReport();
+        // const taskRes = await getTaskReport();
+        const taskRes = [];
         const tasks = (taskRes?.data?.tasks || []).filter(
           (t) => t.userId === userId
         );
@@ -102,7 +112,7 @@ export default function UserReports({ userId }) {
         ];
 
         setChartData({
-          attendance: attendanceChartData,
+          attendance: attendance,
           tasks: taskChartData,
         });
       } catch (err) {
@@ -111,7 +121,7 @@ export default function UserReports({ userId }) {
     };
 
     loadUserCharts();
-  }, [userId]);
+  }, []);
 
   return (
     <div className="flex h-screen">
@@ -129,6 +139,7 @@ export default function UserReports({ userId }) {
         {/* CHARTS */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <AttendanceBarChart data={chartData.attendance} />
+
           <TaskDonutChart data={chartData.tasks} />
         </div>
 
