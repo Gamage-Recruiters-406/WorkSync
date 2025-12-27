@@ -30,14 +30,15 @@ export default function LeaveTable({ data }) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse rounded-xl overflow-hidden">
-          <thead className="bg-gray-300">
+      <div className="overflow-x-auto max-h-96 overflow-y-auto">
+        <table className="min-w-full border-separate border-spacing-0 rounded-xl">
+          <thead className="bg-gray-300 sticky top-0 z-20">
             <tr>
               <th className="px-4 py-3 border text-left">Leave Type</th>
-              <th className="px-4 py-3 border text-left">Approved</th>
-              <th className="px-4 py-3 border text-left">Rejected</th>
-              <th className="px-4 py-3 border text-left">Pending</th>
+              <th className="px-4 py-3 border text-left">Reason</th>
+              <th className="px-4 py-3 border text-left">Status</th>
+              <th className="px-4 py-3 border text-left">StartDate</th>
+              <th className="px-4 py-3 border text-left">EndDate</th>
             </tr>
           </thead>
           <tbody>
@@ -48,15 +49,15 @@ export default function LeaveTable({ data }) {
                   i % 2 === 0 ? "bg-blue-50" : "bg-blue-100"
                 }`}
               >
-                <td className="px-4 py-2 border">{leave.type}</td>
+                <td className="px-4 py-2 border">{leave.leaveType}</td>
+                <td className="px-4 py-2 border">{leave.reason}</td>
+                <td className="px-4 py-2 border">{leave.sts}</td>
                 <td className="px-4 py-2 border">
-                  {leave.status === "Approved" ? "✓" : "-"}
+                  {new Date(leave.startDate).toLocaleDateString("en-CA")}
                 </td>
+
                 <td className="px-4 py-2 border">
-                  {leave.status === "Rejected" ? "✗" : "-"}
-                </td>
-                <td className="px-4 py-2 border">
-                  {leave.status === "Pending" ? "…" : "-"}
+                  {new Date(leave.endDate).toLocaleDateString("en-CA")}
                 </td>
               </tr>
             ))}

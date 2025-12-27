@@ -30,16 +30,24 @@ export default function AttendanceTable({ data }) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse rounded-xl overflow-hidden">
-          <thead className="bg-gray-300">
+      <div className="overflow-x-auto max-h-96 overflow-y-auto">
+        <table className="min-w-full border-separate border-spacing-0 rounded-xl">
+          <thead className="bg-gray-300 sticky top-0 z-20">
             <tr>
-              <th className="px-4 py-3 border text-left">Employee Name</th>
-              <th className="px-4 py-3 border text-left">Date</th>
-              <th className="px-4 py-3 border text-left">Check In</th>
-              <th className="px-4 py-3 border text-left">Check Out</th>
-              <th className="px-4 py-3 border text-left">Status</th>
-              <th className="px-4 py-3 border text-left">Hours Worked</th>
+              <th className="px-4 py-3 border text-left bg-gray-300">
+                Employee Name
+              </th>
+              <th className="px-4 py-3 border text-left bg-gray-300">Date</th>
+              <th className="px-4 py-3 border text-left bg-gray-300">
+                Check In
+              </th>
+              <th className="px-4 py-3 border text-left bg-gray-300">
+                Check Out
+              </th>
+              <th className="px-4 py-3 border text-left bg-gray-300">Status</th>
+              <th className="px-4 py-3 border text-left bg-gray-300">
+                Hours Worked
+              </th>
             </tr>
           </thead>
           <tbody>

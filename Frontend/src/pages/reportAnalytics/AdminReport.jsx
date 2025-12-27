@@ -72,18 +72,15 @@ export default function AdminReport() {
   useEffect(() => {
     const loadCharts = async () => {
       try {
-        const [attendanceReportRes, leavesRes, taskReportRes] =
-          await Promise.all([
-            getAttendanceReport(),
-            getAllLeaves(),
-            getTaskReport(),
-          ]);
+        const [attendanceRes, leavesRes, taskReportRes] = await Promise.all([
+          getAttendance(),
+          getAllLeaves(),
+          // getTaskReport(),
+        ]);
 
-        const attendance = attendanceReportRes?.data?.attendance || [];
+        const attendance = attendanceRes?.data?.attendance || [];
 
-        const leaves = Array.isArray(leavesRes?.data)
-          ? leavesRes.data
-          : leavesRes?.data?.leaves || [];
+        const leaves = leavesRes.data.data;
 
         const tasks = Array.isArray(taskReportRes?.data)
           ? taskReportRes.data
@@ -108,8 +105,8 @@ export default function AdminReport() {
       try {
         const [attendanceRes, tasksRes, projectsRes] = await Promise.all([
           getAttendance(),
-          getAllTasks(),
-          getAllProjects(),
+          // getAllTasks(),
+          // getAllProjects(),
         ]);
 
         const attendance = attendanceRes?.data?.attendance || [];
