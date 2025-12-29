@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
+const EmployeeSchema = new mongoose.Schema({
     FirstName: { 
         type: String, 
         required: true,
@@ -23,19 +23,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    email: { 
-        type: String, 
-        required: [true, "Email is required"],
-        unique: true,
-        lowercase: true,
-        trim: true,
-        match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, "Please provide a valid email"]
-    },
-    attachments: [
-        {
-            type: String
-        }
-    ],
     role: { 
         type: Number, 
         enum: {
@@ -44,19 +31,23 @@ const userSchema = new mongoose.Schema({
         },
         default: 1
     },
+    email: { 
+        type: String, 
+        required: [true, "Email is required"],
+        unique: true,
+        lowercase: true,
+        trim: true,
+        match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, "Please provide a valid email"]
+    },
     password: { 
         type: String, 
+        required: [true, "Password is required"],
         minlength: [6, "Password must be at least 6 characters"]
     },
-}, { 
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
-});
+    departmentID: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "Department",
+    }
+},{timestamps: true});
 
-// Virtual field for userid (maps to _id)
-userSchema.virtual('userid').get(function() {
-    return this._id;
-});
-
-export default mongoose.model("User", userSchema);
+export default mongoose.model("Employees",EmployeeSchema);
