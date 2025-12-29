@@ -214,234 +214,236 @@ const AdminAttendance = () => {
 
         {/* Main Content Area */}
         <div className="flex-1 p-6">
-          {/* Back Button and Header */}
-          <div className="mb-6">
-            <button
-              onClick={handleBackToReports}
-              className="flex items-center gap-2 text-[#087990] hover:text-[#065a70] mb-4"
-            >
-              <ChevronLeft size={20} />
-              Back to Reports
-            </button>
-            
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">
-                  {generatedReport.title}
-                </h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  {generatedReport.date}
-                </p>
-              </div>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleExport('PDF')}
-                  className="px-4 py-2 border border-[#087990] text-[#087990] rounded-lg hover:bg-[#087990] hover:text-white transition flex items-center gap-2"
-                >
-                  <Download size={18} />
-                  Export PDF
-                </button>
-                <button
-                  onClick={() => handleExport('Excel')}
-                  className="px-4 py-2 border border-[#087990] text-[#087990] rounded-lg hover:bg-[#087990] hover:text-white transition flex items-center gap-2"
-                >
-                  <Download size={18} />
-                  Export Excel
-                </button>
-              </div>
-            </div>
+          {/* Back Button */}
+          <button
+            onClick={handleBackToReports}
+            className="flex items-center gap-2 text-[#087990] hover:text-[#065a70] mb-4"
+          >
+            <ChevronLeft size={20} />
+            Back to Reports
+          </button>
+
+          {/* Centered Title/Date Box */}
+          <div className="border border-gray-300 rounded-lg px-6 py-3 text-center mb-6">
+            <h2 className="text-xl font-bold text-gray-800">{generatedReport.title}</h2>
+            <p className="text-base font-semibold text-gray-700 mt-1">{generatedReport.date}</p>
           </div>
 
-          {/* Report Content */}
-          <div className="bg-white rounded-lg border border-gray-200">
-            {/* Report Header Stats */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="text-center">
-                  <p className="text-4xl font-bold text-gray-800">
-                    {reportType === 'daily' ? generatedReport.stats.allEmployees : 
-                     reportType === 'weekly' ? generatedReport.stats.workingDays : 
-                     generatedReport.stats.allEmployees}
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {reportType === 'daily' ? 'All Employees' : 
-                     reportType === 'weekly' ? 'Working Days' : 
-                     'All Employees'}
-                  </p>
-                </div>
-                
-                {reportType === 'daily' && (
-                  <>
-                    <div className="text-center">
-                      <p className="text-4xl font-bold text-gray-800">
-                        {generatedReport.stats.late}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">Late</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-4xl font-bold text-gray-800">
-                        {generatedReport.stats.absent}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">Absent</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-4xl font-bold text-gray-800">
-                        {generatedReport.stats.present}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">Present</p>
-                    </div>
-                  </>
-                )}
-                
-                {reportType === 'weekly' && (
-                  <>
-                    <div className="text-center">
-                      <p className="text-4xl font-bold text-gray-800">
-                        {generatedReport.stats.allEmployees}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">All Employees</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-gray-800">
-                        {generatedReport.stats.mostLate}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">Most Late</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-gray-800">
-                        {generatedReport.stats.mostAbsent}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">Most Absent</p>
-                    </div>
-                  </>
-                )}
-                
-                {reportType === 'monthly' && (
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-800">
-                      {generatedReport.stats.mostLate}
-                    </p>
-                    <p className="text-xs text-gray-600 mt-1">Most Late</p>
+          {/* Stats Cards - 2x2 Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {reportType === 'daily' && (
+              <>
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <Users size={20} className="text-white" />
                   </div>
-                )}
-              </div>
-            </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.allEmployees}</p>
+                    <p className="text-sm text-gray-700">All Employees</p>
+                  </div>
+                </div>
 
-            {/* Report Table */}
-            <div className="p-6">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      {reportType === 'daily' ? (
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <CheckCircle size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.present}</p>
+                    <p className="text-sm text-gray-700">Present</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <Clock size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.late}</p>
+                    <p className="text-sm text-gray-700">Late</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <XCircle size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.absent}</p>
+                    <p className="text-sm text-gray-700">Absent</p>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {reportType === 'weekly' && (
+              <>
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <Users size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.allEmployees}</p>
+                    <p className="text-sm text-gray-700">All Employees</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <Calendar size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.workingDays}</p>
+                    <p className="text-sm text-gray-700">Working Days</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <Clock size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.mostLate}</p>
+                    <p className="text-sm text-gray-700">Most Late</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <XCircle size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.mostAbsent}</p>
+                    <p className="text-sm text-gray-700">Most Absent</p>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {reportType === 'monthly' && (
+              <>
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <Users size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.allEmployees}</p>
+                    <p className="text-sm text-gray-700">All Employees</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <Calendar size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.workingDays}</p>
+                    <p className="text-sm text-gray-700">Working Days</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <Clock size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.mostLate}</p>
+                    <p className="text-sm text-gray-700">Most Late</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                    <XCircle size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{generatedReport.stats.mostAbsent}</p>
+                    <p className="text-sm text-gray-700">Most Absent</p>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Table with Teal Header */}
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-[#087990] text-white">
+                    {reportType === 'daily' && (
+                      <>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Attendee ID</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Name</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Date</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Check IN</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Check Out</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Hours</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold">Status</th>
+                      </>
+                    )}
+                    {reportType === 'weekly' && (
+                      <>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Attendee ID</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Name</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Days Present</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Days Absent</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Late Count</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold">Hours</th>
+                      </>
+                    )}
+                    {reportType === 'monthly' && (
+                      <>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Attendee ID</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Name</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Days Present</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Days Absent</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold border-r border-white">Late Count</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold">Hours</th>
+                      </>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {generatedReport.tableData.map((row, index) => (
+                    <tr key={index} className="border-b border-white bg-gray-100">
+                      <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">{row.id}</td>
+                      <td className="py-3 px-4 text-sm font-medium text-gray-800 border-r border-white">{row.name}</td>
+                      
+                      {reportType === 'daily' && (
                         <>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Attendee ID
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Name
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Date
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Check IN
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Check Out
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Hours
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800">
-                            Status
-                          </th>
+                          <td className="py-3 px-4 text-sm text-gray-600 border-r border-white">{row.date}</td>
+                          <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">{row.checkIn}</td>
+                          <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">{row.checkOut}</td>
+                          <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">{row.hours}</td>
+                          <td className="py-3 px-4 text-sm text-gray-800">
+                            <span className={`px-3 py-1 text-xs font-medium ${
+                              row.status === 'Present' ? 'text-green-600' :
+                              row.status === 'Absent' ? 'text-red-600' :
+                              row.status === 'Late' ? 'text-yellow-600' :
+                              'text-blue-600'
+                            }`}>
+                              {row.status}
+                            </span>
+                          </td>
                         </>
-                      ) : (
+                      )}
+
+                      {reportType !== 'daily' && (
                         <>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Attendee ID
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Name
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Days Present
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Days Absent
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800 border-r border-gray-300">
-                            Late Count
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800">
-                            Hours
-                          </th>
+                          <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">{row.daysPresent}</td>
+                          <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">{row.daysAbsent}</td>
+                          <td className="py-3 px-4 text-sm text-gray-800 border-r border-white">{row.lateCount}</td>
+                          <td className="py-3 px-4 text-sm text-gray-800">{row.hours}</td>
                         </>
                       )}
                     </tr>
-                  </thead>
-                  <tbody>
-                    {generatedReport.tableData.map((row, index) => (
-                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
-                          {row.id}
-                        </td>
-                        <td className="py-3 px-4 text-sm font-medium text-gray-800 border-r border-gray-100">
-                          {row.name}
-                        </td>
-                        
-                        {reportType === 'daily' ? (
-                          <>
-                            <td className="py-3 px-4 text-sm text-gray-600 border-r border-gray-100">
-                              {row.date}
-                            </td>
-                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
-                              {row.checkIn}
-                            </td>
-                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
-                              {row.checkOut}
-                            </td>
-                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
-                              {row.hours}
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                                row.status === 'Present' ? 'bg-green-100 text-green-600' :
-                                row.status === 'Absent' ? 'bg-red-100 text-red-600' :
-                                row.status === 'Late' ? 'bg-yellow-100 text-yellow-600' :
-                                'bg-blue-100 text-blue-600'
-                              }`}>
-                                {row.status}
-                              </span>
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
-                              {row.daysPresent}
-                            </td>
-                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
-                              {row.daysAbsent}
-                            </td>
-                            <td className="py-3 px-4 text-sm text-gray-800 border-r border-gray-100">
-                              {row.lateCount}
-                            </td>
-                            <td className="py-3 px-4 text-sm text-gray-800">
-                              {row.hours}
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            {/* Export Buttons at Bottom */}
-            <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+            {/* Export Buttons */}
+            <div className="flex justify-end gap-3 p-4 bg-gray-100 border-t border-gray-200">
               <button
                 onClick={() => handleExport('PDF')}
                 className="px-6 py-2.5 border border-[#087990] text-[#087990] rounded-lg hover:bg-[#087990] hover:text-white transition"
