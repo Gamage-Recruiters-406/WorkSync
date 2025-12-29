@@ -11,7 +11,7 @@ import Users from "./pages/admin/Users";
 import ManageLeaves from "./pages/admin/ManageLeaves";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
-import Departments from "./pages/admin/Departments";
+import Departments from "./pages/admin/Department/Departments";
 import Projects from "./pages/admin/Projects";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
 import EmployeeList from "./pages/admin/EmployeeList";
@@ -24,18 +24,25 @@ import Task from "./pages/employee/Task";
 import UserReports from "./pages/employee/UserReports";
 import LeaveRequest from "./pages/employee/LeaveRequest";
 import UserAnnouncements from "./pages/employee/UserAnnouncements";
-
-// Team Leader imports
-import CreateTaskForm from "./pages/teamleader/CreateTaskForm";
-import TaskHistory from "./pages/teamleader/TaskHistory";
-
-// Manager imports
-import ManagerDashboard from "./pages/manager/managerDashboard";
-
+import CreateTaskForm from "./pages/TeamLeader/CreateTaskForm";
+import TaskHistory from "./pages/TeamLeader/TaskHistory";
 import Login from "./pages/Login";
-import SignUp from "./pages/Signup";
+import SignUp from "./Pages/Signup";
 import { Navigate } from "react-router-dom";
+
 import { useState } from "react";
+
+import ApproveUser from "./pages/admin/ApproveUser";
+import Sidebar from "./components/sidebar/Sidebar";
+import DashboardUI from "./components/DashboardUI";
+import ProjectDetails from "./pages/employee/ProjectDetails";
+import DepartmentDetails from "./pages/admin/Department/ViewDepartment";
+import SystemSettings from "./pages/systemSetting/SystemSettings";
+import CompanyInfoSettings from "./pages/systemSetting/CompanyInfoSettings";
+import ProfileSettings from "./pages/systemSetting/ProfileSettings";
+import RolesAttendanceSettings from "./pages/systemSetting/RolesAttendanceSettings";
+import WorkingHoursSettings from "./pages/systemSetting/WorkingHoursSettings";
+import ManagerDashboard from "./pages/manager/managerDashboard";
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -55,6 +62,17 @@ function App() {
 
         <Route path="*" element={<Navigate to="/login" replace />} />
 
+        {/* System Settings (Tabs)*/}
+        <Route path="/admin/system-settings" element={<SystemSettings />}>
+          <Route path="company-info" element={<CompanyInfoSettings />} />
+          <Route path="profile" element={<ProfileSettings />} />
+          <Route
+            path="roles-attendance"
+            element={<RolesAttendanceSettings />}
+          />
+          <Route path="working-hours" element={<WorkingHoursSettings />} />
+        </Route>
+
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<EmployeeList />} />
@@ -67,6 +85,8 @@ function App() {
         <Route path="/admin/departments" element={<Departments />} />
         <Route path="/admin/projects" element={<Projects />} />
         <Route path="/admin/attendance" element={<AdminAttendance />} />
+        <Route path="/admin/Approve" element={<ApproveUser />} />
+        <Route path="/admin/D-details/:id" element={<DepartmentDetails />} />
 
         {/* Employee Routes */}
         <Route path="/user/dashboard" element={<UserDashboard />} />
@@ -76,6 +96,8 @@ function App() {
         <Route path="/user/reports" element={<UserReports />} />
         <Route path="/user/announcements" element={<UserAnnouncements />} />
         <Route path="/user/leave-request" element={<LeaveRequest />} />
+        <Route path="/user/user-dashboard" element={<DashboardUI />} />
+        <Route path="/user/project-team/:id" element={<ProjectDetails />} />
 
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />

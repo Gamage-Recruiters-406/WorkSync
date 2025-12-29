@@ -27,7 +27,7 @@ export default function TaskTable({ data }) {
           <thead className="bg-gray-300">
             <tr>
               <th className="px-4 py-2 border text-left">Task Name</th>
-              <th className="px-4 py-2 border text-left">Assigned To</th>
+              <th className="px-4 py-2 border text-left">createdAt</th>
               <th className="px-4 py-2 border text-left">Priority</th>
               <th className="px-4 py-2 border text-left">Deadline</th>
               <th className="px-4 py-2 border text-left">Status</th>
@@ -43,7 +43,9 @@ export default function TaskTable({ data }) {
               >
                 <td className="px-4 py-2 border">{task.title}</td>
                 <td className="px-4 py-2 border">
-                  {task.assignedTo?.map((user) => user.name).join(", ")}
+                  {task.createdAt
+                    ? new Date(task.createdAt).toLocaleDateString()
+                    : "-"}
                 </td>
                 <td className="px-4 py-2 border">{task.priority}</td>
                 <td className="px-4 py-2 border">
