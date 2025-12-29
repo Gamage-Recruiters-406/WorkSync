@@ -78,3 +78,35 @@ export const getAllUsers = () =>
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
   });
+
+// ---------------------
+// Get single user attendance (for user report)
+// ---------------------
+export const getSingleUserAttendance = (userId) =>
+  api.get(`/attendance/get-single-user-attendance/${userId}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+
+// ---------------------
+// Get leaves by user (for user report)
+// ---------------------
+export const getLeavesByUser = (userId) =>
+  api.get(`/leave-request/getLeave/${userId}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+
+// ---------------------
+// NGet all tasks for a user (for user report)
+// ---------------------
+export const getAllUserTasks = () =>
+  api.get("/task/getAllUserTasks", {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+
+// ---------------------
+// Get single user (optional for profile or reports)
+// ---------------------
+export const getSingleUser = (userId) =>
+  api.get(`/userAuth/getUser/${userId}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
