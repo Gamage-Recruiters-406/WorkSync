@@ -24,8 +24,16 @@ import SignUp from "./Pages/Signup";
 import { Navigate } from "react-router-dom";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
 import { useState } from 'react';
-import Sidebar from './components/Sidebar';
-import Dashboard from './Dashboard';
+import EmployeeList from './pages/admin/EmployeeList';
+<<<<<<< Updated upstream
+import Sidebar from './components/sidebar/Sidebar';
+=======
+import AddEmployee from './pages/admin/AddEmployee';
+import EditEmployee from './pages/admin/EditEmployee';
+import ApproveUser from "./pages/admin/ApproveUser";
+import Sidebar from './components/sidebar/Sidebar'; 
+>>>>>>> Stashed changes
+import DashboardUI from './components/DashboardUI';
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -47,6 +55,10 @@ function App() {
 
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<EmployeeList />} />
+        <Route path="/admin/employee-list" element={<EmployeeList />} />
+        <Route path="/admin/add-employee" element={<AddEmployee />} />
+        <Route path="/admin/edit-employee/:id" element={<EditEmployee />} />
         <Route path="/admin/assign-task" element={<AssignTask />} />
         <Route path="/admin/users" element={<Users />} />
         <Route path="/admin/manage-leaves" element={<ManageLeaves />} />
@@ -64,6 +76,7 @@ function App() {
         <Route path="/user/reports" element={<UserReports />} />
         <Route path="/user/announcements" element={<UserAnnouncements />} />
         <Route path="/user/leave-request" element={<LeaveRequest />} />
+        <Route path="/user/user-dashboard" element={<DashboardUI />} />
 
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />
