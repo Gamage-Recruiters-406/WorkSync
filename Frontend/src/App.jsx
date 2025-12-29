@@ -57,10 +57,11 @@ function App() {
         
         {/* System Settings (Tabs)*/}
         <Route path="/admin/system-settings" element={<SystemSettings />}>
-        <Route path="company-info" element={<CompanyInfoSettings />} />
-        <Route path="profile" element={<ProfileSettings />} />
-        <Route path="roles-attendance" element={<RolesAttendanceSettings />} />
-        <Route path="working-hours" element={<WorkingHoursSettings />} />
+          <Route path="company-info" element={<CompanyInfoSettings />} />
+          <Route path="profile" element={<ProfileSettings />} />
+          <Route path="roles-attendance" element={<RolesAttendanceSettings />} />
+          <Route path="working-hours" element={<WorkingHoursSettings />} />
+        </Route>
 
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
