@@ -27,7 +27,7 @@ import UserAnnouncements from "./pages/employee/UserAnnouncements";
 import CreateTaskForm from "./pages/TeamLeader/CreateTaskForm";
 import TaskHistory from "./pages/TeamLeader/TaskHistory";
 import Login from "./pages/Login";
-import SignUp from "./Pages/Signup";
+
 import { Navigate } from "react-router-dom";
 
 import { useState } from "react";
@@ -43,6 +43,7 @@ import ProfileSettings from "./pages/systemSetting/ProfileSettings";
 import RolesAttendanceSettings from "./pages/systemSetting/RolesAttendanceSettings";
 import WorkingHoursSettings from "./pages/systemSetting/WorkingHoursSettings";
 import ManagerDashboard from "./pages/manager/managerDashboard";
+import SignUp from "./pages/Signup";
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
