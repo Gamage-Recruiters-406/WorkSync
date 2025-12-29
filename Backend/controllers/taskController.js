@@ -337,26 +337,40 @@ export const updateTask = async (req, res) => {
 
 // GET ALL TASKS FOR USER
 export const getAllTasks = async (req, res) => {
+  try {
+    const query = {};
 
-     const query = {};
+    // Employee (role = 1) → only own tasks
+    if (req.user.role === 1) {
+      query.assignedTo = req.user._id;
+    }
 
-  if (req.user.role === "User") {
-    query.assignedTo = req.user._id;
+    // Filters (Admin + Team Leader can use)
+    if (req.query.projectId) query.project = req.query.projectId;
+    if (req.query.status) query.status = req.query.status;
+    if (req.query.priority) query.priority = req.query.priority;
+
+    // Team Leader (role = 2) can filter by assigned user
+    if (req.query.assignedTo && req.user.role === 2) {
+      query.assignedTo = req.query.assignedTo;
+    }
+
+    const tasks = await Task.find(query)
+      .populate("assignedTo", "name")
+      .populate("milestone", "milestoneName")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: tasks.map(formatTaskForClient),
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching tasks",
+      error: error.message,
+    });
   }
-
-  if (req.query.projectId) query.project = req.query.projectId;
-  if (req.query.status) query.status = req.query.status;
-  if (req.query.priority) query.priority = req.query.priority;
-  if (req.query.assignedTo && req.user.role === "TeamLeader") {
-    query.assignedTo = req.query.assignedTo;
-  }
-
-  const tasks = await Task.find(query)
-    .populate("assignedTo", "name")
-    .populate("milestone", "milestoneName")
-    .sort({ createdAt: -1 });
-
-  res.json({ success: true, data: tasks.map(formatTaskForClient) });
 };
 
 // GET ALL TASKS ASSIGNED TO THE LOGGED-IN USER
@@ -395,30 +409,6 @@ export const updateTaskStatus = async (req, res) => {
         res.status(200).json({ success: true, message: "Task status updated", data: formatTaskForClient(populated) });
     } catch (error) {
         res.status(500).json({ success: false, message: "Error updating task status", error: error.message });
-    }
-};
-
-// FILTER TASKS BY PROJECT
-export const filterProjectTasks = async (req, res) => {
-    try {
-        const { projectId } = req.params;
-        const { user, priority, startDate, endDate } = req.query;
-
-        const query = { project: projectId };
-        if (user) query.assignedTo = user;
-        if (priority) query.priority = priority;
-        if (startDate && endDate) {
-            query.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
-        }
-
-        const tasks = await Task.find(query)
-            .populate("assignedTo", "name")
-            .populate("milestone", "milestoneName")
-            .sort({ createdAt: -1 });
-
-        res.status(200).json({ success: true, data: tasks.map(formatTaskForClient) });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Failed to filter tasks", error: error.message });
     }
 };
 
