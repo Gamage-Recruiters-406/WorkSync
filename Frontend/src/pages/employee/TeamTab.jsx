@@ -3,34 +3,38 @@ import AddMemberModal from "./AddMemberModal";
 import axios from "axios";
 
 // example – replace with auth/context user
-const currentUser = {
-  id: 1,
-  name: "Team Lead",
-  role: "team-leader", // or "member"
-};
+// const currentUser = {
+//   id: 1,
+//   name: "Team Lead",
+//   role: "team-leader", // or "member"
+// };
+
 
 const URL_API = "http://localhost:8090";
 
-const TeamTab = ({projectId}) => {
+const TeamTab = ({projectId, projectData}) => {
+    const projectRole = projectData?.role || projectData?.assignedRole;
   const [team, setTeam] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [users, setUsers] = useState([]);  // All user for Dropdown
 
-  const isTeamLeader = currentUser.role === "team-leader";
+  const isTeamLeader = projectRole === "Team Leader";
+//   const isTeamLeader = currentUser.role === "team-leader";
 
   // Fetch current team members
+  const fetchMembers = async ()=>{
+    try {
+      const res = await axios.get(`${URL_API}/api/v1/project-team/getMembers/${projectId}`,{
+        withCredentials: true,
+      });
+      setTeam(res.data.data || []);
+      console.log("Members: ", res);
+    } catch (error) {
+      console.error("Failed to fetch team members:", error);
+    }
+  };
+
   useEffect(()=>{
-    const fetchMembers = async ()=>{
-      try {
-        const res = await axios.get(`${URL_API}/api/v1/project-team/getMembers/${projectId}`,{
-          withCredentials: true,
-        });
-        setTeam(res.data.members || []);
-        console.log("Members: ", res);
-      } catch (error) {
-        console.error("Failed to fetch team members:", error);
-      }
-    };
     fetchMembers();
   },[projectId]);
 
@@ -39,8 +43,8 @@ const TeamTab = ({projectId}) => {
     const fetchUser = async ()=>{
       try {
         const res = await axios.get(`${URL_API}/api/v1/project-team/all`,{withCredentials: true});
-        setUsers(res.data.users || []);
-        console.log("Users: ", res);
+        setUsers(res.data.data || []);
+        
       } catch (error) {
         console.error("Failed to fetch users:", error);
       }
@@ -53,10 +57,10 @@ const TeamTab = ({projectId}) => {
     try {
       await axios.post(
         `${URL_API}/api/v1/project-team/addMember`,
-        {projectId, userId:member.id, role: member.role},
+        {projectId, userId:member.id, assignedRole: member.role},
         { withCredentials: true}
       );
-      setTeam((prev)=> [...prev, member]);
+      fetchMembers();
       setIsModalOpen(false);
     } catch (error) {
       console.error("Failed to add member:", error);
@@ -71,7 +75,7 @@ const TeamTab = ({projectId}) => {
         data: {projectId, userId:id},
         withCredentials: true,
       });
-      setTeam((prev) => prev.filter((m) => m.id !== id));
+      fetchMembers();
     } catch (error) {
       console.error("Failed to remove member:", error);
     }
@@ -103,17 +107,19 @@ const TeamTab = ({projectId}) => {
 
         {team.map((member) => (
           <div
-            key={member.id}
+            key={member._id}
             className="py-3 border-t text-sm flex items-center"
           >
             <div className="w-1/6" />
-            <div className="w-1/3 font-medium">{member.name}</div>
+            <div className="w-1/3 font-medium">
+                {member.userId?.name || member.userId?.email || "Unknown"}
+            </div>
             <div className="w-1/3 flex items-center justify-between">
-              <span>{member.role}</span>
+              <span>{member.assignedRole}</span>
 
               {isTeamLeader && (
                 <button
-                  onClick={() => handleRemove(member.id)}
+                  onClick={() => handleRemove(member.userId.id)}
                   className="ml-4 px-4 py-1 rounded-md bg-red-500 text-white text-xs hover:bg-red-600"
                 >
                   Remove
@@ -128,7 +134,7 @@ const TeamTab = ({projectId}) => {
         <AddMemberModal
           onClose={() => setIsModalOpen(false)}
           onSave={handleAddMember}
-          users = {users}
+          
         />
       )}
     </>

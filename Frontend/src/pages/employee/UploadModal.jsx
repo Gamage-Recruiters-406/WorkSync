@@ -4,11 +4,13 @@ import { useState } from "react";
 const UploadModal = ({ onClose, projectId, onUploadSuccess }) => {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [isDragging, setIsDragging] = useState(false);
+    const [uploading, setUploading] = useState(false)
 
     const URL_API = "http://localhost:8090";
 
     const handleSubmit = async (e) => {
       e.preventDefault();
+      setUploading(true);
       // handle files here
       if (selectedFiles.length === 0){
         alert("Please select at least one file");
@@ -26,7 +28,7 @@ console.log("Files to upload:", selectedFiles);
         const res = await axios.post(
           `${URL_API}/api/v1/projects/${projectId}/attachments`,
           formData,
-          {withCredentials: "true", headers: {"Content-Type": "multipart/form-data"}}
+          {withCredentials: true, headers: {"Content-Type": "multipart/form-data"}}
         );
 
         onUploadSuccess?.();
@@ -34,6 +36,8 @@ console.log("Files to upload:", selectedFiles);
       } catch (error) {
         console.error("Upload failed", error);
         alert("File upload failed");
+      } finally{
+        setUploading(false);
       }
 
       
@@ -61,7 +65,7 @@ console.log("Files to upload:", selectedFiles);
             <p className="text-center font-medium mb-4">
               Add project-related documents and files
             </p>
-  
+            {uploading && <p className="text-center text-gray-500 mb-4">Uploading...</p>}
             {/* drag & drop area */}
             <div className={`border-2 border-dashed  rounded-md h-64 flex items-center justify-center mb-6 ${
               isDragging ? "border-[#087990] bg-[#087990]/50" : "border-gray-400"

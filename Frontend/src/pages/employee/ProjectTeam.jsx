@@ -58,14 +58,16 @@ const ProjectTeam = () => {
           } ) ;
 
           const projectsArray = Array.isArray(res.data.data)
-            ? res.data.data.map((p) => ({
+            ? res.data.data
+                .filter((p)=> p.projectId)
+                .map((p) => ({
                 id: p.projectId._id,                      // for navigation
                 name: p.projectId.name,
                 role: p.assignedRole,            // maps to ProjectCard role
                 description: p.projectId.description,
                 progress: 0,                     // default if not in API
                 deadline: "-",                   // default if not in API
-                status: "active"                 // default if not in API
+                status: p.projectId.status || "active"                 // default if not in API
               }))
             : [];
       

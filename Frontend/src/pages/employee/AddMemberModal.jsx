@@ -16,7 +16,8 @@ const AddMemberModal = ({ onClose, onSave }) => {
     const fetchUser = async ()=>{
       try {
         const res = await axios.get(`${URL_API}/api/v1/project-team/all`,{withCredentials: true});
-        setUsers(res.data.users || []);
+        setUsers(res.data.data || []);
+        console.log("Users: ", res);
       } catch (error) {
         console.error("Failed to fetch users:", error);
       }
@@ -56,13 +57,13 @@ const AddMemberModal = ({ onClose, onSave }) => {
             <select
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full/2 border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-[#087990]"
+              className="w-1/2 border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-[#087990]"
               required
             >
               <option value="">Select User</option>
               {users.map((user) => (
                 <option key={user.id} value={user.id}>
-                  {user.label}
+                  {user.name || user.email}
                 </option>
               ))}
             </select>
@@ -74,7 +75,7 @@ const AddMemberModal = ({ onClose, onSave }) => {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full/2 border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-[#087990]"
+              className="w-1/2 border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-[#087990]"
             >
               {roles.map((role) => (
                 <option key={role}>{role}</option>
