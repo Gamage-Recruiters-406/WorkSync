@@ -14,7 +14,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const sidebarContent = {
   admin: {
@@ -164,14 +164,31 @@ const sidebarContent = {
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();
+  const [role, setRole] = useState(null);
 
-  const user = {
-    // role: "employee",
-    // role: "admin",
-    role: "manager",
-  };
-  const menumainItems = sidebarContent[user.role].main || [];
-  const menufooterItems = sidebarContent[user.role].footer || [];
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+
+        // Role mapping: 3-admin, 2-manager, 1-employee
+        const roleMap = {
+          3: "admin",
+          2: "manager",
+          1: "employee",
+        };
+
+        setRole(roleMap[user.role] || null);
+      }
+    } catch (error) {
+      console.error("Failed to parse user data:", error);
+      setRole(null);
+    }
+  }, []);
+
+  const menumainItems = sidebarContent[role]?.main || [];
+  const menufooterItems = sidebarContent[role]?.footer || [];
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
