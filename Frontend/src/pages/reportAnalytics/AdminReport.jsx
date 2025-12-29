@@ -16,6 +16,7 @@ import {
   getTaskReport,
   getAllTasks,
   getAllProjects,
+  getAllUsers,
 } from "../../services/adminReportsApi";
 
 export default function AdminReport() {
@@ -43,9 +44,10 @@ export default function AdminReport() {
   useEffect(() => {
     const loadKpis = async () => {
       try {
-        const [attendanceRes, leaveRes] = await Promise.all([
+        const [attendanceRes, leaveRes, totEmp] = await Promise.all([
           getAttendance(),
           getAllLeaves(),
+          getAllUsers(),
         ]);
 
         const attendance = attendanceRes?.data?.attendance || [];
@@ -57,7 +59,7 @@ export default function AdminReport() {
 
         setKpis((prev) => ({
           ...prev,
-          totalEmployees: attendance.length,
+          totalEmployees: totEmp.data.data.length,
           presentToday: attendance.filter((a) => a.status === "Present").length,
           absentToday: attendance.filter((a) => a.status === "Absent").length,
           pendingLeaves:
@@ -78,17 +80,17 @@ export default function AdminReport() {
         const [attendanceRes, leavesRes, taskReportRes] = await Promise.all([
           getAttendance(),
           getAllLeaves(),
-          // getTaskReport(),
+          getAllTasks(),
         ]);
 
         const attendance = attendanceRes?.data?.attendance || [];
 
         const leaves = leavesRes.data.data;
 
-        const tasks = Array.isArray(taskReportRes?.data)
-          ? taskReportRes.data
-          : taskReportRes?.data?.tasks || [];
-
+        const tasks = Array.isArray(taskReportRes?.data?.data)
+          ? taskReportRes.data.data
+          : [];
+        console.log(tasks);
         setChartData({
           attendance,
           leaves,
@@ -106,22 +108,23 @@ export default function AdminReport() {
   useEffect(() => {
     const loadTables = async () => {
       try {
-        const [attendanceRes, projectsRes] = await Promise.all([
+        const [attendanceRes, projectsRes, tasksRes] = await Promise.all([
           getAttendance(),
 
           getAllProjects(),
+          getAllTasks(),
         ]);
-        console.log("projectsRes:", projectsRes.data.data);
+
         const attendance = attendanceRes?.data?.attendance || [];
 
-        /*const tasks = Array.isArray(tasksRes?.data)
-          ? tasksRes.data
-          : tasksRes?.data?.tasks || [];*/
+        const tasks = Array.isArray(tasksRes?.data?.data)
+          ? tasksRes.data.data
+          : [];
 
         const projects = projectsRes?.data?.data || [];
 
         setAttendanceData(attendance);
-        //setTaskData(tasks);
+        setTaskData(tasks);
         setProjectData(projects);
       } catch (error) {
         console.error("❌ Error loading tables:", error);
