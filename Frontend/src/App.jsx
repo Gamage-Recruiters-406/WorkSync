@@ -31,6 +31,11 @@ import Sidebar from './components/sidebar/Sidebar';
 import DashboardUI from './components/DashboardUI';
 import ProjectDetails from "./pages/employee/ProjectDetails";
 import DepartmentDetails from "./pages/admin/Department/ViewDepartment";
+import SystemSettings from "./pages/systemSetting/SystemSettings";
+import CompanyInfoSettings from "./pages/systemSetting/CompanyInfoSettings";
+import ProfileSettings from "./pages/systemSetting/ProfileSettings";
+import RolesAttendanceSettings from "./pages/systemSetting/RolesAttendanceSettings";
+import WorkingHoursSettings from "./pages/systemSetting/WorkingHoursSettings"
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -49,6 +54,13 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} /> 
 
         <Route path="*" element={<Navigate to="/login" replace />} />
+        
+        {/* System Settings (Tabs)*/}
+        <Route path="/admin/system-settings" element={<SystemSettings />}>
+        <Route path="company-info" element={<CompanyInfoSettings />} />
+        <Route path="profile" element={<ProfileSettings />} />
+        <Route path="roles-attendance" element={<RolesAttendanceSettings />} />
+        <Route path="working-hours" element={<WorkingHoursSettings />} />
 
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
