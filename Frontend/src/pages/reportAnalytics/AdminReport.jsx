@@ -50,15 +50,18 @@ export default function AdminReport() {
 
         const attendance = attendanceRes?.data?.attendance || [];
 
-        const leaves = Array.isArray(leaveRes?.data)
+        /*const leaves = Array.isArray(leaveRes?.data)
           ? leaveRes.data
-          : leaveRes?.data?.leaves || [];
+          : leaveRes?.data?.leaves || [];*/
+        const leaves = leaveRes.data.data || [];
 
         setKpis((prev) => ({
           ...prev,
+          totalEmployees: attendance.length,
           presentToday: attendance.filter((a) => a.status === "Present").length,
           absentToday: attendance.filter((a) => a.status === "Absent").length,
-          pendingLeaves: leaves.filter((l) => l.status === "Pending").length,
+          pendingLeaves:
+            leaves.length /*filter((l) => l.status === "Pending")*/,
         }));
       } catch (error) {
         console.error("❌ Error loading KPI data:", error);
@@ -103,24 +106,22 @@ export default function AdminReport() {
   useEffect(() => {
     const loadTables = async () => {
       try {
-        const [attendanceRes, tasksRes, projectsRes] = await Promise.all([
+        const [attendanceRes, projectsRes] = await Promise.all([
           getAttendance(),
-          // getAllTasks(),
-          // getAllProjects(),
-        ]);
 
+          getAllProjects(),
+        ]);
+        console.log("projectsRes:", projectsRes.data.data);
         const attendance = attendanceRes?.data?.attendance || [];
 
-        const tasks = Array.isArray(tasksRes?.data)
+        /*const tasks = Array.isArray(tasksRes?.data)
           ? tasksRes.data
-          : tasksRes?.data?.tasks || [];
+          : tasksRes?.data?.tasks || [];*/
 
-        const projects = Array.isArray(projectsRes?.data)
-          ? projectsRes.data
-          : projectsRes?.data?.projects || [];
+        const projects = projectsRes?.data?.data || [];
 
         setAttendanceData(attendance);
-        setTaskData(tasks);
+        //setTaskData(tasks);
         setProjectData(projects);
       } catch (error) {
         console.error("❌ Error loading tables:", error);
@@ -143,7 +144,7 @@ export default function AdminReport() {
             <KpiCards title="Total Employees" value={kpis.totalEmployees} />
             <KpiCards title="Present Today" value={kpis.presentToday} />
             <KpiCards title="Absent Today" value={kpis.absentToday} />
-            <KpiCards title="Pending Leaves" value={kpis.pendingLeaves} />
+            <KpiCards title="Leaves" value={kpis.pendingLeaves} />
           </div>
 
           {/* CHARTS */}

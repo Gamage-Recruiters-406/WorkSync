@@ -1,12 +1,66 @@
-import React from "react";
+import React, { lazy } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 export default function LeaveTable({ data }) {
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Leave Report", 14, 20);
+
+    // Map data into table rows
+    const rows = data.map((leave) => [
+      leave.leaveType,
+      leave.reason,
+      leave.sts,
+      leave.startDate
+        ? new Date(leave.startDate).toLocaleDateString("en-CA")
+        : "-",
+      leave.endDate ? new Date(leave.endDate).toLocaleDateString("en-CA") : "-",
+    ]);
+
+    autoTable(doc, {
+      head: [["Leave Type", "Reason", "Status", "Start Date", "End Date"]],
+      body: rows,
+      startY: 30,
+    });
+
+    doc.save("leave_report.pdf");
+  };
+
+  const handleExportExcel = () => {
+    const worksheetData = data.map((leave) => ({
+      "Leave Type": leave.leaveType,
+      Reason: leave.reason,
+      Status: leave.sts,
+      "Start Date": leave.startDate
+        ? new Date(leave.startDate).toLocaleDateString("en-CA")
+        : "-",
+      "End Date": leave.endDate
+        ? new Date(leave.endDate).toLocaleDateString("en-CA")
+        : "-",
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Leave Report");
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(blob, "leave_report.xlsx");
+  };
+
+  /*export default function LeaveTable({ data }) {
   const handleExport = (type) => {
     window.open(
       `http://localhost:8090/api/v1/leave-request/getUserLeaveReport?type=${type}`,
       "_blank"
     );
-  };
+  };*/
 
   return (
     <div className="bg-white p-4 rounded-xl shadow mt-6">
@@ -15,13 +69,15 @@ export default function LeaveTable({ data }) {
         <h2 className="text-xl font-semibold text-gray-700">Leave Report</h2>
         <div>
           <button
-            onClick={() => handleExport("pdf")}
+            //onClick={() => handleExport("pdf")}
+            onClick={handleExportPDF}
             className="bg-[#087990] text-white px-4 py-2 rounded mr-2 hover:text-[#087990] hover:bg-gray-200 transition"
           >
             Export PDF
           </button>
           <button
-            onClick={() => handleExport("excel")}
+            // onClick={() => handleExport("excel")}
+            onClick={handleExportExcel}
             className="bg-white text-[#087990] px-4 py-2 rounded border border-gray-400 hover:bg-[#087990] hover:text-white hover:border-gray-300 transition"
           >
             Export Excel
