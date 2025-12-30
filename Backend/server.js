@@ -68,10 +68,6 @@ app.use("/api/v1/millestone", milestoneRoutes);
 app.use("/api/v1/AnnouncemetAttachmet", AnnouncemetAttachmetRoutes);
 app.use("/api/v1/employee", EmployeeRoute);
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
 
 app.get("/", (req, res) => {
   res.send({
