@@ -1,5 +1,5 @@
 import LeaveRequest from "../models/LeaveRequest.js";
-import User from "../models/User.js";
+import User from "../models/EmployeeModel.js";
 import {
   validateUserIdFromToken,
   checkUserExists,
@@ -147,13 +147,18 @@ export const updateLeaveStatus = async (req, res) => {
     );
 
     // Send email notification
-    if (populatedLeave.requestedBy && populatedLeave.requestedBy.email && (sts === "approved" || sts === "rejected")) {
-      await sendLeaveStatusEmail(
-        populatedLeave.requestedBy.email,
-        populatedLeave.requestedBy.name,
-        sts
-      );
-    }
+    if (
+  populatedLeave.requestedBy &&
+  populatedLeave.requestedBy.email &&
+  (sts === "approved" || sts === "rejected")
+) {
+  const fullName = `${populatedLeave.requestedBy.FirstName} ${populatedLeave.requestedBy.LastName}`;
+  await sendLeaveStatusEmail(
+    populatedLeave.requestedBy.email,
+    fullName,
+    sts
+  );
+}
 
     res.json({
       success: true,
@@ -184,8 +189,17 @@ export const getLeavesByUser = async (req, res) => {
 
     const leaves = await LeaveRequest.find({ requestedBy: uid })
       .sort({ createdAt: -1 })
-      .populate("requestedBy", "username fullName email department")
-      .populate("approvedBy", "username fullName email");
+      .populate({
+        path: "requestedBy",
+        select: "FirstName LastName email departmentID",
+        populate: { 
+          path: "departmentID", 
+          select: "name departmentCode location email" 
+        }
+      })
+      .populate("approvedBy", "FirstName LastName email");
+
+
 
     res.json({
       success: true,
@@ -240,8 +254,16 @@ export const getAllLeaves = async (req, res) => {
 
     const leaves = await LeaveRequest.find()
       .sort({ createdAt: -1 })
-      .populate("requestedBy", "username fullName email department")
-      .populate("approvedBy", "username fullName email");
+      .populate({
+        path: "requestedBy",
+        select: "FirstName LastName email departmentID",
+        populate: { 
+          path: "departmentID", 
+          select: "name departmentCode location email" 
+        }
+      })
+      .populate("approvedBy", "FirstName LastName email");
+
 
     res.json({
       success: true,
