@@ -26,8 +26,14 @@ import { Navigate } from "react-router-dom";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
 import { useState } from 'react';
 import EmployeeList from './pages/admin/EmployeeList';
+<<<<<<< Updated upstream
+import Sidebar from './components/sidebar/Sidebar';
+=======
+import AddEmployee from './pages/admin/AddEmployee';
+import EditEmployee from './pages/admin/EditEmployee';
 import ApproveUser from "./pages/admin/ApproveUser";
 import Sidebar from './components/sidebar/Sidebar'; 
+>>>>>>> Stashed changes
 import DashboardUI from './components/DashboardUI';
 import ProjectDetails from "./pages/employee/ProjectDetails";
 import DepartmentDetails from "./pages/admin/Department/ViewDepartment";
@@ -67,6 +73,8 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<EmployeeList />} />
         <Route path="/admin/employee-list" element={<EmployeeList />} />
+        <Route path="/admin/add-employee" element={<AddEmployee />} />
+        <Route path="/admin/edit-employee/:id" element={<EditEmployee />} />
         <Route path="/admin/assign-task" element={<AssignTask />} />
         <Route path="/admin/users" element={<Users />} />
         <Route path="/admin/manage-leaves" element={<ManageLeaves />} />
