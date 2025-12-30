@@ -44,17 +44,16 @@ export default function UserReports() {
         const attendanceRes = await getSingleUserAttendance(userId);
 
         const attendance = attendanceRes?.data?.attendance || [];
-
+        console.log(attendance);
         // --- Tasks ---
         // const tasksRes = await getAllUserTasks();
-        const tasksRes = [];
-        const tasks = (tasksRes?.data?.tasks || []).filter(
-          (t) => t.userId === userId
-        );
+        const tasksRes = await getAllUserTasks(userId);
 
+        const tasks = tasksRes?.data?.data || [];
+        console.log(tasksRes);
         // --- Leaves ---
         const leavesRes = await getLeavesByUser(userId);
-        console.log(leavesRes.data.data);
+
         const leaves = leavesRes.data.data || [];
 
         // --- KPI ---
@@ -66,7 +65,7 @@ export default function UserReports() {
 
         // --- Tables ---
         setAttendanceData(attendance);
-        // setTaskData(tasks);
+        setTaskData(tasks);
         setLeaveData(leaves);
       } catch (err) {
         console.error("Error loading user data:", err);
@@ -95,21 +94,19 @@ export default function UserReports() {
           // },
         ];
 
-        // const taskRes = await getTaskReport();
-        const taskRes = [];
-        const tasks = (taskRes?.data?.tasks || []).filter(
-          (t) => t.userId === userId
-        );
-        const taskChartData = [
-          {
-            label: "Completed",
-            value: tasks.filter((t) => t.status === "Completed").length,
-          },
-          {
-            label: "Pending",
-            value: tasks.filter((t) => t.status !== "Completed").length,
-          },
-        ];
+        const taskRes = await getAllUserTasks();
+        console.log(taskRes);
+        const taskChartData = taskRes?.data?.data || [];
+        //const taskChartData = [
+        //{
+        //   label: "Completed",
+        //   value: tasks.filter((t) => t.status === "Completed").length,
+        // },
+        // {
+        //   label: "Pending",
+        //   value: tasks.filter((t) => t.status !== "Completed").length,
+        // },
+        // ];
 
         setChartData({
           attendance: attendance,
