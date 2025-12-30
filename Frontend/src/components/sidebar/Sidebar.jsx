@@ -155,8 +155,8 @@ function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const user = {
-    role: "employee",
-    // role: "admin",
+    // role: "employee",
+    role: "admin",
   };
   const menumainItems = sidebarContent[user.role].main || [];
   const menufooterItems = sidebarContent[user.role].footer || [];
