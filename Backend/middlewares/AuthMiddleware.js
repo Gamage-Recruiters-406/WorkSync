@@ -3,8 +3,10 @@ import JWT from "jsonwebtoken";
 // Protected routes using token
 export const requiredSignIn = async(req, res, next) => {
     try {
+        // console.log(req.cookies);
+       
         const token = req.cookies.access_token;
-        
+        // console.log(token);
         if (!token) {
             return res.status(401).json({ 
                 success: false, 
@@ -69,3 +71,4 @@ export const isEmployee = (req, res, next) => {
     }
     next();
 };
+
