@@ -31,9 +31,9 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
-// run every 1 minute
-setInterval(autoDeleteExpiredAnnouncements, 60 * 1000);
-//setInterval(autoDeleteExpiredAnnouncements, 86400000);
+
+//execute every 24 hours
+setInterval(autoDeleteExpiredAnnouncements, 86400000);
 
 //routes
 app.use("/api/v1/userAuth", userRoutes);
