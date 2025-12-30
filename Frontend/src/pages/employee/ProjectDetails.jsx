@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Sidebar from "../../components/sidebar/Sidebar";
 import TeamTab from "./TeamTab";
-// import OverviewTab from "./OverviewTab";
+import OverviewTab from "./OverviewTab";
 import DocumentsTab from "./DocumentsTab";
 import MilestonesTab from "./MilestonesTab";
 
@@ -16,6 +16,9 @@ const ProjectDetails = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [projectData, setProjectData] = useState(location.state?.project || null);
   const [loading, setLoading] = useState(!projectData);
+  const [milestones, setMilestones] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const projectId = projectData?._id || id;
 
   const URL_API = "http://localhost:8090";
 
@@ -39,6 +42,37 @@ const ProjectDetails = () => {
     }
     
   },[projectData, id]);
+
+  const fetchMilestones = async ()=>{
+    const res = await axios.get(
+      `${URL_API}/api/v1/millestone/getAllMilestones/${projectId}`,
+      { withCredentials: true }
+    );
+
+    const formatted = res.data.data.map(m => ({
+      id: m._id,
+      title: m.milestoneName,
+      status: m.Status,
+    }));
+
+    setMilestones(formatted);
+  };
+
+  const fetchTeamMembers = async () => {
+    const res = await axios.get(
+      `${URL_API}/api/v1/project-team/getMembers/${projectId}`,
+      { withCredentials: true }
+    );
+  
+    setTeamMembers(res.data.data);
+  };
+
+  useEffect(()=>{
+    if (projectId) {
+      fetchMilestones();
+      fetchTeamMembers();
+    }
+  }, [projectId]);
 
 
   const goBack = () => navigate("/user/project-team"); // back to projects page
@@ -111,12 +145,17 @@ const ProjectDetails = () => {
         </div>
 
         {/* Tab content */}
-        {/* {activeTab === "overview" && (
-          <OverviewTab project={project} />
-        )} */}
+        {activeTab === "overview" && (
+          <OverviewTab 
+          projectId={projectId}  
+          projectData={projectData}
+          milestones={milestones}
+          teamMembers={teamMembers} 
+          />
+        )}
 
         {activeTab === "team" && (
-          <TeamTab projectId={projectData._id || projectData.id}  projectData={projectData} />
+          <TeamTab projectId={projectData._id || projectData.id} projectData={projectData} />
         )}
 
         {activeTab === "milestones" && (
