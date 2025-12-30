@@ -5,21 +5,13 @@ import JWT from "jsonwebtoken";
 // REGISTER USER
 export const registerUser = async (req, res) => {
     try {
-        const { name, role, email, password, departmentID } = req.body;
+        const { FirstName, LastName, NIC, ContactNumber, Gender, email } = req.body;
 
         // Validation
-        if (!name || !role || !email || !password) {
-            return res.status(400).json({
+        if (!FirstName || !NIC || !ContactNumber || !LastName || !Gender || !email ) {
+            return res.status(404).json({
                 success: false,
-                message: "All fields (name, role, email, password) are required"
-            });
-        }
-
-        // Validate role
-        if (![1, 2, 3].includes(Number(role))) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid role. Must be 1 (Employee), 2 (Manager), or 3 (Admin)"
+                message: "All fields are required!"
             });
         }
 
@@ -28,39 +20,26 @@ export const registerUser = async (req, res) => {
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: "User already exists with this email"
+                message: "You already send your details"
             });
         }
 
-        // Validate password length
-        if (password.length < 6) {
-            return res.status(400).json({
-                success: false,
-                message: "Password must be at least 6 characters long"
-            });
+        const attachments =[];
+        if (req.file) {
+            attachments.push(req.file.path.replace(/\\/g, "/"));
         }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create user
-        const user = await User.create({
-            name,
-            role: Number(role),
-            email,
-            password: hashedPassword,
-            departmentID: departmentID || undefined
-        });
+        const user = await User.create({ FirstName, LastName, NIC, ContactNumber, Gender, email, attachments});
 
         res.status(201).json({
             success: true,
             message: "User registered successfully",
             data: { 
                 userid: user._id,
-                name: user.name,
-                role: user.role,
+                FirstName: user.FirstName,
+                LastName: user.LastName,
                 email: user.email,
-                departmentID: user.departmentID
             }
         });
     } catch (error) {
@@ -137,4 +116,58 @@ export const loginUser = async (req, res) => {
             error: error.message
         });
     }
+};
+
+//get all users
+export const getAllUsers = async (req, res) => {
+  try {
+    // Optional query params:
+    // ?page=1&limit=10&search=ravindu&sort=createdAt&order=desc
+    const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || "20", 10), 1), 100);
+    const search = (req.query.search || "").trim();
+
+    const sortField = req.query.sort || "createdAt";
+    const sortOrder = (req.query.order || "desc").toLowerCase() === "asc" ? 1 : -1;
+
+    const filter = {};
+    if (search) {
+      filter.$or = [
+        { FirstName: { $regex: search, $options: "i" } },
+        { LastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { NIC: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select("-__v") // remove version key
+        .sort({ [sortField]: sortOrder })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Users fetched successfully",
+      data: users,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.error("getAllUsers error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching users",
+      error: error.message,
+    });
+  }
 };
