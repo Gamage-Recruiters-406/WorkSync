@@ -32,7 +32,7 @@ export default function AttendanceBar({ data = [] }) {
             <YAxis allowDecimals={false} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="value" fill="#34d399" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="value" fill="#087990" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
