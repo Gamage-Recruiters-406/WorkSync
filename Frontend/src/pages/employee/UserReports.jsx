@@ -127,7 +127,7 @@ export default function UserReports() {
     <div className="flex h-screen">
       <Sidebar />
       <main className="flex-1 p-6 bg-gray-100">
-        <h1 className="text-2xl font-bold mb-6">User Report & Analytics</h1>
+        <h1 className="text-2xl font-bold mb-6">User Report & analytics</h1>
 
         {/* KPI GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
