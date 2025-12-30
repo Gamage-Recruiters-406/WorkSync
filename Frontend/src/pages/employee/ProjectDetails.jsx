@@ -5,7 +5,7 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import TeamTab from "./TeamTab";
 // import OverviewTab from "./OverviewTab";
 import DocumentsTab from "./DocumentsTab";
-// import MilestonesTab from "./MilestonesTab";
+import MilestonesTab from "./MilestonesTab";
 
 const TABS = ["overview", "team", "milestones", "documents"];
 
@@ -119,9 +119,9 @@ const ProjectDetails = () => {
           <TeamTab projectId={projectData._id || projectData.id}  projectData={projectData} />
         )}
 
-        {/* {activeTab === "milestones" && (
-          <MilestonesTab project={project} />
-        )} */}
+        {activeTab === "milestones" && (
+          <MilestonesTab projectId={projectData._id || projectData.id} projectData={projectData} />
+        )}
 
         {activeTab === "documents" && (
           <DocumentsTab projectId={projectData._id || projectData.id} />
