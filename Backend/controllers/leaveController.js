@@ -10,6 +10,14 @@ import {
   handleControllerError,
   validateLeaveRequest
 } from "../helpers/leaveRequestHelper.js";
+import { sendLeaveStatusEmail } from "../helpers/emailHelper.js";
+
+// LEAVE POLICY (YEARLY)
+const LEAVE_POLICY = {
+  sick: 10,
+  annual: 10,
+  casual: 5,
+};
 
 // Create Leave Request
 export const createLeaveRequest = async (req, res) => {
@@ -138,6 +146,15 @@ export const updateLeaveStatus = async (req, res) => {
       LeaveRequest
     );
 
+    // Send email notification
+    if (populatedLeave.requestedBy && populatedLeave.requestedBy.email && (sts === "approved" || sts === "rejected")) {
+      await sendLeaveStatusEmail(
+        populatedLeave.requestedBy.email,
+        populatedLeave.requestedBy.name,
+        sts
+      );
+    }
+
     res.json({
       success: true,
       message: `Leave request ${sts} successfully.`,
@@ -235,6 +252,55 @@ export const getAllLeaves = async (req, res) => {
     handleControllerError(error, res);
   }
 };
+
+//get leave balance per year
+export const getLeaveBalance = async (req, res) => {
+  try {
+    validateUserIdFromToken(req.user?.userid);
+    const userId = req.user.userid;
+
+    const yearStart = new Date(new Date().getFullYear(), 0, 1);
+    const yearEnd = new Date(new Date().getFullYear(), 11, 31);
+
+    const leaves = await LeaveRequest.find({
+      requestedBy: userId,
+      createdAt: { $gte: yearStart, $lte: yearEnd },
+    });
+
+    const used = { sick: 0, annual: 0, casual: 0 };
+    let approved = 0;
+    let rejected = 0;
+     let pending = 0;
+
+    leaves.forEach(l => {
+      if (l.sts === "approved") {
+        approved++;
+        if (used[l.leaveType] !== undefined) used[l.leaveType]++;
+      } else if (l.sts === "rejected") {
+        rejected++;
+      } else if (l.sts === "pending") {
+        pending++;
+      }
+    });
+
+    res.json({
+      success: true,
+      balance: {
+        sick: `${used.sick}/${LEAVE_POLICY.sick}`,
+        annual: `${used.annual}/${LEAVE_POLICY.annual}`,
+        casual: `${used.casual}/${LEAVE_POLICY.casual}`,
+      },
+      counts: {
+        approved,
+        rejected,
+        pending,
+      },
+    });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+};
+
 
 // Delete Leave Request - Requester only
 export const deleteLeaveRequest = async (req, res) => {

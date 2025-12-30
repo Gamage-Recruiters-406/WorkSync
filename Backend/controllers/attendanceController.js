@@ -1,5 +1,5 @@
 import attendanceModel from "../models/attendanceModel.js";
-import User from "../models/User.js";
+import Employee from "../models/EmployeeModel.js"; 
 import ExcelJS from 'exceljs';       
 import PDFDocument from 'pdfkit';    
 
@@ -137,8 +137,9 @@ export const getAttendanceController = async (req, res) => {
 
         if (role === 3) { 
         } else if (role === 2) { 
-            const employees = await User.find({ role: 1 }).select("_id");
-            const allowedIds = employees.map(user => user._id);
+            // Use Employee table for filtering logic (if IDs match)
+            const employees = await Employee.find({ role: 1 }).select("_id");
+            const allowedIds = employees.map(emp => emp._id);
             allowedIds.push(userid);
             query.userId = { $in: allowedIds };
         } else { 
@@ -162,7 +163,8 @@ export const getAttendanceController = async (req, res) => {
         }
 
         const attendanceRecords = await attendanceModel.find(query)
-            .populate('userId', 'name email role employeeId') 
+            // [FIXED] Populate FirstName, name, AND email
+            .populate('userId', 'FirstName LastName name email role') 
             .sort({ date: -1 })
             .lean(); 
 
@@ -171,9 +173,22 @@ export const getAttendanceController = async (req, res) => {
             if (record.inTime && !record.outTime) {
                 displayStatus = "Working";
             }
+            
+            // [FIXED] Hybrid Name Logic + Email Fallback
+            const user = record.userId || {};
+            let fullName = "Unknown";
+
+            if (user.FirstName) {
+                fullName = `${user.FirstName} ${user.LastName}`;
+            } else if (user.name) {
+                fullName = user.name;
+            } else if (user.email) {
+                fullName = user.email; // Fallback to email
+            }
 
             return { 
                 ...record, 
+                userId: { ...user, name: fullName }, // Ensure frontend gets a valid 'name'
                 status: displayStatus,
                 hoursWorked: calculateDuration(record.inTime, record.outTime) 
             }; 
@@ -198,7 +213,8 @@ export const getSingleUserAttendanceController = async (req, res) => {
         const { id } = req.params; 
         
         const attendanceRecords = await attendanceModel.find({ userId: id })
-            .populate('userId', 'name email')
+            // [FIXED] Populate ALL potential name fields
+            .populate('userId', 'FirstName LastName name email')
             .sort({ date: -1 })
             .lean();
 
@@ -211,9 +227,22 @@ export const getSingleUserAttendanceController = async (req, res) => {
             if (record.inTime && !record.outTime) {
                 displayStatus = "Working";
             }
+            
+            // [FIXED] Hybrid Name Logic + Email Fallback
+            const user = record.userId || {};
+            let fullName = "Unknown";
+            
+            if (user.FirstName) {
+                fullName = `${user.FirstName} ${user.LastName}`;
+            } else if (user.name) {
+                fullName = user.name;
+            } else if (user.email) {
+                fullName = user.email; // Fallback
+            }
 
             return { 
                 ...record, 
+                userId: { ...user, name: fullName },
                 status: displayStatus,
                 hoursWorked: calculateDuration(record.inTime, record.outTime) 
             }; 
@@ -240,8 +269,8 @@ const buildExportQuery = async (req) => {
 
     if (role === 3) {
     } else if (role === 2) {
-        const employees = await User.find({ role: 1 }).select("_id");
-        const allowedIds = employees.map(user => user._id);
+        const employees = await Employee.find({ role: 1 }).select("_id");
+        const allowedIds = employees.map(emp => emp._id);
         allowedIds.push(userid);
         query.userId = { $in: allowedIds };
     } else {
@@ -286,7 +315,8 @@ const exportAttendanceExcel = async (req, res) => {
     try {
         const query = await buildExportQuery(req);
         const attendanceData = await attendanceModel.find(query)
-            .populate('userId', 'name email _id') 
+            // [FIXED] Populate ALL name fields
+            .populate('userId', 'FirstName LastName name email _id') 
             .sort({ date: -1 });
 
         let totalHoursWorked = 0; 
@@ -321,15 +351,28 @@ const exportAttendanceExcel = async (req, res) => {
 
         attendanceData.forEach(record => {
             let uniqueId = "Unknown";
-            if (record.userId && record.userId._id) {
-                const shortId = record.userId._id.toString().slice(-4).toUpperCase();
-                uniqueId = `EMP-${shortId}`;
+            let fullName = "Unknown";
+            
+            if (record.userId) {
+                if (record.userId._id) {
+                    const shortId = record.userId._id.toString().slice(-4).toUpperCase();
+                    uniqueId = `EMP-${shortId}`;
+                }
+                
+                // [FIXED] Hybrid Name Logic + Email Fallback
+                if (record.userId.FirstName) {
+                    fullName = `${record.userId.FirstName} ${record.userId.LastName}`;
+                } else if (record.userId.name) {
+                    fullName = record.userId.name; 
+                } else if (record.userId.email) {
+                    fullName = record.userId.email; // Fallback
+                }
             }
 
             worksheet.addRow({
                 date: record.date,
                 empId: uniqueId, 
-                name: record.userId ? record.userId.name : 'Unknown',
+                name: fullName, 
                 status: record.status,
                 inTime: formatSLTime(record.inTime),
                 outTime: formatSLTime(record.outTime),
@@ -359,7 +402,8 @@ const exportAttendancePDF = async (req, res) => {
     try {
         const query = await buildExportQuery(req);
         const attendanceData = await attendanceModel.find(query)
-            .populate('userId', 'name email _id')
+            // [FIXED] Populate ALL name fields
+            .populate('userId', 'FirstName LastName name email _id')
             .sort({ date: -1 });
 
         let totalHoursWorked = 0;
@@ -408,14 +452,27 @@ const exportAttendancePDF = async (req, res) => {
             const hoursTxt = calculateDuration(record.inTime, record.outTime);
             
             let uniqueId = "Unknown";
-            if (record.userId && record.userId._id) {
-                const shortId = record.userId._id.toString().slice(-4).toUpperCase();
-                uniqueId = `EMP-${shortId}`;
+            let fullName = "Unknown";
+
+            if (record.userId) {
+                if (record.userId._id) {
+                    const shortId = record.userId._id.toString().slice(-4).toUpperCase();
+                    uniqueId = `EMP-${shortId}`;
+                }
+                
+                // [FIXED] Hybrid Name Logic + Email Fallback
+                if (record.userId.FirstName) {
+                    fullName = `${record.userId.FirstName} ${record.userId.LastName}`;
+                } else if (record.userId.name) {
+                    fullName = record.userId.name; 
+                } else if (record.userId.email) {
+                    fullName = record.userId.email; // Fallback
+                }
             }
 
             doc.text(record.date, 30, y);
             doc.text(uniqueId, 110, y);
-            doc.text(record.userId?.name || "Unknown", 160, y, { width: 130 });
+            doc.text(fullName, 160, y, { width: 130 }); 
             doc.text(formatSLTime(record.inTime), 300, y);
             doc.text(formatSLTime(record.outTime), 360, y);
             doc.text(hoursTxt, 420, y);
@@ -502,7 +559,8 @@ export const requestCorrectionController = async (req, res) => {
 export const getPendingCorrectionsController = async (req, res) => {
     try {
         const pendingRequests = await attendanceModel.find({ "correction.status": "Pending" })
-            .populate("userId", "name email employeeId")
+            // [FIXED] Populate ALL name fields
+            .populate("userId", "FirstName LastName name email")
             .sort({ date: -1 });
 
         res.status(200).send({
@@ -624,24 +682,24 @@ export const getMyAttendanceHistoryController = async (req, res) => {
 // 11. GET DASHBOARD STATS (Only for Employees with Role: 1)
 export const getDashboardStatsController = async (req, res) => {
     try {
-        // 1. Get Today's Date (SL Time)
+        // Get Today's Date (SL Time)
         const now = new Date();
         const slTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
         const todayStr = slTime.toISOString().split("T")[0];
 
-        // 2. Get All Employees (Role 1) & Their IDs
-        const employees = await User.find({ role: 1 }).select('_id');
+        // Get All Employees (Role 1) & Their IDs
+        const employees = await Employee.find({ role: 1 }).select('_id');
         const employeeIds = employees.map(emp => emp._id);
 
         const totalEmployees = employees.length;
 
-        // 3. Get Today's Attendance ONLY for Employees
+        // Get Today's Attendance ONLY for Employees
         const todayAttendance = await attendanceModel.find({ 
             date: todayStr,
             userId: { $in: employeeIds } 
         });
 
-        // 4. Calculate Counts
+        // Calculate Counts
         const presentCount = todayAttendance.filter(doc => doc.status === "Present").length;
         const lateCount = todayAttendance.filter(doc => doc.status === "Late").length;
         const absentCount = todayAttendance.filter(doc => doc.status === "Absent").length;
@@ -697,7 +755,7 @@ export const getAnalyticsReportController = async (req, res) => {
         }
 
         //  Fetch Data
-        const employees = await User.find({ role: 1 }).select('_id name employeeId');
+        const employees = await Employee.find({ role: 1 }).select('_id FirstName LastName');
         const attendanceRecords = await attendanceModel.find({
             date: {
                 $gte: startDate.toISOString().split('T')[0],
@@ -729,18 +787,20 @@ export const getAnalyticsReportController = async (req, res) => {
                 }
             });
 
+            // [FIXED] Construct Full Name for Analytics
+            const fullName = `${emp.FirstName} ${emp.LastName}`;
             
-            if (lateCount > mostLateUser.count) mostLateUser = { name: emp.name, count: lateCount };
-            if (daysAbsent > mostAbsentUser.count) mostAbsentUser = { name: emp.name, count: daysAbsent };
-            if (daysPresent > mostPresentUser.count) mostPresentUser = { name: emp.name, count: daysPresent };
+            if (lateCount > mostLateUser.count) mostLateUser = { name: fullName, count: lateCount };
+            if (daysAbsent > mostAbsentUser.count) mostAbsentUser = { name: fullName, count: daysAbsent };
+            if (daysPresent > mostPresentUser.count) mostPresentUser = { name: fullName, count: daysPresent };
 
             const totalHours = Math.floor(totalMs / (1000 * 60 * 60));
             const totalMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
 
             return {
                 id: emp._id,
-                employeeId: emp.employeeId || "EMP000",
-                name: emp.name,
+                employeeId: "EMP-" + emp._id.toString().slice(-4).toUpperCase(), 
+                name: fullName, 
                 daysPresent,
                 daysAbsent,
                 lateCount,
