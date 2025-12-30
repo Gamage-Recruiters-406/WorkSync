@@ -16,6 +16,7 @@ export const createDepartment = async (req, res) => {
       number,
       description,
     } = req.body;
+
     // Validate name
     if (!name || name.trim() === "") {
       return res.status(400).json({
@@ -23,14 +24,16 @@ export const createDepartment = async (req, res) => {
         message: "Department name is required",
       });
     }
+
     // Check if department name already exists
     const existingDeptName = await Department.findOne({
-      name: { $regex: new RegExp(`^${name}$`, "i") }, // Case-insensitive check
+      name: { $regex: new RegExp(`^${name}$`, "i") },
     });
     if (existingDeptName) {
-      return res
-        .status(400)
-        .json({ message: "Department name already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "Department name already exists",
+      });
     }
 
     // Validate code
@@ -40,23 +43,24 @@ export const createDepartment = async (req, res) => {
         message: "Department code is required",
       });
     }
+
     // Check if department code already exists
     const existingDeptCode = await Department.findOne({
-      departmentCode: { $regex: new RegExp(`^${departmentCode}$`, "i") }, // Case-insensitive check
+      departmentCode: { $regex: new RegExp(`^${departmentCode}$`, "i") },
     });
     if (existingDeptCode) {
-      return res
-        .status(400)
-        .json({ message: "Department code already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "Department code already exists",
+      });
     }
 
     // Validate department head (now by name instead of ID, but allow empty)
     let employeeId = undefined;
     if (departmentHead !== undefined) {
       if (!departmentHead || departmentHead.trim() === "") {
-        employeeId = null; // No department head assigned
+        employeeId = null;
       } else {
-        // Find user by name (case-insensitive)
         const employee = await User.findOne({
           name: { $regex: new RegExp(`^${departmentHead.trim()}$`, "i") },
         });
@@ -90,6 +94,7 @@ export const createDepartment = async (req, res) => {
         message: "Capacity must be a number between 1 and 1000",
       });
     }
+
     // Validate status
     const validStatuses = ["Active", "Inactive"];
     if (status && !validStatuses.includes(status)) {
@@ -98,6 +103,7 @@ export const createDepartment = async (req, res) => {
         message: "Status must be either 'Active' or 'Inactive'",
       });
     }
+
     // Validate location
     if (!location || location.trim() === "") {
       return res.status(400).json({
@@ -105,6 +111,7 @@ export const createDepartment = async (req, res) => {
         message: "Location is required",
       });
     }
+
     // Validate email
     const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     if (!email || !emailRegex.test(email)) {
@@ -113,13 +120,18 @@ export const createDepartment = async (req, res) => {
         message: "A valid email address is required",
       });
     }
-    // check email uniqueness
+
+    // Check email uniqueness
     const existingEmail = await Department.findOne({
-      email: { $regex: new RegExp(`^${email}$`, "i") }, // Case-insensitive check
+      email: { $regex: new RegExp(`^${email}$`, "i") },
     });
     if (existingEmail) {
-      return res.status(400).json({ message: "Email already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists",
+      });
     }
+
     // Validate contact number
     const phoneRegex =
       /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
@@ -129,6 +141,7 @@ export const createDepartment = async (req, res) => {
         message: "Contact number is required and must be valid",
       });
     }
+
     // Validate description
     if (description && description.trim().length > 500) {
       return res.status(400).json({
@@ -137,21 +150,20 @@ export const createDepartment = async (req, res) => {
       });
     }
 
-    // Create new department (store the ObjectId we found)
+    // Create new department
     const department = new Department({
       name: name.trim(),
       departmentCode: departmentCode.trim(),
-      departmentHead: employeeId, // Store the ObjectId
+      departmentHead: employeeId,
       capacity,
-      status: status ? status : "Active",
+      status: status || "Active",
       location: location.trim(),
       email: email.trim().toLowerCase(),
       conactNumber: number.trim(),
       description: description ? description.trim() : "",
     });
-    await department.save();
 
-    // Populate the department head before sending response
+    await department.save();
     await department.populate("departmentHead", "name email role");
 
     res.status(201).json({
@@ -160,6 +172,7 @@ export const createDepartment = async (req, res) => {
       data: department,
     });
   } catch (error) {
+    console.error("Error creating department:", error);
     res.status(500).json({
       success: false,
       message: "Error creating department",
@@ -184,6 +197,14 @@ export const updateDepartment = async (req, res) => {
       description,
     } = req.body;
 
+    // Validate ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid department ID",
+      });
+    }
+
     // Check if department exists
     const department = await Department.findById(id);
     if (!department) {
@@ -202,7 +223,6 @@ export const updateDepartment = async (req, res) => {
         });
       }
 
-      // Only check for duplicates if the name is actually changing
       if (name.trim().toLowerCase() !== department.name.toLowerCase()) {
         const existingDeptName = await Department.findOne({
           name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
@@ -226,7 +246,6 @@ export const updateDepartment = async (req, res) => {
         });
       }
 
-      // Only check for duplicates if the code is actually changing
       if (
         departmentCode.trim().toLowerCase() !==
         department.departmentCode.toLowerCase()
@@ -246,14 +265,12 @@ export const updateDepartment = async (req, res) => {
       }
     }
 
-    // Validate department head if provided (by name)
+    // Validate department head if provided
     let employeeId = undefined;
     if (departmentHead !== undefined) {
-      // Allow null or empty string to remove department head
       if (!departmentHead || departmentHead.trim() === "") {
-        employeeId = null; // This will set departmentHead to null
+        employeeId = null;
       } else {
-        // Find user by name (case-insensitive)
         const employee = await User.findOne({
           name: { $regex: new RegExp(`^${departmentHead.trim()}$`, "i") },
         });
@@ -267,7 +284,6 @@ export const updateDepartment = async (req, res) => {
 
         employeeId = employee._id;
 
-        // Only check if employee is already a department head in ANOTHER department
         const existingHead = await Department.findOne({
           departmentHead: employeeId,
           _id: { $ne: id },
@@ -329,7 +345,6 @@ export const updateDepartment = async (req, res) => {
         });
       }
 
-      // Only check for duplicates if the email is actually changing
       if (email.trim().toLowerCase() !== department.email.toLowerCase()) {
         const existingEmail = await Department.findOne({
           email: { $regex: new RegExp(`^${email.trim()}$`, "i") },
@@ -371,7 +386,7 @@ export const updateDepartment = async (req, res) => {
       });
     }
 
-    // Update department fields (only if provided)
+    // Update department fields
     if (name !== undefined) department.name = name.trim();
     if (departmentCode !== undefined)
       department.departmentCode = departmentCode.trim();
@@ -384,8 +399,6 @@ export const updateDepartment = async (req, res) => {
     if (description !== undefined) department.description = description.trim();
 
     await department.save();
-
-    // Populate the department head before sending response
     await department.populate("departmentHead", "name email role");
 
     res.status(200).json({
@@ -394,6 +407,7 @@ export const updateDepartment = async (req, res) => {
       data: department,
     });
   } catch (error) {
+    console.error("Error updating department:", error);
     res.status(500).json({
       success: false,
       message: "Error updating department",
@@ -406,6 +420,15 @@ export const updateDepartment = async (req, res) => {
 export const deleteDepartment = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Validate ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid department ID",
+      });
+    }
+
     const department = await Department.findById(id);
 
     if (!department) {
@@ -416,12 +439,12 @@ export const deleteDepartment = async (req, res) => {
     }
 
     // Check if any users are assigned to this department
-    const emplyeeCount = await User.countDocuments({ departmentID: id });
+    const employeeCount = await User.countDocuments({ departmentID: id });
 
-    if (emplyeeCount > 0) {
+    if (employeeCount > 0) {
       return res.status(400).json({
         success: false,
-        message: "Cannot delete department with assigned employees",
+        message: `Cannot delete department with ${employeeCount} assigned employee(s). Please reassign or remove employees first.`,
       });
     }
 
@@ -432,6 +455,7 @@ export const deleteDepartment = async (req, res) => {
       message: "Department deleted successfully",
     });
   } catch (error) {
+    console.error("Error deleting department:", error);
     res.status(500).json({
       success: false,
       message: "Error deleting department",
@@ -447,13 +471,27 @@ export const getAllDepartments = async (req, res) => {
       .populate("departmentHead", "name email role")
       .sort({ createdAt: -1 });
 
+    // Get employee count for each department
+    const departmentsWithCount = await Promise.all(
+      departments.map(async (dept) => {
+        const employeeCount = await User.countDocuments({
+          departmentID: dept._id,
+        });
+        return {
+          ...dept.toObject(),
+          employeeCount,
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
       message: "Departments retrieved successfully",
       count: departments.length,
-      data: departments,
+      data: departmentsWithCount,
     });
   } catch (error) {
+    console.error("Error retrieving departments:", error);
     res.status(500).json({
       success: false,
       message: "Error retrieving departments",
@@ -487,12 +525,25 @@ export const getDepartment = async (req, res) => {
       });
     }
 
+    // Get employee count for this department
+    const employeeCount = await User.countDocuments({ departmentID: id });
+
+    // Get list of employees in this department
+    const employees = await User.find({ departmentID: id }).select(
+      "name email role"
+    );
+
     res.status(200).json({
       success: true,
       message: "Department retrieved successfully",
-      data: department,
+      data: {
+        ...department.toObject(),
+        employeeCount,
+        employees,
+      },
     });
   } catch (error) {
+    console.error("Error retrieving department:", error);
     res.status(500).json({
       success: false,
       message: "Error retrieving department",
@@ -501,10 +552,19 @@ export const getDepartment = async (req, res) => {
   }
 };
 
-// changeStatus Department
+// Change Department Status
 export const changeDepartmentStatus = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Validate ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid department ID",
+      });
+    }
+
     const department = await Department.findById(id);
 
     if (!department) {
@@ -518,15 +578,126 @@ export const changeDepartmentStatus = async (req, res) => {
     department.status = department.status === "Active" ? "Inactive" : "Active";
     await department.save();
 
+    await department.populate("departmentHead", "name email role");
+
     res.status(200).json({
       success: true,
       message: `Department status changed to ${department.status}`,
       data: department,
     });
   } catch (error) {
+    console.error("Error changing department status:", error);
     res.status(500).json({
       success: false,
       message: "Error changing department status",
+      error: error.message,
+    });
+  }
+};
+
+// Get Active Departments Only
+export const getActiveDepartments = async (req, res) => {
+  try {
+    const departments = await Department.find({ status: "Active" })
+      .populate("departmentHead", "name email role")
+      .sort({ name: 1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Active departments retrieved successfully",
+      count: departments.length,
+      data: departments,
+    });
+  } catch (error) {
+    console.error("Error retrieving active departments:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving active departments",
+      error: error.message,
+    });
+  }
+};
+
+// Search Departments
+export const searchDepartments = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || query.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Search query is required",
+      });
+    }
+
+    const departments = await Department.find({
+      $or: [
+        { name: { $regex: query, $options: "i" } },
+        { departmentCode: { $regex: query, $options: "i" } },
+        { location: { $regex: query, $options: "i" } },
+      ],
+    })
+      .populate("departmentHead", "name email role")
+      .sort({ name: 1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Search completed successfully",
+      count: departments.length,
+      data: departments,
+    });
+  } catch (error) {
+    console.error("Error searching departments:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error searching departments",
+      error: error.message,
+    });
+  }
+};
+
+// Get Department Statistics
+export const getDepartmentStatistics = async (req, res) => {
+  try {
+    const totalDepartments = await Department.countDocuments();
+    const activeDepartments = await Department.countDocuments({
+      status: "Active",
+    });
+    const inactiveDepartments = await Department.countDocuments({
+      status: "Inactive",
+    });
+
+    // Get departments with most employees
+    const allDepartments = await Department.find();
+    const departmentsWithCounts = await Promise.all(
+      allDepartments.map(async (dept) => {
+        const count = await User.countDocuments({ departmentID: dept._id });
+        return {
+          id: dept._id,
+          name: dept.name,
+          employeeCount: count,
+          capacity: dept.capacity,
+        };
+      })
+    );
+
+    departmentsWithCounts.sort((a, b) => b.employeeCount - a.employeeCount);
+
+    res.status(200).json({
+      success: true,
+      message: "Department statistics retrieved successfully",
+      data: {
+        totalDepartments,
+        activeDepartments,
+        inactiveDepartments,
+        topDepartments: departmentsWithCounts.slice(0, 5),
+      },
+    });
+  } catch (error) {
+    console.error("Error retrieving department statistics:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving department statistics",
       error: error.message,
     });
   }
