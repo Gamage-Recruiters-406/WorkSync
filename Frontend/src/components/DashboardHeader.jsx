@@ -1,7 +1,7 @@
 import React from "react";
 import { Search, Bell } from "lucide-react";
 
-const DashboardHeader = ({ user }) => {
+const DashboardHeader = ({ user, role }) => {
   return (
     <header className="bg-white shadow-sm border-b px-6 py-4">
       <div className="flex items-center justify-between">
@@ -20,11 +20,19 @@ const DashboardHeader = ({ user }) => {
             <div className="absolute -top-0.5 right-0 w-2.5 h-2.5 rounded-full bg-[#087990]" />
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-sm font-bold text-gray-700">{user.name}</span>
-            <span className="text-xs text-gray-500">{user.role}</span>
+            <span className="text-sm font-bold text-gray-700">
+              {user?.name}
+            </span>
+            <span className="text-xs text-gray-500">{role || ""}</span>
           </div>
           <div className="w-9 h-9  rounded-full">
-            <img src={user.image} alt={`${user.name.charAt(0)}`} />
+            <img
+              src={
+                user?.image ||
+                "https://img.freepik.com/premium-vector/vector-flat-illustration-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette-profile-picture-suitable-social-media-profiles-icons-screensavers-as-templatex9xa_719432-2205.jpg"
+              }
+              alt={`${user?.name.charAt(0)}`}
+            />
           </div>
         </div>
       </div>
