@@ -5,7 +5,7 @@ import User from "../models/User.js"; // Import User model to find employees
 export const startAutoCheckoutJob = () => {
     
     // MARK ABSENT AT 10:00 AM
-    cron.schedule("00 10 * * *", async () => {
+    cron.schedule("17 15 * * *", async () => {
         console.log(" [CRON] Running 10:00 AM Absent Check...");
 
         try {

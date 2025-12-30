@@ -621,25 +621,29 @@ export const getMyAttendanceHistoryController = async (req, res) => {
 
 
 
-// 11. GET DASHBOARD STATS (Total, Present, Late, Absent)
+// 11. GET DASHBOARD STATS (Only for Employees with Role: 1)
 export const getDashboardStatsController = async (req, res) => {
     try {
-        //  Get Today's Date (SL Time)
+        // 1. Get Today's Date (SL Time)
         const now = new Date();
         const slTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
         const todayStr = slTime.toISOString().split("T")[0];
 
-        //  Get Total Employees (Role 1)
-        const totalEmployees = await User.countDocuments({ role: 1 });
+        // 2. Get All Employees (Role 1) & Their IDs
+        const employees = await User.find({ role: 1 }).select('_id');
+        const employeeIds = employees.map(emp => emp._id);
 
-        //  Get Today's Attendance Records
-        const todayAttendance = await attendanceModel.find({ date: todayStr });
+        const totalEmployees = employees.length;
 
-        //  Calculate Counts
+        // 3. Get Today's Attendance ONLY for Employees
+        const todayAttendance = await attendanceModel.find({ 
+            date: todayStr,
+            userId: { $in: employeeIds } 
+        });
+
+        // 4. Calculate Counts
         const presentCount = todayAttendance.filter(doc => doc.status === "Present").length;
-        
         const lateCount = todayAttendance.filter(doc => doc.status === "Late").length;
-        
         const absentCount = todayAttendance.filter(doc => doc.status === "Absent").length;
 
         res.status(200).send({

@@ -33,4 +33,7 @@ const attendanceSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+// PREVENTS DUPLICATES FOREVER
+attendanceSchema.index({ userId: 1, date: 1 }, { unique: true });
+
 export default mongoose.model("Attendance", attendanceSchema);
