@@ -1,38 +1,20 @@
 import React from 'react';
-import DashboardSidebar from '../../components/sidebar/DashboardSidebar';
-import DashboardHeader from '../../components/DashboardHeader';
+import Sidebar from '../../components/sidebar/Sidebar';
 import EmployeeTable from '../../components/EmployeeTable';
 
 const EmployeeList = () => {
   return (
-    <div className="flex">
-      {/* Sidebar */}
-      <DashboardSidebar activeItem="User" />
-
-      {/* Main Content */}
-      <div className="flex-1 ml-60">
-        {/* Header */}
-        <DashboardHeader />
-
-        {/* Content Area */}
-        <main className="pt-24 pb-32 px-8" style={{ backgroundColor: '#FFFFFF' }}>
-          {/* Page Title */}
-          <div className="mb-8">
-            <h1
-              className="text-3xl font-bold mb-2"
-              style={{ color: '#2D3748' }}
-            >
-              Employee List
-            </h1>
-            <p style={{ color: '#718096' }} className="text-sm">
-              Manage and view all employees in your organization
-            </p>
-          </div>
-
-          {/* Employee Table */}
+    <div className="flex h-screen">
+      <Sidebar />
+      <main className="flex-1 p-6 bg-gray-100 overflow-auto">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Employee List</h1>
+        <p className="text-gray-600 text-sm mb-6">
+          Manage and view all employees in your organization
+        </p>
+        <div className="bg-white rounded-lg shadow">
           <EmployeeTable />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 };
