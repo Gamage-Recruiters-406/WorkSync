@@ -1,6 +1,7 @@
 import EmployeeModel from "../models/EmployeeModel.js";
 import User from "../models/User.js";
-import { hashPassword } from "../helpers/AuthHelper.js";
+import { hashPassword, comparePassword } from "../helpers/AuthHelper.js";
+import JWT from "jsonwebtoken";
 
 export const rejisterEmployee = async (req, res) => {
   try {
@@ -95,3 +96,93 @@ export const EmloyeesByRole = async (req, res) => {
         })
     }
 }
+
+
+
+//get single employee
+export const getSingleEmployee = async (req, res) => {
+  try {
+    const id = req.user.userid;
+
+    const user = await EmployeeModel.findById(id);
+    console.log(user);
+
+    res.status(200).json({
+      success: true,
+      message: 'User details fetch successfully!',
+      user
+    })
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server side Error'
+    })
+  }
+}
+
+// LOGIN USER
+export const loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Validation
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Email and password are required"
+            });
+        }
+
+        // Check if user exists
+        const user = await EmployeeModel.findOne({ email });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        // Check password
+        const isMatch = await comparePassword(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid credentials"
+            });
+        }
+
+        // Generate JWT
+        const token = JWT.sign(
+            { 
+                userid: user._id,
+                role: user.role,
+                email: user.email
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        res.cookie('access_token', token, {
+            httpOnly: true
+        }).status(200).json({
+            success: true,
+            message: "Login successful",
+            data: {
+                userid: user._id,
+                name: user.name,
+                role: user.role,
+                email: user.email,
+                departmentID: user.departmentID
+            },
+            token
+        });
+    } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error logging in",
+            error: error.message
+        });
+    }
+};
