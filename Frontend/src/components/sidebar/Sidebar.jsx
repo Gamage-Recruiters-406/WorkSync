@@ -12,6 +12,7 @@ import {
   SquareChartGantt,
   User,
   UserCheck,
+  UserCircle,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -132,6 +133,12 @@ const sidebarContent = {
         label: "Leave Request",
         icon: SquareChartGantt,
         path: "/user/leave-request",
+      },
+      {
+        key: "profile",
+        label: "Profile",
+        icon: UserCircle,
+        path: "/user/profile",
       },
     ],
     footer: [
