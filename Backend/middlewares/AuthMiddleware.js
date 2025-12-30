@@ -40,6 +40,7 @@ export const isManager = (req, res, next) => {
 
 // Middleware to check if user is an Admin (role = 3)
 export const isAdmin = (req, res, next) => {
+    console.log(req.user.role);
     if (req.user.role !== 3) {
         return res.status(403).json({ 
             success: false, 
