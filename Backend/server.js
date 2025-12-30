@@ -18,8 +18,12 @@ import projectRoutes from "./routes/projectRoutes.js";
 import announcementRoutes from "./routes/announcement_route.js";
 import cookieParser from "cookie-parser";
 import milestoneRoutes from "./routes/milestoneRoute.js";
+import { startAutoCheckoutJob } from "./helpers/autoCheckoutHelper.js";
+// Configure environment
 import { autoDeleteExpiredAnnouncements } from "./middlewares/announcementExpirymiddleware.js";
 import AnnouncemetAttachmetRoutes from "./routes/AnnouncemetAttachmetRoutes.js";
+import EmployeeRoute from "./routes/EmployeeRoute.js";
+
 // Configure environment
 
 dotenv.config();
@@ -33,17 +37,23 @@ const app = express();
 //Data sanitizations
 // app.use(MongoSanitize());
 // app.use(xss());
+app.use(cors({
+  origin: "http://localhost:5173", // FRONTEND URL
+  credentials: true,              // REQUIRED because you use withCredentials
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 
 // Middlewares
-app.use(cors());
+// app.use(cors());
 app.use(helmet());
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
-// run every 1 minute
-setInterval(autoDeleteExpiredAnnouncements, 60 * 1000);
-//setInterval(autoDeleteExpiredAnnouncements, 86400000);
+
+//execute every 24 hours
+setInterval(autoDeleteExpiredAnnouncements, 86400000);
 
 //routes
 app.use("/api/v1/userAuth", userRoutes);
@@ -56,7 +66,7 @@ app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
 app.use("/api/v1/millestone", milestoneRoutes);
 app.use("/api/v1/AnnouncemetAttachmet", AnnouncemetAttachmetRoutes);
-
+app.use("/api/v1/employee", EmployeeRoute);
 
 
 app.get("/", (req, res) => {
@@ -65,10 +75,14 @@ app.get("/", (req, res) => {
   });
 });
 
+
+// For Auto-Checkout Timer
+startAutoCheckoutJob(); 
+
 const PORT = process.env.PORT || 8090;
 
-// Start server
 app.listen(PORT, () => {
-  console.log(`Server Running on ${process.env.DEV_MODE} mode`.bgCyan.white);
-  console.log(`Server is running on port ${PORT}`.bgCyan.white);
+    console.log(`Server Running on ${process.env.DEV_MODE} mode`.bgCyan.white);
+    console.log(`Server is running on port ${PORT}`.bgCyan.white)
 });
+
