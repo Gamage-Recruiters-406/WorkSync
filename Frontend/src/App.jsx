@@ -42,8 +42,13 @@ import CompanyInfoSettings from "./pages/systemSetting/CompanyInfoSettings";
 import ProfileSettings from "./pages/systemSetting/ProfileSettings";
 import RolesAttendanceSettings from "./pages/systemSetting/RolesAttendanceSettings";
 import WorkingHoursSettings from "./pages/systemSetting/WorkingHoursSettings";
+<<<<<<< Updated upstream
 import ManagerDashboard from "./pages/manager/managerDashboard";
 import SignUp from "./pages/Signup";
+=======
+import UserProfile from "./pages/employee/UserProfile";
+import UserProfileEdit from "./pages/employee/UserProfileEdit";
+>>>>>>> Stashed changes
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -99,6 +104,8 @@ function App() {
         <Route path="/user/leave-request" element={<LeaveRequest />} />
         <Route path="/user/user-dashboard" element={<DashboardUI />} />
         <Route path="/user/project-team/:id" element={<ProjectDetails />} />
+        <Route path="/user/profile" element={<UserProfile />} />
+        <Route path="/user/profile/edit" element={<UserProfileEdit />} />
 
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />
