@@ -13,10 +13,10 @@ import {
   User,
   UserCheck,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
-import { useState } from "react";
+import { NavLink,useNavigate } from "react-router-dom";
+import { useState,} from "react";
 
-const sidebarContent = {
+const sidebarContent = { 
   admin: {
     main: [
       {
@@ -95,7 +95,7 @@ const sidebarContent = {
         key: "dashboard",
         label: "Dashboard",
         icon: HouseIcon,
-        path: "/user/dashboard",
+        path: "/user/user-dashboard",
       },
       {
         key: "project-team",
@@ -153,10 +153,11 @@ const sidebarContent = {
 
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+   const navigate = useNavigate();
 
   const user = {
-    // role: "employee",
-    role: "admin",
+    role: "employee",
+      role: "admin",
   };
   const menumainItems = sidebarContent[user.role].main || [];
   const menufooterItems = sidebarContent[user.role].footer || [];
@@ -167,7 +168,7 @@ function Sidebar() {
 
   return (
     <aside
-      className={`flex flex-col min-h-full bg-gray-200 shadow-lg transition-all duration-300 ${
+      className={`flex flex-col h-screen bg-gray-200 shadow-lg transition-all duration-300 ${
         isCollapsed ? "w-15" : "w-72"
       }`}
     >
@@ -253,7 +254,7 @@ function Sidebar() {
         })}
 
         {/* Logout Button */}
-        <button
+        <button  onClick={() => navigate("/login") }
           className={`flex items-center gap-4 ${
             isCollapsed ? "justify-center" : ""
           } px-4 py-3 w-full rounded-lg text-sm font-medium text-[#087990] hover:bg-gray-300 hover:text-teal-800 transition-colors`}
