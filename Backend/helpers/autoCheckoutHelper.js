@@ -5,7 +5,7 @@ import Employee from "../models/EmployeeModel.js";
 export const startAutoCheckoutJob = () => {
     
     // MARK ABSENT AT 10:00 AM (SL Time)
-    cron.schedule("46 10 * * *", async () => {
+    cron.schedule("00 10 * * *", async () => {
         console.log(" [CRON] Running 10:00 AM Absent Check...");
 
         try {
@@ -52,7 +52,7 @@ export const startAutoCheckoutJob = () => {
 
 
     // AUTO CHECKOUT AT 7:30 PM
-    cron.schedule("47 10 * * *", async () => {
+    cron.schedule("30 19 * * *", async () => {
         console.log(" [CRON] Running Auto Check-Out Job...");
 
         try {
