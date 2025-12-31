@@ -11,6 +11,8 @@ import Users from "./pages/admin/Users";
 import ManageLeaves from "./pages/admin/ManageLeaves";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
+import Departments from "./pages/admin/Departments";
+import ProjectsDashboard from "./pages/admin/ProjectsDashboard";
 import Departments from "./pages/admin/Department/Departments";
 import Projects from "./pages/admin/Projects";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
@@ -42,13 +44,16 @@ import CompanyInfoSettings from "./pages/systemSetting/CompanyInfoSettings";
 import ProfileSettings from "./pages/systemSetting/ProfileSettings";
 import RolesAttendanceSettings from "./pages/systemSetting/RolesAttendanceSettings";
 import WorkingHoursSettings from "./pages/systemSetting/WorkingHoursSettings";
-<<<<<<< Updated upstream
+import { useState } from 'react';
+import EmployeeList from './pages/admin/EmployeeList';
+import Sidebar from './components/sidebar/Sidebar';
+import DashboardUI from './components/DashboardUI';
+import ProjectDetails from "./pages/employee/ProjectDetails";
+import ProjectDetailsAdmin from "./pages/admin/ProjectDetaisAdmin";
 import ManagerDashboard from "./pages/manager/managerDashboard";
 import SignUp from "./pages/Signup";
-=======
 import UserProfile from "./pages/employee/UserProfile";
 import UserProfileEdit from "./pages/employee/UserProfileEdit";
->>>>>>> Stashed changes
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -57,7 +62,7 @@ function App() {
     <Router>
       <Routes>
         {/* Default route - redirect to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
 
         {/* Authentication routes */}
         <Route path="/login" element={<Login />} />
@@ -67,6 +72,18 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
+
+        {/* Admin Routes */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/assign-task" element={<AssignTask />} />
+        <Route path="/admin/users" element={<Users />} />
+        <Route path="/admin/manage-leaves" element={<ManageLeaves />} />
+        <Route path="/admin/reports" element={<AdminReport />} />
+        <Route path="/admin/announcements" element={<AdminAnnouncements />} />
+        <Route path="/admin/departments" element={<Departments />} />
+        <Route path="/admin/projects" element={<ProjectsDashboard />} />
+        <Route path="/admin/projects/:id" element={<ProjectDetailsAdmin />} />
+        <Route path="/admin/attendance" element={<AdminAttendance />} />
 
         {/* System Settings (Tabs)*/}
         <Route path="/admin/system-settings" element={<SystemSettings />}>
