@@ -90,7 +90,7 @@ export default function AdminReport() {
         const tasks = Array.isArray(taskReportRes?.data?.data)
           ? taskReportRes.data.data
           : [];
-        console.log(tasks);
+
         setChartData({
           attendance,
           leaves,

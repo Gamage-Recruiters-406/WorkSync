@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-//import axios from "axios";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { getAllUsers } from "../../services/adminReportsApi";
 
 const InputField = ({ label, value }) => {
   return (
@@ -18,25 +19,21 @@ const InputField = ({ label, value }) => {
 
 const ProfileSettings = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(
-    /*null*/ {
-      name: "John Doe",
-      role: "ADMIN",
-      userId: "E001",
-      departmentId: "D001",
-      email: "john.doe@example.com",
-      sts: "ACTIVE",
-    }
-  );
-  /*
-  const userId = "E001"; // or get from auth context
+  const [profile, setProfile] = useState();
+
+  const stored = localStorage.getItem("user");
+  const data = stored ? JSON.parse(stored) : null;
+
+  const userId = data?.userid;
+  console.log(userId);
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(
-        `http://localhost:8090/api/v1/userAuth/getUser/${userId}`
-      );
-      setProfile(res.data); // Assuming API returns { name, email, role, ... }
+      const profData = await getAllUsers();
+      console.log(profData);
+      const user = profData.data.data.filter((user) => user._id === userId);
+      console.log(user);
+      setProfile(user); // Assuming API returns { name, email, role, ... }
     } catch (err) {
       console.error("Failed to fetch profile", err);
     }
@@ -47,7 +44,7 @@ const ProfileSettings = () => {
   }, []);
 
   if (!profile) return <div>Loading...</div>;
-   */
+
   return (
     <main className="">
       <div className="flex-1 p-6 overflow-y-auto">
@@ -60,18 +57,21 @@ const ProfileSettings = () => {
               alt="Profile"
               className="h-24 w-24 rounded-full border-4 border-white object-cover"
             />
-            <h3 className="mt-4 font-semibold text-heading">{profile.name}</h3>
-            <p className="text-sm opacity-90">{profile.role}</p>
+            <h3 className="mt-4 font-semibold text-heading">
+              {profile[0].name}
+            </h3>
+            <p className="text-sm opacity-90">
+              {profile[0].role === 3 ? "Admin" : "User"}
+            </p>
           </div>
 
           {/* Right Details Card */}
           <div className="flex-1 rounded-2xl bg-gray-100 p-6 shadow-lg">
             <div className="space-y-4">
-              <InputField label="User ID" value={profile.userId} />
-              <InputField label="Department ID" value={profile.departmentId} />
-              <InputField label="Email" value={profile.email} />
+              <InputField label="User ID" value={profile[0].id} />
+
+              <InputField label="Email" value={profile[0].email} />
               <InputField label="Password" value="******" />
-              <InputField label="STS" value={profile.sts} />
             </div>
             <div className="mt-6">
               <button
