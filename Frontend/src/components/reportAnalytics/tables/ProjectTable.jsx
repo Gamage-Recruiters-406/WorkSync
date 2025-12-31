@@ -58,7 +58,7 @@ export default function ProjectTable({ data }) {
   };*/
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow mt-6">
+    <div className="bg-white p-4 text-center rounded-xl border-2 border-[#087990] shadow-lg mt-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-700">Projects Report</h2>
         <div>
@@ -81,13 +81,21 @@ export default function ProjectTable({ data }) {
 
       <div className="overflow-x-auto max-h-96 overflow-y-auto">
         <table className="min-w-full border-separate border-spacing-0 rounded-xl">
-          <thead className="bg-gray-300 sticky top-0 z-20">
+          <thead className="bg-[#087990] sticky top-0 z-20">
             <tr>
-              <th className="px-4 py-3 border text-left">Project Name</th>
-              <th className="px-4 py-3 border text-left">Team Lead</th>
-              <th className="px-4 py-3 border text-left">Status</th>
-              <th className="px-4 py-3 border text-left">Start Date</th>
-              <th className="px-4 py-3 border text-left">End Date</th>
+              <th className="px-4 py-3 border text-left text-white">
+                Project Name
+              </th>
+              <th className="px-4 py-3 border text-left text-white">
+                Team Lead
+              </th>
+              <th className="px-4 py-3 border text-left text-white">Status</th>
+              <th className="px-4 py-3 border text-left text-white">
+                Start Date
+              </th>
+              <th className="px-4 py-3 border text-left text-white">
+                End Date
+              </th>
             </tr>
           </thead>
           <tbody>
