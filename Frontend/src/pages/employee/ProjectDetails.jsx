@@ -2,11 +2,12 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Sidebar from "../../components/sidebar/Sidebar";
+import TeamTab from "./TeamTab";
 // import OverviewTab from "./OverviewTab";
-// import DocumentsTab from "./DocumentsTab";
+import DocumentsTab from "./DocumentsTab";
 // import MilestonesTab from "./MilestonesTab";
 
-const TABS = ["overview", "Team", "milestones", "documents"];
+const TABS = ["overview", "team", "milestones", "documents"];
 
 const ProjectDetails = () => {
   const { id } = useParams();
@@ -112,15 +113,19 @@ const ProjectDetails = () => {
         {/* Tab content */}
         {/* {activeTab === "overview" && (
           <OverviewTab project={project} />
+        )} */}
+
+        {activeTab === "team" && (
+          <TeamTab projectId={projectData._id || projectData.id}  projectData={projectData} />
         )}
 
-        {activeTab === "milestones" && (
+        {/* {activeTab === "milestones" && (
           <MilestonesTab project={project} />
-        )}
+        )} */}
 
         {activeTab === "documents" && (
-          <DocumentsTab project={project} />
-        )} */}
+          <DocumentsTab projectId={projectData._id || projectData.id} />
+        )}
       </main>
     </div>
   );
