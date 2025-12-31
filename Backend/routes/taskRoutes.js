@@ -58,18 +58,17 @@ router.post(
 );
 
 /* =========================
-   LIST ALL TASKS (ADMIN / TL)
+   LIST ALL TASKS (ADMIN / TL / EMPLOYEE)
    GET /getAllTasks
 ========================= */
 router.get(
     "/getAllTasks",
     requiredSignIn,
-    isAdmin,
     getAllTasks
 );
 
 /* =========================
-   LIST USER TASKS
+   LIST EMPLOYEE TASKS
    GET /getAllUserTasks
 ========================= */
 router.get(
@@ -128,9 +127,7 @@ router.get(
 ========================= */
 router.get(
     "/taskDetails/:id",
-    requiredSignIn,
-    isEmployee,
-    getTaskDetails
+    requiredSignIn,    getTaskDetails
 );
 
 /* =========================

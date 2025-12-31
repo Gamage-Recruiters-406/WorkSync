@@ -31,9 +31,11 @@ import TaskHistory from "./pages/TeamLeader/TaskHistory";
 import Login from "./pages/Login";
 
 import { Navigate } from "react-router-dom";
-
-import { useState } from "react";
-
+import AdminReport from "./pages/reportAnalytics/AdminReport";
+import { useState } from 'react';
+import EmployeeList from './pages/admin/EmployeeList';
+import AddEmployee from './pages/admin/AddEmployee';
+import EditEmployee from './pages/admin/EditEmployee';
 import ApproveUser from "./pages/admin/ApproveUser";
 import Sidebar from "./components/sidebar/Sidebar";
 import DashboardUI from "./components/DashboardUI";
@@ -96,6 +98,8 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<EmployeeList />} />
         <Route path="/admin/employee-list" element={<EmployeeList />} />
+        <Route path="/admin/add-employee" element={<AddEmployee />} />
+        <Route path="/admin/edit-employee/:id" element={<EditEmployee />} />
         <Route path="/admin/assign-task" element={<AssignTask />} />
         <Route path="/admin/users" element={<Users />} />
         <Route path="/admin/manage-leaves" element={<ManageLeaves />} />

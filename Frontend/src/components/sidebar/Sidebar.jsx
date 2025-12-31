@@ -197,6 +197,13 @@ function Sidebar() {
   const menumainItems = sidebarContent[role]?.main || [];
   const menufooterItems = sidebarContent[role]?.footer || [];
 
+  const user = {
+     role: "employee",
+    //role: "admin",
+  };
+  const menumainItems = sidebarContent[user.role].main || [];
+  const menufooterItems = sidebarContent[user.role].footer || [];
+
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };

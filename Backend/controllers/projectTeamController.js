@@ -1,9 +1,9 @@
 import ProjectTeam from "../models/ProjectTeam.js";
-import User from "../models/User.js";
+import Employees from "../models/EmployeeModel.js";
 import Project from "../models/ProjectModel.js";
 import mongoose from "mongoose";
 
-//add member
+// ADD MEMBER
 export const addMember = async (req, res) => {
     try {
         const { projectId, userId, assignedRole } = req.body;
@@ -16,15 +16,25 @@ export const addMember = async (req, res) => {
         }
 
         const project = await Project.findById(projectId);
-        if (!project) return res.status(404).json({ success: false, message: "Project not found" });
+        if (!project)
+            return res.status(404).json({ success: false, message: "Project not found" });
 
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+        const employee = await Employees.findById(userId);
+        if (!employee)
+            return res.status(404).json({ success: false, message: "Employee not found" });
 
         const alreadyAdded = await ProjectTeam.findOne({ projectId, userId });
-        if (alreadyAdded) return res.status(400).json({ success: false, message: "User already added to this project" });
+        if (alreadyAdded)
+            return res.status(400).json({
+                success: false,
+                message: "Employee already added to this project"
+            });
 
-        const member = await ProjectTeam.create({ projectId, userId, assignedRole });
+        const member = await ProjectTeam.create({
+            projectId,
+            userId,
+            assignedRole
+        });
 
         res.status(201).json({
             success: true,
@@ -37,32 +47,39 @@ export const addMember = async (req, res) => {
     }
 };
 
-//get all members of a specific project
+//  GET MEMBERS OF A PROJECT 
 export const getMembers = async (req, res) => {
     try {
         const { pid } = req.params;
 
         const members = await ProjectTeam.find({ projectId: pid })
-            .populate("userId", "name email"); // user-friendly info
+            .populate("userId", "FirstName LastName email");
 
-        res.status(200).json({ success: true, data: members });
+        res.status(200).json({
+            success: true,
+            data: members
+        });
 
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-//update member role
+// UPDATE MEMBER ROLE
 export const updateMemberRole = async (req, res) => {
     try {
         const { projectId, userId, assignedRole } = req.body;
 
         if (!projectId || !userId || !assignedRole) {
-            return res.status(400).json({ success: false, message: "projectId, userId and assignedRole are required" });
+            return res.status(400).json({
+                success: false,
+                message: "projectId, userId and assignedRole are required"
+            });
         }
 
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+        const employee = await Employees.findById(userId);
+        if (!employee)
+            return res.status(404).json({ success: false, message: "Employee not found" });
 
         const updated = await ProjectTeam.findOneAndUpdate(
             { projectId, userId },
@@ -70,57 +87,87 @@ export const updateMemberRole = async (req, res) => {
             { new: true }
         );
 
-        if (!updated) return res.status(404).json({ success: false, message: "Member not found in this project" });
+        if (!updated)
+            return res.status(404).json({
+                success: false,
+                message: "Member not found in this project"
+            });
 
-        res.status(200).json({ success: true, message: "Role updated successfully", data: updated });
+        res.status(200).json({
+            success: true,
+            message: "Role updated successfully",
+            data: updated
+        });
 
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-//remove member
+// REMOVE MEMBER
 export const removeMember = async (req, res) => {
     try {
         const { projectId, userId } = req.body;
 
         if (!projectId || !userId) {
-            return res.status(400).json({ success: false, message: "projectId and userId are required" });
+            return res.status(400).json({
+                success: false,
+                message: "projectId and userId are required"
+            });
         }
 
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+        const employee = await Employees.findById(userId);
+        if (!employee)
+            return res.status(404).json({ success: false, message: "Employee not found" });
 
         const deleted = await ProjectTeam.findOneAndDelete({ projectId, userId });
-        if (!deleted) return res.status(404).json({ success: false, message: "Member not found in this project" });
+        if (!deleted)
+            return res.status(404).json({
+                success: false,
+                message: "Member not found in this project"
+            });
 
-        res.status(200).json({ success: true, message: "Member removed successfully" });
+        res.status(200).json({
+            success: true,
+            message: "Member removed successfully"
+        });
 
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-//get all projects of a specific user
+// GET PROJECTS OF A USER
 export const getProjectsOfUser = async (req, res) => {
     try {
         const { uid } = req.params;
 
         const projects = await ProjectTeam.find({ userId: uid })
-            .populate("projectId", "name description"); // optional project info
+            .populate("projectId", "name description");
 
-        res.status(200).json({ success: true, data: projects });
+        res.status(200).json({
+            success: true,
+            data: projects
+        });
 
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-//get all users for dropdown list
+// GET ALL USERS (EMPLOYEES) FOR DROPDOWN
 export const getAllUsers = async (req, res) => {
     try {
-        const users = await User.find({}, "name email"); // send only name and email
-        res.status(200).json({ success: true, data: users });
+        const users = await Employees.find(
+            {},
+            "FirstName LastName email"
+        );
+
+        res.status(200).json({
+            success: true,
+            data: users
+        });
+
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
