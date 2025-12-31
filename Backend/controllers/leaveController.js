@@ -240,8 +240,8 @@ export const getAllLeaves = async (req, res) => {
 
     const leaves = await LeaveRequest.find()
       .sort({ createdAt: -1 })
-      .populate("requestedBy", "username fullName email department")
-      .populate("approvedBy", "username fullName email");
+      .populate("requestedBy", "FirstName LastName email department")
+      .populate("approvedBy", "FirstName LastName email");
 
     res.json({
       success: true,

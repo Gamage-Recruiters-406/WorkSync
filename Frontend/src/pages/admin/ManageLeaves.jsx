@@ -163,7 +163,9 @@ const ManageLeaves = () => {
                       {l.requestedBy?._id?.slice(-6) || "N/A"}
                     </td>
                     <td className="border px-2 py-2">
-                      {l.requestedBy?.fullName || "N/A"}
+                        {l.requestedBy
+                        ? `${l.requestedBy.FirstName || ""} ${l.requestedBy.LastName || ""}`.trim() || l.requestedBy.email
+                        : "No User"}
                     </td>
                     <td className="border">{l.leaveType}</td>
                     <td className="border">{l.startDate?.slice(0, 10)}</td>
