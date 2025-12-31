@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 const attendanceSchema = new mongoose.Schema({
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User", 
-        required: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Employees", 
+    required: true
     },
     date: {
         type: String, 
@@ -12,7 +12,7 @@ const attendanceSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Present', 'Absent'], 
+        enum: ['Present', 'Absent','Late'], 
         default: 'Present'
     },
     inTime: {
@@ -21,7 +21,19 @@ const attendanceSchema = new mongoose.Schema({
     },
     outTime: {
         type: Date
+    },
+
+    correction: {
+        isRequested: { type: Boolean, default: false },
+        requestType: { type: String, enum: ['CheckIn', 'CheckOut', null], default: null }, 
+        requestedTime: { type: Date, default: null }, 
+        reason: { type: String, default: "" }, 
+        status: { type: String, enum: ['Pending', 'Approved', 'Rejected', null], default: null } 
     }
+
 }, { timestamps: true });
+
+// PREVENTS DUPLICATES FOREVER
+attendanceSchema.index({ userId: 1, date: 1 }, { unique: true });
 
 export default mongoose.model("Attendance", attendanceSchema);

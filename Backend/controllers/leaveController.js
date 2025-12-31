@@ -1,5 +1,5 @@
 import LeaveRequest from "../models/LeaveRequest.js";
-import User from "../models/User.js";
+import User from "../models/EmployeeModel.js";
 import {
   validateUserIdFromToken,
   checkUserExists,
@@ -10,6 +10,14 @@ import {
   handleControllerError,
   validateLeaveRequest
 } from "../helpers/leaveRequestHelper.js";
+import { sendLeaveStatusEmail } from "../helpers/emailHelper.js";
+
+// LEAVE POLICY (YEARLY)
+const LEAVE_POLICY = {
+  sick: 10,
+  annual: 10,
+  casual: 5,
+};
 
 // Create Leave Request
 export const createLeaveRequest = async (req, res) => {
@@ -138,6 +146,20 @@ export const updateLeaveStatus = async (req, res) => {
       LeaveRequest
     );
 
+    // Send email notification
+    if (
+  populatedLeave.requestedBy &&
+  populatedLeave.requestedBy.email &&
+  (sts === "approved" || sts === "rejected")
+) {
+  const fullName = `${populatedLeave.requestedBy.FirstName} ${populatedLeave.requestedBy.LastName}`;
+  await sendLeaveStatusEmail(
+    populatedLeave.requestedBy.email,
+    fullName,
+    sts
+  );
+}
+
     res.json({
       success: true,
       message: `Leave request ${sts} successfully.`,
@@ -147,6 +169,160 @@ export const updateLeaveStatus = async (req, res) => {
     handleControllerError(error, res);
   }
 };
+
+// Get all leaves of a user
+export const getLeavesByUser = async (req, res) => {
+  try {
+    validateUserIdFromToken(req.user?.userid);
+    const { uid } = req.params;
+
+    // Check user exists
+    await checkUserExists(uid);
+
+    // If current user is not Admin/Manager, they can only view their own leaves
+    if (![2, 3].includes(req.user.role) && req.user.userid !== uid) {
+      throw {
+        status: 403,
+        message: "You can only view your own leave requests.",
+      };
+    }
+
+    const leaves = await LeaveRequest.find({ requestedBy: uid })
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "requestedBy",
+        select: "FirstName LastName email departmentID",
+        populate: { 
+          path: "departmentID", 
+          select: "name departmentCode location email" 
+        }
+      })
+      .populate("approvedBy", "FirstName LastName email");
+
+
+
+    res.json({
+      success: true,
+      count: leaves.length,
+      data: leaves,
+    });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+};
+
+// Get single leave request
+export const getSingleLeave = async (req, res) => {
+  try {
+    validateUserIdFromToken(req.user?.userid);
+    const { id } = req.params;
+
+    // Find leave
+    const leave = await checkLeaveRequestExists(id);
+
+    // If current user is not Admin/Manager, they can only view their own leave
+    if (![2, 3].includes(req.user.role) && !isRequester(leave.requestedBy, req.user.userid)) {
+      throw {
+        status: 403,
+        message: "You are not allowed to view this leave request.",
+      };
+    }
+
+    const populatedLeave = await populateLeaveRequestDetails(leave._id);
+
+    res.json({
+      success: true,
+      data: populatedLeave,
+    });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+};
+
+// Get all leave requests (Admin / Manager only)
+export const getAllLeaves = async (req, res) => {
+  try {
+    validateUserIdFromToken(req.user?.userid);
+
+    // Only Admin (3) or Manager (2) can access all leaves
+    if (![2, 3].includes(req.user.role)) {
+      throw {
+        status: 403,
+        message: "Access denied. Only Admin or Manager can view all leave requests.",
+      };
+    }
+
+    const leaves = await LeaveRequest.find()
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "requestedBy",
+        select: "FirstName LastName email departmentID",
+        populate: { 
+          path: "departmentID", 
+          select: "name departmentCode location email" 
+        }
+      })
+      .populate("approvedBy", "FirstName LastName email");
+
+
+    res.json({
+      success: true,
+      count: leaves.length,
+      data: leaves,
+    });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+};
+
+//get leave balance per year
+export const getLeaveBalance = async (req, res) => {
+  try {
+    validateUserIdFromToken(req.user?.userid);
+    const userId = req.user.userid;
+
+    const yearStart = new Date(new Date().getFullYear(), 0, 1);
+    const yearEnd = new Date(new Date().getFullYear(), 11, 31);
+
+    const leaves = await LeaveRequest.find({
+      requestedBy: userId,
+      createdAt: { $gte: yearStart, $lte: yearEnd },
+    });
+
+    const used = { sick: 0, annual: 0, casual: 0 };
+    let approved = 0;
+    let rejected = 0;
+     let pending = 0;
+
+    leaves.forEach(l => {
+      if (l.sts === "approved") {
+        approved++;
+        if (used[l.leaveType] !== undefined) used[l.leaveType]++;
+      } else if (l.sts === "rejected") {
+        rejected++;
+      } else if (l.sts === "pending") {
+        pending++;
+      }
+    });
+
+    res.json({
+      success: true,
+      balance: {
+        sick: `${used.sick}/${LEAVE_POLICY.sick}`,
+        annual: `${used.annual}/${LEAVE_POLICY.annual}`,
+        casual: `${used.casual}/${LEAVE_POLICY.casual}`,
+      },
+      counts: {
+        approved,
+        rejected,
+        pending,
+      },
+    });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+};
+
 
 // Delete Leave Request - Requester only
 export const deleteLeaveRequest = async (req, res) => {

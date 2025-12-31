@@ -1,4 +1,5 @@
 import Project from "../models/ProjectModel.js";
+import ProjectTeam from "../models/ProjectTeam.js";
 
 // Create a new project
 export const createProjectController = async (req, res) => {
@@ -46,6 +47,12 @@ export const createProjectController = async (req, res) => {
             teamLeader: teamLeaderId,
         });
 
+        await ProjectTeam.create({
+            projectId: project._id,
+            userId: teamLeaderId,
+            assignedRole: "Team Lead"
+        });
+
         res.status(201).json({
             success:true,
             message: "Project created successfully",
@@ -56,6 +63,70 @@ export const createProjectController = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Error creating project",
+            error: error.message
+        });
+    }
+};
+
+
+// Get single project
+export const getSingleProjectController = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const project = await Project.findById(id)
+            .populate("createdBy", "name email")
+            .populate("teamLeader", "name email")
+            .lean();
+
+            if (!project) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Project not found",
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Project fetched successfully",
+                data: project
+            });
+    } catch (error) {
+        // Invalid ObjectId
+        if (error?.name === 'CastError') {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid project ID",
+            });
+        }
+
+        console.error("Error fetching project:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching project",
+            error: error.message
+        });
+    }
+};
+
+
+// Get all projects
+export const getAllProjectsController = async (req, res) => {
+    try {
+        const projects = await Project.find()
+            .sort({ createdAt: -1 })
+            .populate("createdBy", "name email")
+            .populate("teamLeader", "name email");
+
+        return res.status(200).json({
+            success: true,
+            count: projects.length,
+            data: projects
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Error fetching projects",
             error: error.message
         });
     }
