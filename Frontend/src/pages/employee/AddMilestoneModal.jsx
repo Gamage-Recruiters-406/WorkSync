@@ -58,7 +58,7 @@ const AddMilestoneModal = ({ onClose, onCreate }) => {
             <div className="flex-1">
               <label className="block mb-1 font-medium">Start Date</label>
               <input
-                type="text"
+                type="date"
                 name="startDate"
                 value={form.startDate}
                 onChange={handleChange}
@@ -69,7 +69,7 @@ const AddMilestoneModal = ({ onClose, onCreate }) => {
             <div className="flex-1">
               <label className="block mb-1 font-medium">End Date</label>
               <input
-                type="text"
+                type="date"
                 name="endDate"
                 value={form.endDate}
                 onChange={handleChange}

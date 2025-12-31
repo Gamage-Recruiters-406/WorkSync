@@ -53,6 +53,7 @@ const ProjectDetails = () => {
       id: m._id,
       title: m.milestoneName,
       status: m.Status,
+      endDate: m.End_Date,
     }));
 
     setMilestones(formatted);

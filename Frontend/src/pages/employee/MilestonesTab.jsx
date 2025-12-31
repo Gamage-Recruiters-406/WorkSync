@@ -3,6 +3,7 @@ import AddMilestoneModal from "./AddMilestoneModal";
 import MilestoneDetailsModal from "./MilestoneDetailsModal";
 import axios from "axios";
 import EditMilestoneModal from "./EditMilestoneModal";
+import Toast from "../../components/Toast";
 
 
 
@@ -13,6 +14,9 @@ const MilestonesTab = ({projectId, projectData}) => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
 
   const URL_API = "http://localhost:8090";
 
@@ -84,17 +88,9 @@ const MilestonesTab = ({projectId, projectData}) => {
   };
 
   const handleDeleteMilestone = async (id)=> {
-    if (!confirm("Are you sure you want to delete this milestone?")) return;
+    setConfirmDelete({id})
+  }
 
-    try {
-      await axios.delete(`${URL_API}/api/v1/millestone/deleteMilestone/${id}`, { withCredentials: true });
-      setMilestones(prev => prev.filter(m => m.id !== id));
-      alert("Milestone deleted successfully");
-    } catch (error) {
-      console.error("Failed to delete milestone", error);
-      alert("Failed to delete milestone");
-    }
-  };
 
   const handleEditMilestone = async (updatedData) => {
     const res = await axios.put(
@@ -165,6 +161,49 @@ const MilestonesTab = ({projectId, projectData}) => {
       {!loading && milestones.length === 0 && (
         <p className="m-6 text-gray-500">No milestones found.</p>
       )}
+      {/* conformation pop-up */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-md shadow-md max-w-sm w-full">
+            <p className="mb-4 text-gray-800">
+              Are you sure you want to delete <span className="font-semibold">{confirmDelete.title}</span>?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await axios.delete(`${URL_API}/api/v1/millestone/deleteMilestone/${confirmDelete.id}`, { withCredentials: true });
+                    setMilestones(prev => prev.filter(m => m.id !== confirmDelete.id));
+                    setToast({ message: "Milestone deleted successfully", type: "success" });
+                  } catch (error) {
+                    setToast({ message: "Failed to delete milestone", type: "error" });
+                  } finally {
+                    setConfirmDelete(null);
+                  }
+                }}
+                className="px-4 py-2 rounded-md bg-red-500 text-white hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
 
       {/* milestone cards */}
       <div className="space-y-6 max-w-xl m-6">
@@ -210,7 +249,7 @@ const MilestonesTab = ({projectId, projectData}) => {
                 </button>
         
                 <button
-                  onClick={() => handleDeleteMilestone(m.id)}
+                  onClick={() => setConfirmDelete(m)}
                   className="px-4 py-2 rounded-md bg-red-500 text-white text-sm hover:bg-red-600"
                 >
                   Delete

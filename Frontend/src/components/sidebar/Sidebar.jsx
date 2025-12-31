@@ -156,8 +156,8 @@ function Sidebar() {
    const navigate = useNavigate();
 
   const user = {
+    role: "admin",
     role: "employee",
-      role: "admin",
   };
   const menumainItems = sidebarContent[user.role].main || [];
   const menufooterItems = sidebarContent[user.role].footer || [];
