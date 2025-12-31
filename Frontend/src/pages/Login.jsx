@@ -35,7 +35,7 @@ export default function Login() {
     //     credentials: "include",
     //     body: JSON.stringify({ email, password }),
     //   });
-    const res = await axios.post("http://localhost:8090/api/v1/userAuth/userLogin", { email, password });
+    const res = await axios.post("http://localhost:8090/api/v1/employee/userLogin", { email, password });
     console.log(res);
 
     //   const data = await response.json();
