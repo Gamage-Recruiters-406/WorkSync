@@ -69,7 +69,7 @@ router.get(
 );
 
 /* =========================
-   LIST USER TASKS
+   LIST EMPLOYEE TASKS
    GET /getAllUserTasks
 ========================= */
 router.get(

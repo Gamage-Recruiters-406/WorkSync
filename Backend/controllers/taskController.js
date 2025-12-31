@@ -159,7 +159,7 @@ export const createTask = async (req, res) => {
         /* =========================
            EMPLOYEE EMAIL/ID → OBJECT ID
         ========================= */
-        let assignedUserIds = [];
+        let assignedEmployeeIds = [];
         if (assignedTo) {
             const identifiers = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
 
@@ -169,7 +169,7 @@ export const createTask = async (req, res) => {
                     { _id: { $in: identifiers.filter(id => mongoose.Types.ObjectId.isValid(id)) } }
                 ]
             }, "_id");
-            assignedUserIds = employees.map((u) => u._id);
+            assignedEmployeeIds = employees.map((emp) => emp._id);
         }
 
         /* =========================
@@ -195,7 +195,7 @@ export const createTask = async (req, res) => {
             ...(taskId ? { _id: taskId } : {}),
             title,
             description,
-            assignedTo: assignedUserIds,
+            assignedTo: assignedEmployeeIds,
             deadline,
             priority,
             milestone: milestoneId,
@@ -303,7 +303,7 @@ export const updateTask = async (req, res) => {
                     { _id: { $in: identifiers.filter(id => mongoose.Types.ObjectId.isValid(id)) } }
                 ]
             }, "_id");
-            task.assignedTo = employees.map((u) => u._id);
+            task.assignedTo = employees.map((emp) => emp._id);
         }
 
         /* =========================
@@ -345,7 +345,7 @@ export const updateTask = async (req, res) => {
 };
 
 
-// GET ALL TASKS FOR USER
+// GET ALL TASKS FOR EMPLOYEE
 export const getAllTasks = async (req, res) => {
   try {
     const query = {};
@@ -360,7 +360,7 @@ export const getAllTasks = async (req, res) => {
     if (req.query.status) query.status = req.query.status;
     if (req.query.priority) query.priority = req.query.priority;
 
-    // Team Leader (role = 2) can filter by assigned user
+    // Team Leader (role = 2) can filter by assigned employee
     if (req.query.assignedTo && req.user.role === 2) {
       query.assignedTo = req.query.assignedTo;
     }
@@ -383,13 +383,13 @@ export const getAllTasks = async (req, res) => {
   }
 };
 
-// GET ALL TASKS ASSIGNED TO THE LOGGED-IN USER
+// GET ALL TASKS ASSIGNED TO THE LOGGED-IN EMPLOYEE
 export const getAllUserTasks = async (req, res) => {
     try {
         // ⚡ Use 'new' when creating ObjectId
-        const userId = new mongoose.Types.ObjectId(req.user._id);
+        const employeeId = new mongoose.Types.ObjectId(req.user._id);
 
-        const tasks = await Task.find({ assignedTo: userId })
+        const tasks = await Task.find({ assignedTo: employeeId })
             .populate("assignedTo", "FirstName LastName email")
             .populate("milestone", "milestoneName")
             .sort({ createdAt: -1 });
@@ -397,7 +397,7 @@ export const getAllUserTasks = async (req, res) => {
         res.status(200).json({ success: true, data: tasks.map(formatTaskForClient) });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false, message: "Error fetching user tasks", error: error.message });
+        res.status(500).json({ success: false, message: "Error fetching employee tasks", error: error.message });
     }
 };
 
