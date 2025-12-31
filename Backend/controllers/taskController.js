@@ -17,7 +17,16 @@ const formatTaskForClient = (taskDoc) => {
     return {
         ...task,
         assignedTo: assigned
-            .map((u) => (typeof u === "object" && u !== null ? `${u.FirstName} ${u.LastName}` : null))
+            .map((u) => {
+                if (typeof u === "object" && u !== null) {
+                    return {
+                        _id: u._id,
+                        name: `${u.FirstName} ${u.LastName}`,
+                        email: u.email
+                    };
+                }
+                return null;
+            })
             .filter(Boolean),
         milestone: task.milestone && typeof task.milestone === "object" ? task.milestone.milestoneName : null,
     };
@@ -351,18 +360,13 @@ export const getAllTasks = async (req, res) => {
     const query = {};
     const userId = req.user.userid || req.user._id;
 
-    // Employee (role = 1) → only own tasks
-    if (req.user.role === 1) {
-      query.assignedTo = userId;
-    }
-
     // Filters (Admin + Team Leader can use)
     if (req.query.projectId) query.project = req.query.projectId;
     if (req.query.status) query.status = req.query.status;
     if (req.query.priority) query.priority = req.query.priority;
 
-    // Team Leader (role = 2) can filter by assigned employee
-    if (req.query.assignedTo && req.user.role === 2) {
+    // Team Leader (role = 1) can filter by assigned employee
+    if (req.query.assignedTo && req.user.role === 1) {
       query.assignedTo = req.query.assignedTo;
     }
 
