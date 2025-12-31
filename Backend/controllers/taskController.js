@@ -389,42 +389,28 @@ export const getAllTasks = async (req, res) => {
 };
 
 // GET ALL TASKS ASSIGNED TO THE LOGGED-IN EMPLOYEE
+
 export const getAllUserTasks = async (req, res) => {
-    try {
-        const userId = req.user.userid || req.user._id;
-        
-        // Get logged-in employee details
-        const employee = await Employee.findById(userId).select("FirstName LastName email role");
+  try {
+    const employeeId = new mongoose.Types.ObjectId(req.user.userid);
+    const tasks = await Task.find({ assignedTo: employeeId })
+      .populate("assignedTo", "FirstName LastName email")
+      .populate("milestone", "milestoneName")
+      .sort({ createdAt: -1 });
+    console.log("req.user:", req.user);
 
-        if (!employee) {
-            return res.status(404).json({ 
-                success: false, 
-                message: "Employee not found. Please ensure your account exists in the employee database." 
-            });
-        }
-
-        const tasks = await Task.find({ assignedTo: userId })
-            .populate("assignedTo", "FirstName LastName email")
-            .populate("milestone", "milestoneName")
-            .sort({ createdAt: -1 });
-
-        res.status(200).json({ 
-            success: true, 
-            employee: {
-                _id: employee._id,
-                name: `${employee.FirstName} ${employee.LastName}`,
-                email: employee.email,
-                role: employee.role
-            },
-            taskCount: tasks.length,
-            data: tasks.map(formatTaskForClient) 
-        });
-    } catch (error) {
-        console.error("Error in getAllUserTasks:", error);
-        res.status(500).json({ success: false, message: "Error fetching employee tasks", error: error.message });
-    }
+    res
+      .status(200)
+      .json({ success: true, data: tasks.map(formatTaskForClient) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching user tasks",
+      error: error.message,
+    });
+  }
 };
-
 
 // UPDATE STATUS
 export const updateTaskStatus = async (req, res) => {
