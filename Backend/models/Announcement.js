@@ -38,7 +38,7 @@ const announcementSchema = new mongoose.Schema(
     },
 
     // likes
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Users" }],
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Employees" }],
     likesCount: {
       type: Number,
       default: 0,
