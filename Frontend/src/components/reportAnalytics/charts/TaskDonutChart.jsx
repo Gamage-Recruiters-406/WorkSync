@@ -7,7 +7,7 @@ import {
   Cell,
 } from "recharts";
 
-const COLORS = ["#7C3AED", "#087990"]; // purple, gray
+const COLORS = ["#087990", "#fbbf24"];
 
 export default function TaskDonut({ data = [] }) {
   const completed = data.filter((t) => t.status === "Completed").length;
@@ -19,10 +19,10 @@ export default function TaskDonut({ data = [] }) {
   ];
 
   return (
-    <div className="bg-white p-4 shadow text-center rounded-xl">
+    <div className="bg-white p-4 text-center rounded-xl border-2 border-[#087990] shadow-lg">
       <h3 className="font-semibold mb-4">Task Status</h3>
 
-      <div className="h-40">
+      <div className="w-full h-48">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
