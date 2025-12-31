@@ -1,6 +1,5 @@
 import Announcement from "../models/Announcement.js";
 import { v4 as uuidv4 } from "uuid";
-import User from "../models/User.js";
 import Employees from "../models/EmployeeModel.js"
 import Notification from "../models/Notification.js";
 import File from "../models/AnnouncemetAttachmet.js";
