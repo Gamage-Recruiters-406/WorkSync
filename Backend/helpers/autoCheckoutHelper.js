@@ -1,12 +1,11 @@
 import cron from "node-cron";
 import attendanceModel from "../models/attendanceModel.js";
-import Employee from "../models/EmployeeModel.js"; // <--- 1. CHANGED IMPORT
+import Employee from "../models/EmployeeModel.js";
 
 export const startAutoCheckoutJob = () => {
     
     // MARK ABSENT AT 10:00 AM (SL Time)
-    // Runs at 17:23 Server Time (Adjust this cron time if needed based on your server location)
-    cron.schedule("00 10 * * *", async () => {
+    cron.schedule("46 10 * * *", async () => {
         console.log(" [CRON] Running 10:00 AM Absent Check...");
 
         try {
@@ -14,15 +13,12 @@ export const startAutoCheckoutJob = () => {
             const slTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
             const todayStr = slTime.toISOString().split("T")[0];
 
-            // 2. CHANGED: Get all employees from the new Employee table (Role 1)
-            // We select '_id' because that's all we need to match with attendance
             const allEmployees = await Employee.find({ role: 1 }).select("_id");
 
             // Get everyone who has ALREADY clocked in today
             const presentAttendance = await attendanceModel.find({ date: todayStr }).select("userId");
             const presentUserIds = presentAttendance.map(record => record.userId.toString());
 
-            // Find who is MISSING
             // Compare Employee IDs vs. Attendance UserIDs
             const absentUsers = allEmployees.filter(emp => !presentUserIds.includes(emp._id.toString()));
 
@@ -56,7 +52,7 @@ export const startAutoCheckoutJob = () => {
 
 
     // AUTO CHECKOUT AT 7:30 PM
-    cron.schedule("30 19 * * *", async () => {
+    cron.schedule("47 10 * * *", async () => {
         console.log(" [CRON] Running Auto Check-Out Job...");
 
         try {
