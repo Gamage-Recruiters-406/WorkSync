@@ -349,10 +349,11 @@ export const updateTask = async (req, res) => {
 export const getAllTasks = async (req, res) => {
   try {
     const query = {};
+    const userId = req.user.userid || req.user._id;
 
     // Employee (role = 1) → only own tasks
     if (req.user.role === 1) {
-      query.assignedTo = req.user._id;
+      query.assignedTo = userId;
     }
 
     // Filters (Admin + Team Leader can use)
@@ -386,17 +387,36 @@ export const getAllTasks = async (req, res) => {
 // GET ALL TASKS ASSIGNED TO THE LOGGED-IN EMPLOYEE
 export const getAllUserTasks = async (req, res) => {
     try {
-        // ⚡ Use 'new' when creating ObjectId
-        const employeeId = new mongoose.Types.ObjectId(req.user._id);
+        const userId = req.user.userid || req.user._id;
+        
+        // Get logged-in employee details
+        const employee = await Employee.findById(userId).select("FirstName LastName email role");
 
-        const tasks = await Task.find({ assignedTo: employeeId })
+        if (!employee) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Employee not found. Please ensure your account exists in the employee database." 
+            });
+        }
+
+        const tasks = await Task.find({ assignedTo: userId })
             .populate("assignedTo", "FirstName LastName email")
             .populate("milestone", "milestoneName")
             .sort({ createdAt: -1 });
 
-        res.status(200).json({ success: true, data: tasks.map(formatTaskForClient) });
+        res.status(200).json({ 
+            success: true, 
+            employee: {
+                _id: employee._id,
+                name: `${employee.FirstName} ${employee.LastName}`,
+                email: employee.email,
+                role: employee.role
+            },
+            taskCount: tasks.length,
+            data: tasks.map(formatTaskForClient) 
+        });
     } catch (error) {
-        console.error(error);
+        console.error("Error in getAllUserTasks:", error);
         res.status(500).json({ success: false, message: "Error fetching employee tasks", error: error.message });
     }
 };
