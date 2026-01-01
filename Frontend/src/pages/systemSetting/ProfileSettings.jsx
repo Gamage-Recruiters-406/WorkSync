@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { getAllUsers } from "../../services/adminReportsApi";
+import { getSingleEmployee } from "../../services/adminReportsApi";
 
 const InputField = ({ label, value }) => {
   return (
@@ -19,7 +18,7 @@ const InputField = ({ label, value }) => {
 
 const ProfileSettings = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState();
+  const [profile, setProfile] = useState(null);
 
   const stored = localStorage.getItem("user");
   const data = stored ? JSON.parse(stored) : null;
@@ -28,35 +27,27 @@ const ProfileSettings = () => {
 
   const fetchProfile = async () => {
     try {
-      const profData = await getAllUsers();
-      const usersArray = profData?.data?.data || [];
-      const user = usersArray.find((u) => u._id === userId);
+      const resp = await getSingleEmployee(userId);
+
+      const user = resp?.data?.user;
+
       if (user) {
-        setProfile(user); // Found in API
+        setProfile({
+          _id: user._id,
+          firstName: user.FirstName,
+          lastName: user.LastName,
+          email: user.email,
+          contact: user.ContactNumber,
+          gender: user.Gender,
+          nic: user.NIC,
+          role: user.role,
+        });
       } else {
-        // Fallback to localStorage
-        const userFromStorage = data
-          ? {
-              name: "Admin",
-              email: data.email,
-              role: data.role,
-              _id: data.userid,
-            }
-          : null;
-        setProfile(userFromStorage);
+        setProfile(null);
       }
     } catch (err) {
       console.error("Failed to fetch profile", err);
-      // Fallback if API fails
-      const userFromStorage = data
-        ? {
-            name: "Admin",
-            email: data.email,
-            role: data.role,
-            _id: data.userid,
-          }
-        : null;
-      setProfile(userFromStorage);
+      setProfile(null);
     }
   };
 
@@ -64,13 +55,13 @@ const ProfileSettings = () => {
     fetchProfile();
   }, []);
 
-  if (profile === undefined) return <div>Loading...</div>;
-  if (profile === null) return <div>User not found</div>;
+  if (profile === null) return <div>Loading...</div>;
 
   return (
-    <main className="">
+    <main>
       <div className="flex-1 p-6 overflow-y-auto">
         <h2 className="text-heading font-semibold mb-6">Profile</h2>
+
         <div className="flex gap-8">
           {/* Left Profile Card */}
           <div className="w-72 rounded-2xl bg-[#0b7c8f] text-white flex flex-col items-center justify-center py-10 shadow-lg">
@@ -79,7 +70,11 @@ const ProfileSettings = () => {
               alt="Profile"
               className="h-24 w-24 rounded-full border-4 border-white object-cover"
             />
-            <h3 className="mt-4 font-semibold text-heading">{profile.name}</h3>
+
+            <h3 className="mt-4 font-semibold text-heading">
+              {profile.firstName} {profile.lastName}
+            </h3>
+
             <p className="text-sm opacity-90">
               {profile.role === 3 ? "Admin" : "User"}
             </p>
@@ -89,10 +84,17 @@ const ProfileSettings = () => {
           <div className="flex-1 rounded-2xl bg-gray-100 p-6 shadow-lg">
             <div className="space-y-4">
               <InputField label="User ID" value={profile._id} />
-
+              <InputField
+                label="Name"
+                value={`${profile.firstName} ${profile.lastName}`}
+              />
               <InputField label="Email" value={profile.email} />
+              <InputField label="Contact Number" value={profile.contact} />
+              <InputField label="NIC" value={profile.nic} />
+              <InputField label="Gender" value={profile.gender} />
               <InputField label="Password" value="******" />
             </div>
+
             <div className="mt-6">
               <button
                 onClick={() => navigate("/settings/profile/edit")}
@@ -107,4 +109,5 @@ const ProfileSettings = () => {
     </main>
   );
 };
+
 export default ProfileSettings;
