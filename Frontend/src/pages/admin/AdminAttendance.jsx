@@ -18,6 +18,12 @@ import axios from "axios";
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_VERSION}`;
 
 const AdminAttendance = () => {
+  const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  const userData = storedUser ? JSON.parse(storedUser) : null;
+  // Prefer explicit FirstName from DB; if only full name is present, use its first token; avoid email fallback
+  const displayName = userData?.FirstName || (userData?.name ? userData.name.split(" ")[0] : "Admin");
+  const roleLabel = { 1: "Employee", 2: "Manager", 3: "Admin" }[userData?.role] || "Admin";
+
   const [activeTab, setActiveTab] = useState("logs");
   const [dateFilter, setDateFilter] = useState("today");
   const [customDate, setCustomDate] = useState("");
@@ -31,6 +37,8 @@ const AdminAttendance = () => {
 
   const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [corrections, setCorrections] = useState([]);
+  const [weeklySummary, setWeeklySummary] = useState({ mostLate: "-", mostAbsent: "-" });
+  const [monthlySummary, setMonthlySummary] = useState({ mostLate: "-", mostAbsent: "-" });
   const [dashboardStats, setDashboardStats] = useState({
     totalEmployees: 0,
     present: 0,
@@ -40,6 +48,11 @@ const AdminAttendance = () => {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const todayStr = new Date().toISOString().split("T")[0];
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const [reportDailyDate, setReportDailyDate] = useState(todayStr);
+  const [reportWeeklyDate, setReportWeeklyDate] = useState(todayStr);
+  const [reportMonthlyDate, setReportMonthlyDate] = useState(currentMonthStr);
 
   // Prefer backend-provided employeeId; accept strings and fall back to hash from _id/ids
   const getEmployeeId = (user) => {
@@ -134,11 +147,47 @@ const AdminAttendance = () => {
     fetchDashboardStats();
   }, []);
 
+  const fetchReportSummaries = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const [weekRes, monthRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/attendance/analytics-report`, {
+          params: { type: "week" },
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }),
+        axios.get(`${API_BASE_URL}/attendance/analytics-report`, {
+          params: { type: "month" },
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }),
+      ]);
+
+      if (weekRes.data?.success) {
+        setWeeklySummary({
+          mostLate: weekRes.data.summary?.mostLate || "-",
+          mostAbsent: weekRes.data.summary?.mostAbsent || "-",
+        });
+      }
+
+      if (monthRes.data?.success) {
+        setMonthlySummary({
+          mostLate: monthRes.data.summary?.mostLate || "-",
+          mostAbsent: monthRes.data.summary?.mostAbsent || "-",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching report summaries:", error);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "logs") {
       fetchAttendanceLogs();
     } else if (activeTab === "corrections") {
       fetchPendingCorrections();
+    } else if (activeTab === "reports") {
+      fetchReportSummaries();
     }
   }, [activeTab, dateFilter, customDate]);
 
@@ -207,13 +256,13 @@ const AdminAttendance = () => {
     }
   };
 
-  const handleGenerateReport = async (type) => {
+  const handleGenerateReport = async (type, targetDate) => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       
       const response = await axios.get(`${API_BASE_URL}/attendance/analytics-report`, {
-        params: { type: type === 'daily' ? 'week' : type },
+        params: { type: type === 'daily' ? 'week' : type, date: targetDate },
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -221,7 +270,7 @@ const AdminAttendance = () => {
       });
 
       if (response.data.success) {
-        const formattedReport = formatReportData(type, response.data);
+        const formattedReport = formatReportData(type, response.data, targetDate);
         setReportType(type);
         setGeneratedReport(formattedReport);
       }
@@ -233,15 +282,15 @@ const AdminAttendance = () => {
     }
   };
 
-  const formatReportData = (type, data) => {
-    const today = new Date();
+  const formatReportData = (type, data, targetDate) => {
+    const baseDate = targetDate ? new Date(targetDate) : new Date();
     
     if (type === 'daily') {
-      const todayStr = today.toISOString().split('T')[0];
+      const todayStr = baseDate.toISOString().split('T')[0];
       
       return {
         title: "Daily Attendance Report",
-        date: today.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+        date: baseDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
         stats: {
           allEmployees: dashboardStats.totalEmployees,
           present: dashboardStats.present,
@@ -259,28 +308,40 @@ const AdminAttendance = () => {
         }))
       };
     } else if (type === 'weekly' || type === 'monthly') {
-      const startDate = new Date();
-      const endDate = new Date();
+      let startDate = new Date();
+      let endDate = new Date();
       
       if (type === 'weekly') {
-        const day = startDate.getDay();
-        const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
-        startDate.setDate(diff);
-        endDate.setDate(startDate.getDate() + 6);
+        // Get selected week: Monday to Sunday based on target
+        const currentDate = new Date(baseDate);
+        const day = currentDate.getDay();
+        const diff = currentDate.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+        startDate = new Date(currentDate.setDate(diff));
+        endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 6); // Add 6 days to get Sunday
       } else {
-        startDate.setDate(1);
-        endDate.setMonth(endDate.getMonth() + 1);
-        endDate.setDate(0);
+        // Get selected month: 1st to last day
+        startDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+        endDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
+      }
+
+      // Calculate working days (Monday to Friday only)
+      let workingDaysCount = 0;
+      let loopDate = new Date(startDate);
+      while (loopDate <= endDate) {
+        const dayOfWeek = loopDate.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) workingDaysCount++; // Exclude Sunday (0) and Saturday (6)
+        loopDate.setDate(loopDate.getDate() + 1);
       }
 
       return {
         title: type === 'weekly' ? "Weekly Attendance Report" : "Monthly Attendance Report",
         date: type === 'weekly' 
-          ? `${startDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })} - ${endDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}`
-          : today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          ? `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+          : endDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
         stats: {
           allEmployees: data.summary.totalEmployees,
-          workingDays: data.summary.workingDays,
+          workingDays: workingDaysCount,
           mostLate: data.summary.mostLate,
           mostAbsent: data.summary.mostAbsent
         },
@@ -294,6 +355,34 @@ const AdminAttendance = () => {
         }))
       };
     }
+  };
+
+  const getWorkingDaysForPeriod = (type) => {
+    const today = new Date();
+    let startDate = new Date();
+    let endDate = new Date();
+
+    if (type === 'week') {
+      const currentDate = new Date();
+      const day = currentDate.getDay();
+      const diff = currentDate.getDate() - day + (day === 0 ? -6 : 1);
+      startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), diff);
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6);
+    } else {
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+
+    let workingDays = 0;
+    const loopDate = new Date(startDate);
+    while (loopDate <= endDate) {
+      const dayOfWeek = loopDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) workingDays++;
+      loopDate.setDate(loopDate.getDate() + 1);
+    }
+
+    return workingDays;
   };
 
   const formatTime = (dateString) => {
@@ -411,6 +500,9 @@ const AdminAttendance = () => {
     return pages;
   };
 
+  const weeklyWorkingDays = getWorkingDaysForPeriod('week');
+  const monthlyWorkingDays = getWorkingDaysForPeriod('month');
+
   if (generatedReport) {
     return (
       <div className="min-h-screen bg-white flex">
@@ -419,7 +511,7 @@ const AdminAttendance = () => {
         </div>
 
         <div className="flex-1 flex flex-col">
-          <TopBar userName="Admin User" role="Admin" />
+          <TopBar userName={displayName} role={roleLabel} />
           
           <div className="flex-1 overflow-auto p-6">
             <button
@@ -628,7 +720,7 @@ const AdminAttendance = () => {
         <Sidebar role="admin" activeItem="attendance" />
 
       <div className="flex-1 flex flex-col">
-        <TopBar userName="Admin User" role="Admin" />
+        <TopBar userName={displayName} role={roleLabel} />
 
         <div className="flex-1 overflow-auto">
           <div className="px-6 py-4">
@@ -1113,19 +1205,19 @@ const AdminAttendance = () => {
                           <div className="flex justify-between items-center">
                             <p className="text-sm text-gray-800">Working Days</p>
                             <p className="text-xl font-semibold text-gray-800">
-                              5
+                              {weeklyWorkingDays}
                             </p>
                           </div>
                           <div className="flex justify-between items-center">
-                            <p className="text-sm text-gray-800">Total Records</p>
+                            <p className="text-sm text-gray-800">Most Late</p>
                             <p className="text-base font-semibold text-gray-800">
-                              {attendanceLogs.length}
+                              {weeklySummary.mostLate}
                             </p>
                           </div>
                           <div className="flex justify-between items-center">
-                            <p className="text-sm text-gray-800">View Details</p>
+                            <p className="text-sm text-gray-800">Most Absent</p>
                             <p className="text-base font-semibold text-gray-800">
-                              →
+                              {weeklySummary.mostAbsent}
                             </p>
                           </div>
                         </div>
@@ -1161,19 +1253,19 @@ const AdminAttendance = () => {
                           <div className="flex justify-between items-center">
                             <p className="text-sm text-gray-800">Working Days</p>
                             <p className="text-xl font-semibold text-gray-800">
-                              20
+                              {monthlyWorkingDays}
                             </p>
                           </div>
                           <div className="flex justify-between items-center">
-                            <p className="text-sm text-gray-800">Total Records</p>
+                            <p className="text-sm text-gray-800">Most Late</p>
                             <p className="text-base font-semibold text-gray-800">
-                              {attendanceLogs.length}
+                              {monthlySummary.mostLate}
                             </p>
                           </div>
                           <div className="flex justify-between items-center">
-                            <p className="text-sm text-gray-800">View Details</p>
+                            <p className="text-sm text-gray-800">Most Absent</p>
                             <p className="text-base font-semibold text-gray-800">
-                              →
+                              {monthlySummary.mostAbsent}
                             </p>
                           </div>
                         </div>
