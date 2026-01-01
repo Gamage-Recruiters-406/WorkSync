@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 const attendanceSchema = new mongoose.Schema({
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User", 
-        required: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Employees", 
+    required: true
     },
     date: {
         type: String, 
@@ -32,5 +32,8 @@ const attendanceSchema = new mongoose.Schema({
     }
 
 }, { timestamps: true });
+
+// PREVENTS DUPLICATES FOREVER
+attendanceSchema.index({ userId: 1, date: 1 }, { unique: true });
 
 export default mongoose.model("Attendance", attendanceSchema);

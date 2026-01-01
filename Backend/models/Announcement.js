@@ -32,13 +32,13 @@ const announcementSchema = new mongoose.Schema(
       default: "Medium",
     },
     audience: {
-      type: Number,
-      enum: [0, 1, 2, 3], // 0 = All
-      default: 0,
+      type: [Number],
+      enum: [ 1, 2, 3], // 1=employee , 2 = manager, 3=admins
+      required: true,
     },
 
     // likes
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Users" }],
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Employees" }],
     likesCount: {
       type: Number,
       default: 0,
@@ -53,13 +53,6 @@ const announcementSchema = new mongoose.Schema(
     isPinned: {
       type: Boolean,
       default: false,
-    },
-
-    //notifications
-    notifyRoles: {
-      type: [Number], // 1,2,3
-      enum: [1, 2, 3],
-      default: [],
     },
 
     neverExpire: {

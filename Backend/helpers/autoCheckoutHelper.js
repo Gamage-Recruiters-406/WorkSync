@@ -1,10 +1,10 @@
 import cron from "node-cron";
 import attendanceModel from "../models/attendanceModel.js";
-import User from "../models/User.js"; // Import User model to find employees
+import Employee from "../models/EmployeeModel.js";
 
 export const startAutoCheckoutJob = () => {
     
-    // MARK ABSENT AT 10:00 AM
+    // MARK ABSENT AT 10:00 AM (SL Time)
     cron.schedule("00 10 * * *", async () => {
         console.log(" [CRON] Running 10:00 AM Absent Check...");
 
@@ -13,15 +13,14 @@ export const startAutoCheckoutJob = () => {
             const slTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
             const todayStr = slTime.toISOString().split("T")[0];
 
-            //  Get all employees (Role 1)
-            const allEmployees = await User.find({ role: 1 }).select("_id name");
+            const allEmployees = await Employee.find({ role: 1 }).select("_id");
 
-            //  Get everyone who has ALREADY clocked in today
+            // Get everyone who has ALREADY clocked in today
             const presentAttendance = await attendanceModel.find({ date: todayStr }).select("userId");
             const presentUserIds = presentAttendance.map(record => record.userId.toString());
 
-            // Find who is MISSING
-            const absentUsers = allEmployees.filter(user => !presentUserIds.includes(user._id.toString()));
+            // Compare Employee IDs vs. Attendance UserIDs
+            const absentUsers = allEmployees.filter(emp => !presentUserIds.includes(emp._id.toString()));
 
             if (absentUsers.length === 0) {
                 console.log(" [CRON] Everyone is present today!");
@@ -30,9 +29,9 @@ export const startAutoCheckoutJob = () => {
 
             console.log(` [CRON] Found ${absentUsers.length} employees absent at 10:00 AM.`);
 
-            //  Create "Absent" records 
-            const absentRecords = absentUsers.map(user => ({
-                userId: user._id,
+            // Create "Absent" records 
+            const absentRecords = absentUsers.map(emp => ({
+                userId: emp._id,
                 date: todayStr,
                 status: "Absent",
                 inTime: null,
