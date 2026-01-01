@@ -109,6 +109,8 @@ const AdminDashboard = () => {
   const [attendanceTrendsLoading, setAttendanceTrendsLoading] = useState(true);
   const [taskDistribution, setTaskDistribution] = useState({completed: 0, inProgress: 0, pending: 0, overdue: 0});
   const [taskDistributionLoading, setTaskDistributionLoading] = useState(true);
+  const [userName, setUserName] = useState('User');
+  const [userLoading, setUserLoading] = useState(true);
 
   // API Base URL
   const API_BASE_URL = "http://localhost:8090/api/v1/";
@@ -123,6 +125,27 @@ const AdminDashboard = () => {
   const hideTooltip = () => setTooltip({ ...tooltip, visible: false });
 
   useEffect(() => {
+     // Fetch logged-in user data
+    const fetchUserData = async () => {
+      setUserLoading(true);
+      try {
+        const response = await axios.get(`${API_BASE_URL}employee/getSingleEmployee`, {
+          withCredentials: true,
+        });
+        if (response.data.success && response.data.data) {
+          const { firstName, lastName } = response.data.data;
+          setUserName(`${firstName ? `${firstName[0]}.` : ''} ${lastName || ''}`.trim() || 'User');
+        }
+      } catch (err) {
+        console.error("Fetch user data error:", err);
+        if (err.response?.status === 401) {
+          // Unauthorized - redirect to login
+          navigate('/login');
+        }
+      } finally {
+        setUserLoading(false);
+      }
+    };
     const fetchDepartments = async () => {
       setDepartmentsLoading(true);
       try {
@@ -271,6 +294,7 @@ const AdminDashboard = () => {
       }
     };
 
+    fetchUserData();
     fetchDepartments();
     fetchDashboardStats();
     fetchActiveProjects();
@@ -428,7 +452,7 @@ const AdminDashboard = () => {
         <div className="flex-1 overflow-auto p-5">
           {/* WELCOME */}
           <div className="mb-5">
-            <h1 className="text-2xl font-bold text-gray-800 mb-1">Welcome back, K. Perera!</h1>
+            <h1 className="text-2xl font-bold text-gray-800 mb-1">Welcome back, {userName}!</h1>
             <p className="text-sm text-gray-600">Here's what's happening with your organization today</p>
           </div>
 

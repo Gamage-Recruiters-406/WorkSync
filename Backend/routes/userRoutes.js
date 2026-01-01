@@ -20,7 +20,7 @@ router.post("/userLogin", loginUser);
 //get all users
 router.get('/getAllUsers', requiredSignIn, isAdmin, getAllUsers );
 
-
-
+//remove user 
+router.delete('/removeResume/:id',requiredSignIn, isAdmin, removeResume);
 
 export default router;

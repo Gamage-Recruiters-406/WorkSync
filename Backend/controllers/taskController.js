@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import Task from "../models/Task.js";
 import TaskAttachment from "../models/TaskAttachmentModel.js";
 import Milestone from "../models/milestoneModel.js";
-import Employee from "../models/EmployeeModel.js";
+import User from "../models/User.js";
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
 
@@ -17,16 +17,7 @@ const formatTaskForClient = (taskDoc) => {
     return {
         ...task,
         assignedTo: assigned
-            .map((u) => {
-                if (typeof u === "object" && u !== null) {
-                    return {
-                        _id: u._id,
-                        name: `${u.FirstName} ${u.LastName}`,
-                        email: u.email
-                    };
-                }
-                return null;
-            })
+            .map((u) => (typeof u === "object" && u !== null ? u.name : null))
             .filter(Boolean),
         milestone: task.milestone && typeof task.milestone === "object" ? task.milestone.milestoneName : null,
     };
@@ -42,7 +33,7 @@ export const taskReport = async (req, res) => {
         const { format } = req.query;
 
         const tasks = await Task.find()
-            .populate("assignedTo", "FirstName LastName email")
+            .populate("assignedTo", "name")
             .populate("milestone", "milestoneName");
 
         /* =====================
@@ -69,7 +60,7 @@ export const taskReport = async (req, res) => {
                     .text(`Status: ${task.status}`)
                     .text(`Priority: ${task.priority}`)
                     .text(
-                        `Assigned To: ${task.assignedTo.map(u => `${u.FirstName} ${u.LastName}`).join(", ")}`
+                        `Assigned To: ${task.assignedTo.map(u => u.name).join(", ")}`
                     )
                     .text(`Milestone: ${task.milestone?.milestoneName || "-"}`)
                     .text(`Deadline: ${task.deadline || "-"}`)
@@ -101,7 +92,7 @@ export const taskReport = async (req, res) => {
                     title: task.title,
                     status: task.status,
                     priority: task.priority,
-                    assignedTo: task.assignedTo.map(u => `${u.FirstName} ${u.LastName}`).join(", "),
+                    assignedTo: task.assignedTo.map(u => u.name).join(", "),
                     milestone: task.milestone?.milestoneName || "-",
                     deadline: task.deadline || "-",
                 });
@@ -166,19 +157,14 @@ export const createTask = async (req, res) => {
                 : undefined;
 
         /* =========================
-           EMPLOYEE EMAIL/ID → OBJECT ID
+           USER NAME → OBJECT ID
         ========================= */
-        let assignedEmployeeIds = [];
+        let assignedUserIds = [];
         if (assignedTo) {
-            const identifiers = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
+            const names = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
 
-            const employees = await Employee.find({
-                $or: [
-                    { email: { $in: identifiers } },
-                    { _id: { $in: identifiers.filter(id => mongoose.Types.ObjectId.isValid(id)) } }
-                ]
-            }, "_id");
-            assignedEmployeeIds = employees.map((emp) => emp._id);
+            const users = await User.find({ name: { $in: names } }, "_id");
+            assignedUserIds = users.map((u) => u._id);
         }
 
         /* =========================
@@ -204,7 +190,7 @@ export const createTask = async (req, res) => {
             ...(taskId ? { _id: taskId } : {}),
             title,
             description,
-            assignedTo: assignedEmployeeIds,
+            assignedTo: assignedUserIds,
             deadline,
             priority,
             milestone: milestoneId,
@@ -236,7 +222,7 @@ filePath: `uploads/tasks/${created._id.toString()}/${file.filename}` // fixed
 }
 
         const task = await Task.findById(created._id)
-            .populate("assignedTo", "FirstName LastName email")
+            .populate("assignedTo", "name")
             .populate("milestone", "milestoneName");
 
         res.status(201).json({
@@ -302,17 +288,12 @@ export const updateTask = async (req, res) => {
         if (status !== undefined) task.status = status;
 
         /* =========================
-           UPDATE ASSIGNED EMPLOYEES
+           UPDATE ASSIGNED USERS
         ========================= */
         if (assignedTo !== undefined) {
-            const identifiers = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
-            const employees = await Employee.find({
-                $or: [
-                    { email: { $in: identifiers } },
-                    { _id: { $in: identifiers.filter(id => mongoose.Types.ObjectId.isValid(id)) } }
-                ]
-            }, "_id");
-            task.assignedTo = employees.map((emp) => emp._id);
+            const names = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
+            const users = await User.find({ name: { $in: names } }, "_id");
+            task.assignedTo = users.map((u) => u._id);
         }
 
         /* =========================
@@ -336,7 +317,7 @@ export const updateTask = async (req, res) => {
         await task.save();
 
         const populated = await Task.findById(task._id)
-            .populate("assignedTo", "FirstName LastName email")
+            .populate("assignedTo", "name")
             .populate("milestone", "milestoneName");
 
         res.status(200).json({
@@ -354,24 +335,28 @@ export const updateTask = async (req, res) => {
 };
 
 
-// GET ALL TASKS FOR EMPLOYEE
+// GET ALL TASKS FOR USER
 export const getAllTasks = async (req, res) => {
   try {
     const query = {};
-    const userId = req.user.userid || req.user._id;
+
+    // Employee (role = 1) → only own tasks
+    if (req.user.role === 1) {
+      query.assignedTo = req.user._id;
+    }
 
     // Filters (Admin + Team Leader can use)
     if (req.query.projectId) query.project = req.query.projectId;
     if (req.query.status) query.status = req.query.status;
     if (req.query.priority) query.priority = req.query.priority;
 
-    // Team Leader (role = 1) can filter by assigned employee
-    if (req.query.assignedTo && req.user.role === 1) {
+    // Team Leader (role = 2) can filter by assigned user
+    if (req.query.assignedTo && req.user.role === 2) {
       query.assignedTo = req.query.assignedTo;
     }
 
     const tasks = await Task.find(query)
-      .populate("assignedTo", "FirstName LastName email")
+      .populate("assignedTo", "name")
       .populate("milestone", "milestoneName")
       .sort({ createdAt: -1 });
 
@@ -388,29 +373,24 @@ export const getAllTasks = async (req, res) => {
   }
 };
 
-// GET ALL TASKS ASSIGNED TO THE LOGGED-IN EMPLOYEE
-
+// GET ALL TASKS ASSIGNED TO THE LOGGED-IN USER
 export const getAllUserTasks = async (req, res) => {
-  try {
-    const employeeId = new mongoose.Types.ObjectId(req.user.userid);
-    const tasks = await Task.find({ assignedTo: employeeId })
-      .populate("assignedTo", "FirstName LastName email")
-      .populate("milestone", "milestoneName")
-      .sort({ createdAt: -1 });
-    console.log("req.user:", req.user);
+    try {
+        // ⚡ Use 'new' when creating ObjectId
+        const userId = new mongoose.Types.ObjectId(req.user._id);
 
-    res
-      .status(200)
-      .json({ success: true, data: tasks.map(formatTaskForClient) });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching user tasks",
-      error: error.message,
-    });
-  }
+        const tasks = await Task.find({ assignedTo: userId })
+            .populate("assignedTo", "name")
+            .populate("milestone", "milestoneName")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ success: true, data: tasks.map(formatTaskForClient) });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Error fetching user tasks", error: error.message });
+    }
 };
+
 
 // UPDATE STATUS
 export const updateTaskStatus = async (req, res) => {
@@ -424,7 +404,7 @@ export const updateTaskStatus = async (req, res) => {
         task.status = status;
         await task.save();
         const populated = await Task.findById(task._id)
-            .populate("assignedTo", "FirstName LastName email")
+            .populate("assignedTo", "name")
             .populate("milestone", "milestoneName");
         res.status(200).json({ success: true, message: "Task status updated", data: formatTaskForClient(populated) });
     } catch (error) {
@@ -442,7 +422,7 @@ export const getTaskDetails = async (req, res) => {
         }
 
         const task = await Task.findById(id)
-            .populate("assignedTo", "FirstName LastName email")
+            .populate("assignedTo", "name email")
             .populate("milestone", "milestoneName");
 
         if (!task) {

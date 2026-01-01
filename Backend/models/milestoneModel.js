@@ -43,7 +43,7 @@ const milestoneSchema = new mongoose.Schema({
     },
     assignedTo: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Employees"
+        ref: "User"
     }],
     Completion_Date: {
         type: Date

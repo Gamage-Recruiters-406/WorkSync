@@ -31,9 +31,9 @@ import TaskHistory from "./pages/TeamLeader/TaskHistory";
 import Login from "./pages/Login";
 
 import { Navigate } from "react-router-dom";
-import AdminReport from "./pages/reportAnalytics/AdminReport";
+//import AdminReport from "./pages/reportAnalytics/AdminReport";
 import { useState } from 'react';
-import EmployeeList from './pages/admin/EmployeeList';
+//import EmployeeList from './pages/admin/EmployeeList';
 import AddEmployee from './pages/admin/AddEmployee';
 import EditEmployee from './pages/admin/EditEmployee';
 import ApproveUser from "./pages/admin/ApproveUser";

@@ -1,10 +1,7 @@
 import attendanceModel from "../models/attendanceModel.js";
-import Employee from "../models/EmployeeModel.js"; 
-import User from "../models/User.js"; 
+import User from "../models/User.js";
 import ExcelJS from 'exceljs';       
 import PDFDocument from 'pdfkit';    
-
-
 
 // Calculate "0h 0m" format
 const calculateDuration = (inTime, outTime) => {
@@ -39,43 +36,19 @@ const determineStatus = () => {
 };
 
 
-const getEmployeeIdFromUser = async (idFromToken) => {
-    // Check if the ID belongs directly to an Employee 
-    const directEmployee = await Employee.findById(idFromToken);
-    if (directEmployee) {
-        return directEmployee._id;
-    }
-
-    const user = await User.findById(idFromToken);
-    if (user) {
-        const linkedEmployee = await Employee.findOne({ email: user.email });
-        if (linkedEmployee) return linkedEmployee._id;
-    }
-
-    return null;
-};
-
-
 // 1. START ATTENDANT (Clock In)
 export const clockInController = async (req, res) => {
     try {
         const { date } = req.body; 
-        const idFromToken = req.user.userid; 
+        const userId = req.user.userid; 
 
         if (!date) return res.status(400).send({ message: "Date is required" });
 
-        // Get the correct Employee ID
-        const employeeId = await getEmployeeIdFromUser(idFromToken);
-        
-        if (!employeeId) {
-            return res.status(404).send({ success: false, message: "Employee profile not found. Please contact HR." });
-        }
-
-        // Check if a record exists using EMPLOYEE ID
-        let attendance = await attendanceModel.findOne({ userId: employeeId, date });
+        // Check if a record exists
+        let attendance = await attendanceModel.findOne({ userId, date });
 
         // Logic to determine status based on time
-        const calculatedStatus = determineStatus(); 
+        const calculatedStatus = determineStatus(); // Returns Present, Late, or Absent
 
         if (attendance) {
             if (attendance.inTime === null || attendance.status === 'Absent') {
@@ -91,6 +64,7 @@ export const clockInController = async (req, res) => {
                     attendance
                 });
             } else {
+                // Real duplicate check-in (they actually clocked in earlier)
                 return res.status(400).send({
                     success: false,
                     message: "You have already clocked in for this date."
@@ -98,9 +72,9 @@ export const clockInController = async (req, res) => {
             }
         }
 
-        // Create new record with EMPLOYEE ID
+        // Normal First Time Check In (Before 10 AM)
         const newAttendance = new attendanceModel({
-            userId: employeeId, 
+            userId,  
             date,
             status: calculatedStatus,
             inTime: new Date()
@@ -125,12 +99,9 @@ export const clockInController = async (req, res) => {
 export const clockOutController = async (req, res) => {
     try {
         const { date } = req.body;
-        const idFromToken = req.user.userid; 
+        const userId = req.user.userid; 
 
-        const employeeId = await getEmployeeIdFromUser(idFromToken);
-        if (!employeeId) return res.status(404).send({ message: "Employee profile not found" });
-
-        const attendance = await attendanceModel.findOne({ userId: employeeId, date });
+        const attendance = await attendanceModel.findOne({ userId, date });
 
         if (!attendance) {
             return res.status(404).send({ success: false, message: "Attendance record not found for today" });
@@ -165,21 +136,13 @@ export const getAttendanceController = async (req, res) => {
         let query = {};
 
         if (role === 3) { 
-            // Admin sees all
         } else if (role === 2) { 
-            // Manager: Get all Employees + Themselves
-            const employees = await Employee.find({ role: 1 }).select("_id");
-            const allowedIds = employees.map(emp => emp._id);
-            
-            const managerEmpId = await getEmployeeIdFromUser(userid);
-            if (managerEmpId) allowedIds.push(managerEmpId);
-
+            const employees = await User.find({ role: 1 }).select("_id");
+            const allowedIds = employees.map(user => user._id);
+            allowedIds.push(userid);
             query.userId = { $in: allowedIds };
         } else { 
-            // Employee sees only their own
-            const employeeId = await getEmployeeIdFromUser(userid);
-            if(employeeId) query.userId = employeeId;
-            else return res.status(200).send({ success: true, count: 0, attendance: [] }); 
+            query.userId = userid;
         }
 
         const targetDate = date ? new Date(date) : new Date(); 
@@ -199,7 +162,7 @@ export const getAttendanceController = async (req, res) => {
         }
 
         const attendanceRecords = await attendanceModel.find(query)
-            .populate('userId', 'FirstName LastName name email role') 
+            .populate('userId', 'name email role employeeId') 
             .sort({ date: -1 })
             .lean(); 
 
@@ -208,21 +171,9 @@ export const getAttendanceController = async (req, res) => {
             if (record.inTime && !record.outTime) {
                 displayStatus = "Working";
             }
-            
-            const user = record.userId || {};
-            let fullName = "Unknown";
-
-            if (user.FirstName) {
-                fullName = `${user.FirstName} ${user.LastName}`;
-            } else if (user.name) {
-                fullName = user.name;
-            } else if (user.email) {
-                fullName = user.email;
-            }
 
             return { 
                 ...record, 
-                userId: { ...user, name: fullName }, 
                 status: displayStatus,
                 hoursWorked: calculateDuration(record.inTime, record.outTime) 
             }; 
@@ -247,7 +198,7 @@ export const getSingleUserAttendanceController = async (req, res) => {
         const { id } = req.params; 
         
         const attendanceRecords = await attendanceModel.find({ userId: id })
-            .populate('userId', 'FirstName LastName name email')
+            .populate('userId', 'name email')
             .sort({ date: -1 })
             .lean();
 
@@ -260,21 +211,9 @@ export const getSingleUserAttendanceController = async (req, res) => {
             if (record.inTime && !record.outTime) {
                 displayStatus = "Working";
             }
-            
-            const user = record.userId || {};
-            let fullName = "Unknown";
-            
-            if (user.FirstName) {
-                fullName = `${user.FirstName} ${user.LastName}`;
-            } else if (user.name) {
-                fullName = user.name;
-            } else if (user.email) {
-                fullName = user.email;
-            }
 
             return { 
                 ...record, 
-                userId: { ...user, name: fullName },
                 status: displayStatus,
                 hoursWorked: calculateDuration(record.inTime, record.outTime) 
             }; 
@@ -301,16 +240,12 @@ const buildExportQuery = async (req) => {
 
     if (role === 3) {
     } else if (role === 2) {
-        const employees = await Employee.find({ role: 1 }).select("_id");
-        const allowedIds = employees.map(emp => emp._id);
-        
-        const managerEmpId = await getEmployeeIdFromUser(userid);
-        if (managerEmpId) allowedIds.push(managerEmpId);
-
+        const employees = await User.find({ role: 1 }).select("_id");
+        const allowedIds = employees.map(user => user._id);
+        allowedIds.push(userid);
         query.userId = { $in: allowedIds };
     } else {
-        const employeeId = await getEmployeeIdFromUser(userid);
-        if(employeeId) query.userId = employeeId;
+        query.userId = userid;
     }
 
     const targetDate = date ? new Date(date) : new Date();
@@ -351,7 +286,7 @@ const exportAttendanceExcel = async (req, res) => {
     try {
         const query = await buildExportQuery(req);
         const attendanceData = await attendanceModel.find(query)
-            .populate('userId', 'FirstName LastName name email _id') 
+            .populate('userId', 'name email _id') 
             .sort({ date: -1 });
 
         let totalHoursWorked = 0; 
@@ -386,27 +321,15 @@ const exportAttendanceExcel = async (req, res) => {
 
         attendanceData.forEach(record => {
             let uniqueId = "Unknown";
-            let fullName = "Unknown";
-            
-            if (record.userId) {
-                if (record.userId._id) {
-                    const shortId = record.userId._id.toString().slice(-4).toUpperCase();
-                    uniqueId = `EMP-${shortId}`;
-                }
-                
-                if (record.userId.FirstName) {
-                    fullName = `${record.userId.FirstName} ${record.userId.LastName}`;
-                } else if (record.userId.name) {
-                    fullName = record.userId.name; 
-                } else if (record.userId.email) {
-                    fullName = record.userId.email; 
-                }
+            if (record.userId && record.userId._id) {
+                const shortId = record.userId._id.toString().slice(-4).toUpperCase();
+                uniqueId = `EMP-${shortId}`;
             }
 
             worksheet.addRow({
                 date: record.date,
                 empId: uniqueId, 
-                name: fullName, 
+                name: record.userId ? record.userId.name : 'Unknown',
                 status: record.status,
                 inTime: formatSLTime(record.inTime),
                 outTime: formatSLTime(record.outTime),
@@ -436,7 +359,7 @@ const exportAttendancePDF = async (req, res) => {
     try {
         const query = await buildExportQuery(req);
         const attendanceData = await attendanceModel.find(query)
-            .populate('userId', 'FirstName LastName name email _id')
+            .populate('userId', 'name email _id')
             .sort({ date: -1 });
 
         let totalHoursWorked = 0;
@@ -485,26 +408,14 @@ const exportAttendancePDF = async (req, res) => {
             const hoursTxt = calculateDuration(record.inTime, record.outTime);
             
             let uniqueId = "Unknown";
-            let fullName = "Unknown";
-
-            if (record.userId) {
-                if (record.userId._id) {
-                    const shortId = record.userId._id.toString().slice(-4).toUpperCase();
-                    uniqueId = `EMP-${shortId}`;
-                }
-                
-                if (record.userId.FirstName) {
-                    fullName = `${record.userId.FirstName} ${record.userId.LastName}`;
-                } else if (record.userId.name) {
-                    fullName = record.userId.name; 
-                } else if (record.userId.email) {
-                    fullName = record.userId.email; 
-                }
+            if (record.userId && record.userId._id) {
+                const shortId = record.userId._id.toString().slice(-4).toUpperCase();
+                uniqueId = `EMP-${shortId}`;
             }
 
             doc.text(record.date, 30, y);
             doc.text(uniqueId, 110, y);
-            doc.text(fullName, 160, y, { width: 130 }); 
+            doc.text(record.userId?.name || "Unknown", 160, y, { width: 130 });
             doc.text(formatSLTime(record.inTime), 300, y);
             doc.text(formatSLTime(record.outTime), 360, y);
             doc.text(hoursTxt, 420, y);
@@ -557,13 +468,10 @@ export const updateAttendanceController = async (req, res) => {
 // 7. EMPLOYEE: REQUEST CORRECTION
 export const requestCorrectionController = async (req, res) => {
     try {
-        const idFromToken = req.user.userid;
+        const userId = req.user.userid;
         const { date, type, requestedTime, reason } = req.body; 
 
-        const employeeId = await getEmployeeIdFromUser(idFromToken);
-        if(!employeeId) return res.status(404).send({ success: false, message: "Employee profile not found" });
-
-        const attendance = await attendanceModel.findOne({ userId: employeeId, date });
+        const attendance = await attendanceModel.findOne({ userId, date });
         if (!attendance) {
             return res.status(404).send({ success: false, message: "Attendance record not found for this date" });
         }
@@ -594,7 +502,7 @@ export const requestCorrectionController = async (req, res) => {
 export const getPendingCorrectionsController = async (req, res) => {
     try {
         const pendingRequests = await attendanceModel.find({ "correction.status": "Pending" })
-            .populate("userId", "FirstName LastName name email")
+            .populate("userId", "name email employeeId")
             .sort({ date: -1 });
 
         res.status(200).send({
@@ -680,12 +588,9 @@ export const approveCorrectionController = async (req, res) => {
 // 10. GET USER ATTENDANCE HISTORY (for User side)
 export const getMyAttendanceHistoryController = async (req, res) => {
     try {
-        const idFromToken = req.user.userid; 
+        const userId = req.user.userid; 
 
-        const employeeId = await getEmployeeIdFromUser(idFromToken);
-        if (!employeeId) return res.status(200).send({ success: true, count: 0, attendance: [] });
-
-        const attendanceRecords = await attendanceModel.find({ userId: employeeId })
+        const attendanceRecords = await attendanceModel.find({ userId })
             .sort({ date: -1 }) 
             .lean();
 
@@ -716,29 +621,25 @@ export const getMyAttendanceHistoryController = async (req, res) => {
 
 
 
-// 11. GET DASHBOARD STATS (Only for Employees with Role: 1)
+// 11. GET DASHBOARD STATS (Total, Present, Late, Absent)
 export const getDashboardStatsController = async (req, res) => {
     try {
-        // Get Today's Date (SL Time)
+        //  Get Today's Date (SL Time)
         const now = new Date();
         const slTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
         const todayStr = slTime.toISOString().split("T")[0];
 
-        // Get All Employees (Role 1) & Their IDs
-        const employees = await Employee.find({ role: 1 }).select('_id');
-        const employeeIds = employees.map(emp => emp._id);
+        //  Get Total Employees (Role 1)
+        const totalEmployees = await User.countDocuments({ role: 1 });
 
-        const totalEmployees = employees.length;
+        //  Get Today's Attendance Records
+        const todayAttendance = await attendanceModel.find({ date: todayStr });
 
-        // Get Today's Attendance ONLY for Employees
-        const todayAttendance = await attendanceModel.find({ 
-            date: todayStr,
-            userId: { $in: employeeIds } 
-        });
-
-        // Calculate Counts
+        //  Calculate Counts
         const presentCount = todayAttendance.filter(doc => doc.status === "Present").length;
+        
         const lateCount = todayAttendance.filter(doc => doc.status === "Late").length;
+        
         const absentCount = todayAttendance.filter(doc => doc.status === "Absent").length;
 
         res.status(200).send({
@@ -792,7 +693,7 @@ export const getAnalyticsReportController = async (req, res) => {
         }
 
         //  Fetch Data
-        const employees = await Employee.find({ role: 1 }).select('_id FirstName LastName');
+        const employees = await User.find({ role: 1 }).select('_id name employeeId');
         const attendanceRecords = await attendanceModel.find({
             date: {
                 $gte: startDate.toISOString().split('T')[0],
@@ -824,20 +725,18 @@ export const getAnalyticsReportController = async (req, res) => {
                 }
             });
 
-            // Construct Full Name for Analytics
-            const fullName = `${emp.FirstName} ${emp.LastName}`;
             
-            if (lateCount > mostLateUser.count) mostLateUser = { name: fullName, count: lateCount };
-            if (daysAbsent > mostAbsentUser.count) mostAbsentUser = { name: fullName, count: daysAbsent };
-            if (daysPresent > mostPresentUser.count) mostPresentUser = { name: fullName, count: daysPresent };
+            if (lateCount > mostLateUser.count) mostLateUser = { name: emp.name, count: lateCount };
+            if (daysAbsent > mostAbsentUser.count) mostAbsentUser = { name: emp.name, count: daysAbsent };
+            if (daysPresent > mostPresentUser.count) mostPresentUser = { name: emp.name, count: daysPresent };
 
             const totalHours = Math.floor(totalMs / (1000 * 60 * 60));
             const totalMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
 
             return {
                 id: emp._id,
-                employeeId: "EMP-" + emp._id.toString().slice(-4).toUpperCase(), 
-                name: fullName, 
+                employeeId: emp.employeeId || "EMP000",
+                name: emp.name,
                 daysPresent,
                 daysAbsent,
                 lateCount,
