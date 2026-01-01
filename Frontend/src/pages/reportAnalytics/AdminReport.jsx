@@ -51,22 +51,28 @@ export default function AdminReport() {
         ]);
 
         const attendance = attendanceRes?.data?.attendance || [];
+        console.log(attendance);
 
-        /*const leaves = Array.isArray(leaveRes?.data)
-          ? leaveRes.data
-          : leaveRes?.data?.leaves || [];*/
         const leaves = leaveRes.data.data || [];
+
+        const today = new Date().toISOString().split("T")[0];
+
+        const todayAttendance = attendance.filter((a) => a.date === today);
 
         setKpis((prev) => ({
           ...prev,
           totalEmployees: totEmp.data.data.length,
-          presentToday: attendance.filter((a) => a.status === "Present").length,
-          absentToday: attendance.filter((a) => a.status === "Absent").length,
-          pendingLeaves:
-            leaves.length /*filter((l) => l.status === "Pending")*/,
+
+          presentToday: todayAttendance.filter((a) => a.status === "Present")
+            .length,
+
+          absentToday: todayAttendance.filter((a) => a.status === "Absent")
+            .length,
+
+          pendingLeaves: leaves.length, // unchanged
         }));
       } catch (error) {
-        console.error("❌ Error loading KPI data:", error);
+        console.error(" Error loading KPI data:", error);
       }
     };
 
