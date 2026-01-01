@@ -119,20 +119,85 @@ export const loginUser = async (req, res) => {
 };
 
 //get all users
-export const getAllUsers = async(req, res) => {
+export const getAllUsers = async (req, res) => {
+  try {
+    // Optional query params:
+    // ?page=1&limit=10&search=ravindu&sort=createdAt&order=desc
+    const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || "20", 10), 1), 100);
+    const search = (req.query.search || "").trim();
+
+    const sortField = req.query.sort || "createdAt";
+    const sortOrder = (req.query.order || "desc").toLowerCase() === "asc" ? 1 : -1;
+
+    const filter = {};
+    if (search) {
+      filter.$or = [
+        { FirstName: { $regex: search, $options: "i" } },
+        { LastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { NIC: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select("-__v") // remove version key
+        .sort({ [sortField]: sortOrder })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Users fetched successfully",
+      data: users,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.error("getAllUsers error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching users",
+      error: error.message,
+    });
+  }
+};
+
+//reject user resume controller
+export const removeResume = async (req, res) => {
     try {
-        const Users = await User.find();
+        const { id } = req.params;
+
+        const CheckExist = await User.findById(id);
+        if(!CheckExist){
+            res.status(404).json({
+                success: false,
+                message: 'This user already rejected.'
+            })
+        }
+
+        const user = await User.findByIdAndDelete(id);
 
         res.status(200).json({
             success: true,
-            message: 'Fetching Users Data successfully!',
-            Users
+            message: 'User rejected!'
         })
+        
     } catch (error) {
         console.log(error);
         res.status(500).json({
             success: false,
-            message: 'Server side Error'
+            message: 'Server side Error.',
+            error
         })
     }
 }
