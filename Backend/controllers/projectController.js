@@ -1,5 +1,4 @@
 import Project from "../models/ProjectModel.js";
-import ProjectTeam from "../models/ProjectTeam.js";
 
 // Create a new project
 export const createProjectController = async (req, res) => {
@@ -45,12 +44,6 @@ export const createProjectController = async (req, res) => {
             status,
             createdBy,
             teamLeader: teamLeaderId,
-        });
-
-        await ProjectTeam.create({
-            projectId: project._id,
-            userId: teamLeaderId,
-            assignedRole: "Team Lead"
         });
 
         res.status(201).json({

@@ -16,7 +16,7 @@ const departmentSchema = new mongoose.Schema(
     },
     departmentHead: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Employees",
       default: null,
     },
     capacity: {
