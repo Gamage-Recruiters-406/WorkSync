@@ -2,6 +2,7 @@ import EmployeeModel from "../models/EmployeeModel.js";
 import User from "../models/User.js";
 import { hashPassword, comparePassword } from "../helpers/AuthHelper.js";
 import JWT from "jsonwebtoken";
+import mongoose from "mongoose";
 
 export const rejisterEmployee = async (req, res) => {
   try {
@@ -105,7 +106,27 @@ export const getSingleEmployee = async (req, res) => {
     const id = req.user.userid;
 
     const user = await EmployeeModel.findById(id);
-    console.log(user);
+
+    res.status(200).json({
+      success: true,
+      message: 'User details fetch successfully!',
+      user
+    })
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server side Error'
+    })
+  }
+}
+
+//get single employee by ID
+export const getSingleEmployeeByID = async (req, res) => {
+  try {
+    const {id} = req.params;
+
+    const user = await EmployeeModel.findById(id);
 
     res.status(200).json({
       success: true,
@@ -224,6 +245,73 @@ export const RemoveEmployee = async (req, res) => {
 
   } catch (error) {
     console.log(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server side Error.'
+    })
+  }
+}
+
+//update employee deatils
+//add department and employee ID for emolyee database
+export const updateEmployee = async (req, res) => {
+  try {
+    const {id} = req.params;
+    const { EmployeeID, role, departmentID } = req.body;
+
+    if(!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employee ID'
+      });
+    }
+
+    const updateEmployee = {};
+    if(EmployeeID !== undefined ) updateEmployee.EmployeeID = EmployeeID;
+    if(role !== undefined) updateEmployee.role = role;
+    if(departmentID !== undefined) updateEmployee.departmentID = departmentID;
+
+    if(Object.keys(updateEmployee).length === 0){
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided for update",
+      });
+    }
+
+    const update = await EmployeeModel.findByIdAndUpdate(
+      id,
+      {$set: updateEmployee},
+      {
+        new: true,
+        runValidators: true
+      }
+    )
+
+    if(!update) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found'
+      })
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Employee updated successfully',
+      data: update
+    })
+
+
+  } catch (error) {
+    console.log(error)
+
+    // Duplicate EmployeeID error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "EmployeeID already exists",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Server side Error.'
