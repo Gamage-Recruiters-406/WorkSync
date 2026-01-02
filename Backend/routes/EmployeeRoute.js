@@ -5,7 +5,8 @@ import {
     EmloyeesByRole,
     getSingleEmployee,
     loginUser,
-    SignOut
+    SignOut,
+    RemoveEmployee
  } from '../controllers/Employeecontroller.js';
 import { isAdmin, requiredSignIn } from '../middlewares/AuthMiddleware.js';
 
@@ -29,6 +30,9 @@ router.get("/getEmloyeesByRole", requiredSignIn, EmloyeesByRole );
 
 //get single user
 router.get("/getSingleEmployee",requiredSignIn, getSingleEmployee)
+
+//remove employee
+router.delete("/RemoveEmployee/:id",requiredSignIn, isAdmin, RemoveEmployee)
 
 
 export default router;
