@@ -50,10 +50,9 @@ export const startAutoCheckoutJob = () => {
             const slTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
             const todayStr = slTime.toISOString().split("T")[0];
 
-            // ✅ FIX: Use 'outTime: null' to catch records with null values
             const forgotToCheckoutEmployees = await attendanceModel.find({
                 date: todayStr,
-                outTime: null, // <--- CHANGED FROM { $exists: false }
+                outTime: null, 
                 status: { $ne: "Absent" } 
             });
 
