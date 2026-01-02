@@ -67,22 +67,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
 
-        {/* Dashboard routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
         <Route path="*" element={<Navigate to="/login" replace />} />
-
-        {/* Admin Routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/assign-task" element={<AssignTask />} />
-        <Route path="/admin/users" element={<Users />} />
-        <Route path="/admin/manage-leaves" element={<ManageLeaves />} />
-        <Route path="/admin/reports" element={<AdminReport />} />
-        <Route path="/admin/announcements" element={<AdminAnnouncements />} />
-        <Route path="/admin/departments" element={<Departments />} />
-        <Route path="/admin/projects" element={<ProjectsDashboard />} />
-        <Route path="/admin/projects/:id" element={<ProjectDetailsAdmin />} />
-        <Route path="/admin/attendance" element={<AdminAttendance />} />
 
         {/* System Settings (Tabs)*/}
         <Route path="/admin/system-settings" element={<SystemSettings />}>
@@ -108,6 +93,8 @@ function App() {
         <Route path="/admin/announcements" element={<AdminAnnouncements />} />
         <Route path="/admin/departments" element={<Departments />} />
         <Route path="/admin/projects" element={<Projects />} />
+        <Route path="/admin/projects" element={<ProjectsDashboard />} />
+        <Route path="/admin/projects/:id" element={<ProjectDetailsAdmin />} />
         <Route path="/admin/attendance" element={<AdminAttendance />} />
         <Route path="/admin/Approve" element={<ApproveUser />} />
         <Route path="/admin/D-details/:id" element={<DepartmentDetails />} />
