@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProjectController, getSingleProjectController, getAllProjectsController, updateProjectController, deleteProjectController } from '../controllers/projectController.js';
+import { createProjectController, getSingleProjectController, getAllProjectsController, updateProjectController, deleteProjectController, projectProgressReportController } from '../controllers/projectController.js';
 import { requiredSignIn, isManagerOrAdmin } from '../middlewares/AuthMiddleware.js';
 import projectAttachmentRoutes from './projectAttachmentRoutes.js';
 
@@ -23,5 +23,8 @@ router.delete("/deleteProject/:id", requiredSignIn, isManagerOrAdmin, deleteProj
 
 // mount attachment routes under each project
 router.use("/:projectId/attachments", projectAttachmentRoutes);
+
+// PROJECT PROGRESS REPORT -> GET /api/v1/projects/projectReport/:id
+router.get("/projectReport/:id", requiredSignIn, projectProgressReportController);
 
 export default router;

@@ -171,3 +171,33 @@ export const getAllUsers = async (req, res) => {
     });
   }
 };
+
+//reject user resume controller
+export const removeResume = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const CheckExist = await User.findById(id);
+        if(!CheckExist){
+            res.status(404).json({
+                success: false,
+                message: 'This user already rejected.'
+            })
+        }
+
+        const user = await User.findByIdAndDelete(id);
+
+        res.status(200).json({
+            success: true,
+            message: 'User rejected!'
+        })
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: 'Server side Error.',
+            error
+        })
+    }
+}

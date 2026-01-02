@@ -189,3 +189,47 @@ export const loginUser = async (req, res) => {
         });
     }
 };
+
+//log out controller
+export const SignOut = async(req, res) => {
+  try {
+    res.clearCookie('access_token').status(200).json({
+      success: true,
+      message: 'Signout Successfully!'
+    })
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server side Error.'
+    })
+  }
+}
+
+//remove employee
+export const RemoveEmployee = async (req, res) => {
+  try {
+    const {id} = req.params();
+
+    const existUser = await EmployeeModel.findById(id);
+    if(!existUser){
+      res.status(404).json({
+        success: false, 
+        message: 'User not found or User already removed'
+      })
+    }
+
+    await EmployeeModel.findByIdAndDelete(id);
+    res.status(200).json({
+      success: false,
+      message: 'Employee removed successfully.'
+    })
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server side Error.'
+    })
+  }
+}
