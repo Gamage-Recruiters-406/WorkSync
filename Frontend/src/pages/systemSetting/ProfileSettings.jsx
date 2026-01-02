@@ -81,8 +81,8 @@ const ProfileSettings = () => {
           </div>
 
           {/* Right Details Card */}
-          <div className="flex-1 rounded-2xl bg-gray-100 p-6 shadow-lg">
-            <div className="space-y-4">
+          <div className="flex-1 rounded-2xl bg-gray-100 p-6 border-2 border-[#087990] shadow-lg">
+            <div className="space-y-4 ">
               <InputField label="User ID" value={profile._id} />
               <InputField
                 label="Name"

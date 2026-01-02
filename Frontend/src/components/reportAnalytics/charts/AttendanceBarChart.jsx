@@ -25,7 +25,7 @@ export default function AttendanceBar({ data = [] }) {
       <h3 className="font-semibold mb-4">Attendance Overview</h3>
 
       <div className="w-full">
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={213}>
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />

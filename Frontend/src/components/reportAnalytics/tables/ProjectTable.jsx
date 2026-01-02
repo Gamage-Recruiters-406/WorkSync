@@ -12,14 +12,16 @@ export default function ProjectTable({ data }) {
     // Map data into table rows
     const rows = data.map((proj, i) => [
       proj.name,
-      proj.teamLeader?.name || "-",
+      proj.description,
       proj.status,
       proj.startDate ? new Date(proj.startDate).toLocaleDateString() : "-",
       proj.endDate ? new Date(proj.endDate).toLocaleDateString() : "-",
     ]);
 
     autoTable(doc, {
-      head: [["Project Name", "Team Lead", "Status", "Start Date", "End Date"]],
+      head: [
+        ["Project Name", "Description", "Status", "Start Date", "End Date"],
+      ],
       body: rows,
       startY: 30,
     });
@@ -30,7 +32,7 @@ export default function ProjectTable({ data }) {
   const handleExportExcel = () => {
     const worksheetData = data.map((proj) => ({
       "Project Name": proj.name,
-      "Team Lead": proj.teamLeader?.name || "-",
+      Description: proj.description,
       Status: proj.status,
       "Start Date": proj.startDate
         ? new Date(proj.startDate).toLocaleDateString()
@@ -87,7 +89,7 @@ export default function ProjectTable({ data }) {
                 Project Name
               </th>
               <th className="px-4 py-3 border text-left text-white">
-                Team Lead
+                Description
               </th>
               <th className="px-4 py-3 border text-left text-white">Status</th>
               <th className="px-4 py-3 border text-left text-white">
@@ -107,9 +109,7 @@ export default function ProjectTable({ data }) {
                 }`}
               >
                 <td className="px-4 py-2 border">{proj.name}</td>
-                <td className="px-4 py-2 border">
-                  {proj.teamLeader?.name || "-"}
-                </td>
+                <td className="px-4 py-2 border">{proj.description}</td>
                 <td className="px-4 py-2 border">{proj.status}</td>
                 <td className="px-4 py-2 border">
                   {proj.startDate

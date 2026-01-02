@@ -115,3 +115,8 @@ export const getSingleEmployee = () =>
   api.get("/employee/getSingleEmployee", {
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
+
+export const getAllEmployee = () =>
+  api.get("/employee/getAllEmployee", {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
