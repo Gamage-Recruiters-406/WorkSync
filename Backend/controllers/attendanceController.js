@@ -1,6 +1,5 @@
 import attendanceModel from "../models/attendanceModel.js";
 import Employee from "../models/EmployeeModel.js"; 
-import User from "../models/User.js"; 
 import ExcelJS from 'exceljs';       
 import PDFDocument from 'pdfkit';    
 
@@ -33,15 +32,9 @@ const determineStatus = () => {
 };
 
 const getEmployeeIdFromUser = async (idFromToken) => {
-    // Check if the ID belongs directly to an Employee 
     const directEmployee = await Employee.findById(idFromToken);
     if (directEmployee) {
         return directEmployee._id;
-    }
-    const user = await User.findById(idFromToken);
-    if (user) {
-        const linkedEmployee = await Employee.findOne({ email: user.email });
-        if (linkedEmployee) return linkedEmployee._id;
     }
     return null;
 };
