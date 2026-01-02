@@ -193,6 +193,8 @@ const LeaveRequest = () => {
         `http://localhost:8090/api/v1/leave-request/deleteLeave/${confirmDelete.leaveId}`,
         { withCredentials: true }
       );
+
+      setLeaveHistory(prev => prev.filter(l => l._id !== confirmDelete.leaveId));
       setAlert({ open: true, message: "Leave deleted successfully", type: "success" });
       fetchLeaveHistory();
       fetchLeaveBalance(); // Add this to update balance after delete
@@ -320,7 +322,7 @@ const LeaveRequest = () => {
                 </div>
               </div>
             </form>
-          </div>
+          </div>  
 
           {/* Leave Balance UI */}
           {leaveBalance && (
@@ -471,4 +473,4 @@ const LeaveRequest = () => {
   );
 };
 
-export default LeaveRequest;
+export default LeaveRequest; 
