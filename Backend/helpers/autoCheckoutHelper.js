@@ -1,86 +1,103 @@
 import cron from "node-cron";
 import attendanceModel from "../models/attendanceModel.js";
-import Employee from "../models/EmployeeModel.js"; 
+import User from "../models/User.js"; // Import User model to find employees
 
 export const startAutoCheckoutJob = () => {
     
-    // 1. MARK ABSENT AT 10:00 AM (SL Time)
+    // MARK ABSENT AT 10:00 AM (SL Time)
     cron.schedule("00 10 * * *", async () => {
         console.log(" [CRON] Running 10:00 AM Absent Check...");
+
         try {
             const now = new Date();
             const slTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
             const todayStr = slTime.toISOString().split("T")[0];
 
-            const allEmployees = await Employee.find({ role: 1 }).select("_id");
+            //  Get all employees (Role 1)
+            const allEmployees = await User.find({ role: 1 }).select("_id name");
+
+            //  Get everyone who has ALREADY clocked in today
             const presentAttendance = await attendanceModel.find({ date: todayStr }).select("userId");
-            const presentIds = presentAttendance.map(record => record.userId.toString());
+            const presentUserIds = presentAttendance.map(record => record.userId.toString());
 
-            const absentEmployees = allEmployees.filter(emp => !presentIds.includes(emp._id.toString()));
+            // Find who is MISSING
+            const absentUsers = allEmployees.filter(user => !presentUserIds.includes(user._id.toString()));
 
-            if (absentEmployees.length === 0) {
-                console.log(" [CRON] All employees are present today!");
+            if (absentUsers.length === 0) {
+                console.log(" [CRON] Everyone is present today!");
                 return;
             }
 
-            console.log(` [CRON] Found ${absentEmployees.length} employees absent at 10:00 AM.`);
+            console.log(` [CRON] Found ${absentUsers.length} employees absent at 10:00 AM.`);
 
-            const absentRecords = absentEmployees.map(emp => ({
-                userId: emp._id, 
+            //  Create "Absent" records 
+            const absentRecords = absentUsers.map(user => ({
+                userId: user._id,
                 date: todayStr,
                 status: "Absent",
                 inTime: null,
                 outTime: null 
             }));
 
+            // Bulk insert is faster
             if (absentRecords.length > 0) {
                 await attendanceModel.insertMany(absentRecords);
-                console.log(" [CRON] Marked missing employees as Absent.");
+                console.log(" [CRON] marked all missing users as Absent.");
             }
+
         } catch (error) {
             console.error(" [CRON] Error in Absent Check:", error);
         }
     });
 
-    // 2. AUTO CHECKOUT AT 7:30 PM (FIXED QUERY)
+
+
+    // AUTO CHECKOUT AT 7:30 PM
     cron.schedule("30 19 * * *", async () => {
         console.log(" [CRON] Running Auto Check-Out Job...");
+
         try {
             const now = new Date();
             const slTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
             const todayStr = slTime.toISOString().split("T")[0];
 
-            // ✅ FIX: Use 'outTime: null' to catch records with null values
-            const forgotToCheckoutEmployees = await attendanceModel.find({
+            
+            const forgotToCheckoutUsers = await attendanceModel.find({
                 date: todayStr,
-                outTime: null, // <--- CHANGED FROM { $exists: false }
+                outTime: { $exists: false },
                 status: { $ne: "Absent" } 
             });
 
-            if (forgotToCheckoutEmployees.length === 0) {
-                console.log(" [CRON] No employees found who forgot to checkout.");
+            if (forgotToCheckoutUsers.length === 0) {
+                console.log(" [CRON] No users found who forgot to checkout.");
                 return;
             }
 
-            console.log(` [CRON] Found ${forgotToCheckoutEmployees.length} employees to auto-checkout.`);
+            console.log(` [CRON] Found ${forgotToCheckoutUsers.length} users to auto-checkout.`);
 
-            for (const record of forgotToCheckoutEmployees) {
+            for (const record of forgotToCheckoutUsers) {
+                //  Set Out Time to 1:00 PM (13:00)
                 const autoOutTime = new Date();
-                autoOutTime.setHours(13, 0, 0, 0); // 1:00 PM
+                autoOutTime.setHours(13, 0, 0, 0); 
                 record.outTime = autoOutTime;
     
                 if (record.inTime) {
                     const inTimeSL = new Date(record.inTime).toLocaleString("en-US", { timeZone: "Asia/Colombo" });
                     const inHour = new Date(inTimeSL).getHours(); 
 
-                    if (inHour < 9) record.status = "Present";
-                    else if (inHour === 9) record.status = "Late";
-                    else record.status = "Absent";
+                    if (inHour < 9) {
+                        record.status = "Present";
+                    } else if (inHour === 9) {
+                        record.status = "Late";
+                    } else {
+                        record.status = "Absent";
+                    }
                 }
                 
                 await record.save();
-                console.log(`   -> Auto-checked out Employee ID: ${record.userId} | Status: ${record.status}`);
+                console.log(`   -> Auto-checked out ID: ${record.userId} | Status: ${record.status}`);
             }
+
             console.log(" [CRON] Auto Check-Out Complete.");
 
         } catch (error) {
