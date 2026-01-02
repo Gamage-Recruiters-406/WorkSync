@@ -2,40 +2,6 @@ import mongoose from "mongoose";
 import PDFDocument from "pdfkit";
 
 import Project from "../models/ProjectModel.js";
-import ProjectTeam from "../models/ProjectTeam.js";
-import Milestone from "../models/milestoneModel.js";
-import Task from "../models/Task.js";
-
-
-
-const fmtDate = (d) => {
-  if (!d) return "-";
-  const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return "-";
-  return dt.toISOString().slice(0, 10);
-};
-
-const namesOrDash = (arr) => {
-  if (!Array.isArray(arr) || arr.length === 0) return "-";
-  const names = arr
-    .map((u) => {
-      if (!u || typeof u !== "object") return null;
-      const fn = u.FirstName || "";
-      const ln = u.LastName || "";
-      const full = `${fn} ${ln}`.trim();
-      return full || null;
-    })
-    .filter(Boolean);
-
-  return names.length ? names.join(", ") : "-";
-};
-
-const ensureSpace = (doc, needed = 60) => {
-  const bottom = doc.page.height - doc.page.margins.bottom;
-  if (doc.y + needed > bottom) doc.addPage();
-};
-
-
 
 // Create a new project
 export const createProjectController = async (req, res) => {
@@ -81,12 +47,6 @@ export const createProjectController = async (req, res) => {
             status,
             createdBy,
             teamLeader: teamLeaderId,
-        });
-
-        await ProjectTeam.create({
-            projectId: project._id,
-            userId: teamLeaderId,
-            assignedRole: "Team Lead"
         });
 
         res.status(201).json({

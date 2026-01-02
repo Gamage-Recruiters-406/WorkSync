@@ -32,7 +32,7 @@ export const startAutoCheckoutJob = () => {
 
             // Mark them Absent using their EMPLOYEE ID
             const absentRecords = absentEmployees.map(emp => ({
-                userId: emp._id, 
+                userId: emp._id, // Saving Employee ID
                 date: todayStr,
                 status: "Absent",
                 inTime: null,
@@ -58,7 +58,7 @@ export const startAutoCheckoutJob = () => {
             const slTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
             const todayStr = slTime.toISOString().split("T")[0];
 
-            
+        
             const forgotToCheckoutEmployees = await attendanceModel.find({
                 date: todayStr,
                 outTime: null, 
