@@ -1,7 +1,7 @@
 // leaveRequestHelper.js
 
 import LeaveRequest from "../models/LeaveRequest.js";
-import User from "../models/User.js";
+import Employee from "../models/EmployeeModel.js";
 
 // Authentication and authorization helpers
 export const validateUserIdFromToken = (userId) => {
@@ -14,7 +14,7 @@ export const validateUserIdFromToken = (userId) => {
 };
 
 export const checkUserExists = async (userId) => {
-  const userExists = await User.findById(userId);
+  const userExists = await Employee.findById(userId);
   if (!userExists) {
     throw {
       status: 404,
