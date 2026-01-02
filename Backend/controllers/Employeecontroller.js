@@ -5,7 +5,10 @@ import JWT from "jsonwebtoken";
 
 export const rejisterEmployee = async (req, res) => {
   try {
+    console.log('awa');
+    console.log(req.params)
     const { id } = req.params;
+    console.log(id)
 
     // get user
     const user = await User.findById(id);
