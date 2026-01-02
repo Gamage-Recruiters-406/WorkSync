@@ -15,6 +15,7 @@ import {
   checkLeaveOverlap,
   hasLeavePermission
 } from "../helpers/leaveRequestHelper.js";
+import { sendLeaveStatusEmail } from "../helpers/emailHelper.js";
 
 // LEAVE POLICY (YEARLY)
 const LEAVE_POLICY = {
@@ -343,7 +344,6 @@ export const getLeaveBalance = async (req, res) => {
           used[leave.leaveType] += days;
         }
       }
-      if (l.sts === "rejected") rejected++;
     });
 
     res.json({
