@@ -25,11 +25,11 @@ const projectSchema = new mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Employees"
+    ref: "User"
   },
   teamLeader: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Employees",
+    ref: "User",
     required: true
   }
 }, { timestamps: true });

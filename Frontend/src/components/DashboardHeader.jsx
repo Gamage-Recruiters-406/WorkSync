@@ -1,58 +1,39 @@
-import React from 'react';
-import { Search, Bell, ChevronDown } from 'lucide-react';
+import React from "react";
+import { Search, Bell } from "lucide-react";
 
-const DashboardHeader = () => {
+const DashboardHeader = ({ user, role }) => {
   return (
-    <header
-      className="fixed top-0 left-60 right-0 h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-40"
-      style={{ borderColor: '#D9E2EC' }}
-    >
-      {/* Left - Search Bar */}
-      <div className="flex-1 max-w-md">
+    <header className="bg-white shadow-sm border-b px-6 py-4">
+      <div className="flex items-center justify-between">
         <div className="relative">
-          <Search
-            size={18}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2"
-            style={{ color: '#718096' }}
-          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
           <input
             type="text"
             placeholder="Search"
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none transition-all"
-            style={{
-              backgroundColor: '#F1F5F7',
-              borderColor: '#D9E2EC',
-              color: '#2D3748',
-            }}
+            className="pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087990] w-80"
           />
         </div>
-      </div>
 
-      {/* Right - Notification & Profile */}
-      <div className="flex items-center gap-6 ml-8">
-        {/* Notification Bell */}
-        <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <Bell size={20} style={{ color: '#718096' }} />
-          <span
-            className="absolute top-1 right-1 w-2 h-2 rounded-full"
-            style={{ backgroundColor: '#00C853' }}
-          ></span>
-        </button>
-
-        {/* User Profile */}
-        <div className="flex items-center gap-3 pl-6 border-l border-gray-200">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-semibold">
-            M
+        <div className="flex items-center gap-6">
+          <div className="relative cursor-pointer">
+            <Bell className="w-5 h-5 text-[#087990]" />
+            <div className="absolute -top-0.5 right-0 w-2.5 h-2.5 rounded-full bg-[#087990]" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium" style={{ color: '#2D3748' }}>
-              Mahi
+          <div className="flex flex-col items-center">
+            <span className="text-sm font-bold text-gray-700">
+              {user?.name}
             </span>
-            <span className="text-xs" style={{ color: '#718096' }}>
-              Admin
-            </span>
+            <span className="text-xs text-gray-500">{role || ""}</span>
           </div>
-          <ChevronDown size={16} style={{ color: '#718096' }} />
+          <div className="w-9 h-9  rounded-full">
+            <img
+              src={
+                user?.image ||
+                "https://img.freepik.com/premium-vector/vector-flat-illustration-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette-profile-picture-suitable-social-media-profiles-icons-screensavers-as-templatex9xa_719432-2205.jpg"
+              }
+              alt={`${user?.name.charAt(0)}`}
+            />
+          </div>
         </div>
       </div>
     </header>

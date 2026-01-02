@@ -1,7 +1,7 @@
 // leaveRequestHelper.js
 
 import LeaveRequest from "../models/LeaveRequest.js";
-import User from "../models/EmployeeModel.js";
+import User from "../models/User.js";
 
 // Authentication and authorization helpers
 export const validateUserIdFromToken = (userId) => {
@@ -69,18 +69,9 @@ export const canDeleteLeaveRequest = (status) => {
 // Population helper
 export const populateLeaveRequestDetails = async (leaveRequestId) => {
   return await LeaveRequest.findById(leaveRequestId)
-    .populate({
-      path: "requestedBy",
-      select: "FirstName LastName email departmentID",
-      populate: { 
-        path: "departmentID", 
-        select: "name departmentCode location email" 
-      }
-    })
-    .populate("approvedBy", "FirstName LastName email");
+    .populate("requestedBy", "username fullName email department")
+    .populate("approvedBy", "username fullName email");
 };
-
-
 
 // Error handler
 export const handleControllerError = (error, res) => {

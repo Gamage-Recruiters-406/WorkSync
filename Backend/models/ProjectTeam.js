@@ -8,7 +8,7 @@ const ProjectTeamSchema = new mongoose.Schema({
     },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Employees",
+        ref: "User",
         required: true
     },
     assignedRole: {
