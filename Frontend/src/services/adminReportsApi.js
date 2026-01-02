@@ -110,3 +110,8 @@ export const getSingleUser = (userId) =>
   api.get(`/userAuth/getUser/${userId}`, {
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
+
+export const getSingleEmployee = () =>
+  api.get("/employee/getSingleEmployee", {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });

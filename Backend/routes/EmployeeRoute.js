@@ -5,18 +5,17 @@ import {
     EmloyeesByRole,
     getSingleEmployee,
     loginUser,
-    SignOut
+    SignOut,
+    RemoveEmployee,
+    updateEmployee,
+    getSingleEmployeeByID
  } from '../controllers/Employeecontroller.js';
 import { isAdmin, requiredSignIn } from '../middlewares/AuthMiddleware.js';
 
 
 const router = express.Router();
 
-//login route
 router.post("/userLogin", loginUser);
-
-//log out function
-router.post("/signout",requiredSignIn, SignOut);
 
 //add new employee route
 router.post("/RejisterEmployee/:id", requiredSignIn, isAdmin, rejisterEmployee );
@@ -29,6 +28,15 @@ router.get("/getEmloyeesByRole", requiredSignIn, EmloyeesByRole );
 
 //get single user
 router.get("/getSingleEmployee",requiredSignIn, getSingleEmployee)
+
+//get single employee by id
+router.get("/getSingleEmployeeByID/:id",requiredSignIn, getSingleEmployeeByID)
+
+//remove employee
+router.delete("/RemoveEmployee/:id",requiredSignIn, isAdmin, RemoveEmployee)
+
+//update employee, add department, employee id and assign new role
+router.patch("/updateEmployee/:id", requiredSignIn, isAdmin, updateEmployee)
 
 
 export default router;
