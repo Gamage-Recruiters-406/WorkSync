@@ -10,6 +10,7 @@ import {
   handleControllerError,
   validateLeaveRequest
 } from "../helpers/leaveRequestHelper.js";
+import { sendLeaveStatusEmail } from "../helpers/emailHelper.js";
 
 // LEAVE POLICY (YEARLY)
 const LEAVE_POLICY = {
@@ -145,6 +146,15 @@ export const updateLeaveStatus = async (req, res) => {
       LeaveRequest
     );
 
+    // Send email notification
+    if (populatedLeave.requestedBy && populatedLeave.requestedBy.email && (sts === "approved" || sts === "rejected")) {
+      await sendLeaveStatusEmail(
+        populatedLeave.requestedBy.email,
+        populatedLeave.requestedBy.name,
+        sts
+      );
+    }
+
     res.json({
       success: true,
       message: `Leave request ${sts} successfully.`,
@@ -230,8 +240,8 @@ export const getAllLeaves = async (req, res) => {
 
     const leaves = await LeaveRequest.find()
       .sort({ createdAt: -1 })
-      .populate("requestedBy", "username fullName email department")
-      .populate("approvedBy", "username fullName email");
+      .populate("requestedBy", "FirstName LastName email department")
+      .populate("approvedBy", "FirstName LastName email");
 
     res.json({
       success: true,

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, Edit2, Trash2, Plus } from 'lucide-react';
 
 const EmployeeTable = () => {
+  const navigate = useNavigate();
   const [employees] = useState([
     {
       id: 1,
@@ -190,7 +192,7 @@ const EmployeeTable = () => {
 
                     {/* Edit Button */}
                     <button
-                      onClick={() => handleAction('Edit', employee)}
+                      onClick={() => navigate(`/admin/edit-employee/${employee.id}`)}
                       className="p-2 rounded-full hover:bg-blue-50 transition-all duration-200 cursor-pointer"
                       style={{ color: '#0E7C86' }}
                       title="Edit"
@@ -214,23 +216,6 @@ const EmployeeTable = () => {
           </tbody>
         </table>
       </div>
-
-      {/* Add New Employee Button */}
-      <button
-        className="fixed bottom-8 right-8 flex items-center gap-2 px-6 py-3 rounded-lg text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer"
-        style={{
-          backgroundColor: '#0E7C86',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#0A6670';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#0E7C86';
-        }}
-      >
-        <Plus size={20} />
-        Add New Employee
-      </button>
     </div>
   );
 };

@@ -21,7 +21,7 @@ export default function AttendanceBar({ data = [] }) {
   ];
 
   return (
-    <div className="bg-white p-4 shadow rounded-xl">
+    <div className="bg-white p-4 text-center rounded-xl border-2 border-[#087990] shadow-lg">
       <h3 className="font-semibold mb-4">Attendance Overview</h3>
 
       <div className="w-full">
@@ -32,7 +32,7 @@ export default function AttendanceBar({ data = [] }) {
             <YAxis allowDecimals={false} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="value" fill="#34d399" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="value" fill="#087990" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

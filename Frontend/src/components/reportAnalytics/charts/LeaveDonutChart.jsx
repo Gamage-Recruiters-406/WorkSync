@@ -18,10 +18,10 @@ export default function LeaveDonutChart({ data = [] }) {
     { name: "Sick", value: sick },
   ];
 
-  const COLORS = ["#fbbf24", "#34d399"]; // yellow, green
+  const COLORS = ["#fbbf24", "#087990", "#FF4949"]; // yellow, green
 
   return (
-    <div className="bg-white p-4 shadow text-center rounded-xl">
+    <div className="bg-white p-4 text-center rounded-xl border-2 border-[#087990] shadow-lg">
       <h3 className="font-semibold mb-4">Leave Status</h3>
 
       <div className="w-full h-48">
@@ -47,7 +47,7 @@ export default function LeaveDonutChart({ data = [] }) {
       </div>
 
       <p className="mt-3 text-sm text-gray-500">
-        annual: {annual}, casual: {casual}
+        Annual: {annual} Casual: {casual} Sick: {sick}
       </p>
     </div>
   );
