@@ -13,6 +13,7 @@ const MilestonesTab = ({projectId, projectData}) => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedMilestone, setSelectedMilestone] = useState(null);
+  const [editMilestone, setEditMilestone] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -80,10 +81,11 @@ const MilestonesTab = ({projectId, projectData}) => {
         }
       
       ]);
+      setToast({ message: "Milestone created successfully", type: "success" });
       setIsAddOpen(false);
     } catch (error) {
       console.error("Failed to create milestone", error);
-      alert("Failed to create milestone");
+      setToast({ message: "Failed to create Milestone", type: "error" });
     } 
   };
 
@@ -115,7 +117,7 @@ const MilestonesTab = ({projectId, projectData}) => {
           : m
       )
     );
-  
+    setToast({ message: `${updatedData.milestoneName || "Milestone"} edited successfully`, type: "success" });
     setIsEditOpen(false);
     setSelectedMilestone(null);
   };
@@ -129,7 +131,7 @@ const MilestonesTab = ({projectId, projectData}) => {
   };
 
   const openEdit = (milestone) =>{
-    setSelectedMilestone(milestone);
+    setEditMilestone(milestone);
     setIsEditOpen(true);
   };
 
@@ -166,7 +168,7 @@ const MilestonesTab = ({projectId, projectData}) => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-md shadow-md max-w-sm w-full">
             <p className="mb-4 text-gray-800">
-              Are you sure you want to delete <span className="font-semibold">{confirmDelete.title}</span>?
+              Are you sure you want to delete <span className="font-semibold">{confirmDelete?.title || "this milestone"}</span>?
             </p>
             <div className="flex justify-end gap-2">
               <button
@@ -269,10 +271,13 @@ const MilestonesTab = ({projectId, projectData}) => {
         />
       )}
 
-      {isEditOpen && selectedMilestone && (
+      {isEditOpen && editMilestone && (
         <EditMilestoneModal
-          milestone={selectedMilestone}
-          onClose={() => setIsEditOpen(false)}
+          milestone={editMilestone}
+          onClose={() => {
+            setIsEditOpen(false);
+            setEditMilestone(null);
+          }}
           onUpdate={handleEditMilestone}
         />
       )}
@@ -287,10 +292,10 @@ const MilestonesTab = ({projectId, projectData}) => {
               m.id === updatedMilestone._id
                 ? {
                   ...m,
-                  title: updatedMilestone.milestoneName,
-                  description: updatedMilestone.Description,
-                  startDate: updatedMilestone.Start_Date,
-                  endDate: updatedMilestone.End_Date,
+                  // title: updatedMilestone.milestoneName,
+                  // description: updatedMilestone.Description,
+                  // startDate: updatedMilestone.Start_Date,
+                  // endDate: updatedMilestone.End_Date,
                   status: updatedMilestone.Status
                 }
                 : m
@@ -300,6 +305,7 @@ const MilestonesTab = ({projectId, projectData}) => {
               ...prev,
               status: updatedMilestone.Status
             }));
+            // setSelectedMilestone(null);
           }}
         />
       )}

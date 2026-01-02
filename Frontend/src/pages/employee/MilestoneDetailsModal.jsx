@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
+import Toast from "../../components/Toast";
 
 const statusColors = {
   "In Progress": "text-blue-600",
@@ -10,6 +11,7 @@ const statusColors = {
 const MilestoneDetailsModal = ({ milestone, onClose, onUpdate }) => {
   const [status, setStatus] = useState(milestone.status);
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const URL_API = "http://localhost:8090";
 
@@ -28,7 +30,7 @@ const MilestoneDetailsModal = ({ milestone, onClose, onUpdate }) => {
 
     } catch (error) {
       console.error("Failed to update status", error);
-      alert("Failed to update milestone status");
+      setToast({ message: "Failed to update milestone status", type: "error" });
       setStatus(milestone.status);
     } finally {
       setLoading(false);
@@ -49,6 +51,13 @@ const MilestoneDetailsModal = ({ milestone, onClose, onUpdate }) => {
               &times;
             </button>
           </div>
+          {toast && (
+                <Toast
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(null)}
+                />
+            )}
   
           <div className="px-8 py-6 text-sm text-gray-800 space-y-4">
             <div>

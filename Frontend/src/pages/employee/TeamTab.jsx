@@ -136,7 +136,8 @@ const TeamTab = ({projectId, projectData}) => {
             className="grid grid-cols-3 items-center px-6 py-3 border-t text-sm hover:bg-gray-50 transition"
           >
             <span className="font-medium text-center">
-                {member.userId?.name || member.userId?.email || "Unknown"}
+                {member.userId
+                  ?`${member.userId.FirstName} ${member.userId.LastName}`: "Unknown"}
             </span>
             <span 
             className={`px-3 py-1 rounded-full text-center text-xs font-medium ${
@@ -150,8 +151,8 @@ const TeamTab = ({projectId, projectData}) => {
               {isTeamLeader && (
                 <button
                   onClick={() => setConfirmRemove({
-                    id: member.userId.id,
-                    name: member.userId.name || member.userId.email,
+                    id: member.userId._id,
+                    name: `${member.userId.FirstName} ${member.userId.LastName}`,
                   })}
                   className="ml-4 px-4 py-1 rounded-md bg-red-500 text-white text-xs hover:bg-red-600"
                 >

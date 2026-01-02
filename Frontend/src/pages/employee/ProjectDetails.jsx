@@ -164,7 +164,7 @@ const ProjectDetails = () => {
         )}
 
         {activeTab === "documents" && (
-          <DocumentsTab projectId={projectData._id || projectData.id} />
+          <DocumentsTab projectId={projectData._id || projectData.id} projectData={projectData}/>
         )}
       </main>
     </div>
