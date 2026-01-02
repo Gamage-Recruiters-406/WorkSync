@@ -87,7 +87,6 @@ function App() {
         <Route path="/admin/add-employee" element={<AddEmployee />} />
         <Route path="/admin/edit-employee/:id" element={<EditEmployee />} />
         <Route path="/admin/assign-task" element={<AssignTask />} />
-        <Route path="/admin/users" element={<Users />} />
         <Route path="/admin/manage-leaves" element={<ManageLeaves />} />
         <Route path="/admin/reports" element={<AdminReport />} />
         <Route path="/admin/announcements" element={<AdminAnnouncements />} />
