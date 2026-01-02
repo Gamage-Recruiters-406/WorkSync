@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import officeImg from '../assets/office.jpg';
+import Sidebar from './sidebar/Sidebar';
+import { CheckSquare, Users, FolderKanban, Search, Bell } from 'lucide-react';
 
 /*
   Consolidated dashboard UI components:
@@ -17,33 +19,31 @@ const TopBar = () => {
   const [query, setQuery] = useState('');
 
   return (
-    <header className="flex h-16 items-center justify-between rounded-[12px] bg-card px-4 shadow-sm">
+    <header className="flex h-20 items-center justify-between rounded-2xl bg-white px-6 shadow-lg border border-gray-100">
       <div className="flex items-center gap-4">
-        <div className="relative w-[320px] max-w-[60vw]">
+        <div className="relative w-[400px] max-w-[60vw]">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
-            className="w-full rounded-full border border-border/60 bg-white py-2 pl-4 pr-10 text-sm placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            placeholder="Search"
+            className="w-full rounded-full border-2 border-gray-200 bg-gray-50 py-3 pl-12 pr-6 text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#087990] focus:border-transparent focus:bg-white transition-all duration-200"
+            placeholder="Search..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary text-sm">⌕</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <button className="rounded-full p-2 text-text-secondary hover:bg-gray-50">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 17H14.27C13.4 17 12.6 17.4 12 18.09C11.4 17.4 10.6 17 9.73 17H9" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M20 10C20 6.13401 16.866 3 13 3C9.13401 3 6 6.13401 6 10V13L4 15V16H22V15L20 13V10Z" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+      <div className="flex items-center gap-6">
+        <button className="relative rounded-full p-3 text-gray-500 hover:bg-gray-100 hover:text-[#087990] transition-all duration-200 group">
+          <Bell className="w-6 h-6" />
+          <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
         </button>
 
-        <div className="flex items-center gap-3 rounded-full px-3 py-1">
-          <img src="https://i.pravatar.cc/40?img=12" alt="John Doe" className="h-9 w-9 rounded-full" />
+        <div className="flex items-center gap-3 bg-gray-50 rounded-full pl-4 pr-2 py-2 hover:bg-gray-100 transition-all duration-200 cursor-pointer">
           <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold text-text-primary">John Doe</span>
-            <span className="text-[12px] text-text-secondary">Employee</span>
+            <span className="text-sm font-semibold text-gray-800">John Doe</span>
+            <span className="text-xs text-gray-500">Employee</span>
           </div>
+          <img src="https://i.pravatar.cc/40?img=12" alt="John Doe" className="h-10 w-10 rounded-full ring-2 ring-white shadow-md" />
         </div>
       </div>
     </header>
@@ -179,33 +179,36 @@ const CompleteProfileCard = () => (
 
 export default function DashboardUI() {
   return (
-    <main className="flex w-full flex-col gap-6">
-      <TopBar />
+    <div className="flex h-screen">
+      <Sidebar />
+      <main className="flex-1 flex flex-col gap-6 p-6 bg-gray-50 overflow-y-auto">
+        <TopBar />
 
-      <section className="grid grid-cols-3 gap-6">
-        <WelcomeCard />
+        <section className="grid grid-cols-3 gap-6">
+          <WelcomeCard />
 
-        <div className="col-span-1 flex flex-col gap-4">
-          <ProfileCard />
-        </div>
-      </section>
-
-      <section className="grid grid-cols-3 gap-4">
-        <StatCard icon={<>🏷</>} number={34} label="Assigned Tasks" />
-        <StatCard icon={<>👥</>} number={12} label="Employees" />
-        <StatCard icon={<>📁</>} number={5} label="Active Projects" />
-      </section>
-
-      <section className="grid grid-cols-3 gap-6">
-        <div className="col-span-2">
-          <RecentActivities />
-        </div>
-        <div className="col-span-1">
-          <div className="space-y-4">
-            <CompleteProfileCard />
+          <div className="col-span-1 flex flex-col gap-4">
+            <ProfileCard />
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+
+        <section className="grid grid-cols-3 gap-4">
+          <StatCard icon={<CheckSquare className="w-6 h-6 text-[#087990]" />} number={34} label="Assigned Tasks" />
+          <StatCard icon={<Users className="w-6 h-6 text-[#6366F1]" />} number={12} label="Employees" />
+          <StatCard icon={<FolderKanban className="w-6 h-6 text-[#F59E0B]" />} number={5} label="Active Projects" />
+        </section>
+
+        <section className="grid grid-cols-3 gap-6">
+          <div className="col-span-2">
+            <RecentActivities />
+          </div>
+          <div className="col-span-1">
+            <div className="space-y-4">
+              <CompleteProfileCard />
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

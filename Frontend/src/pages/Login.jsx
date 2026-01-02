@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LogoImg from "../assets/Logo.jpg";
 import axios from "axios";
+import Cookies from 'js-cookie';
+
 
 export default function Login() {
   const navigate = useNavigate();
@@ -33,7 +35,7 @@ export default function Login() {
     //     credentials: "include",
     //     body: JSON.stringify({ email, password }),
     //   });
-    const res = await axios.post("http://localhost:8090/api/v1/userAuth/userLogin", { email, password });
+    const res = await axios.post("http://localhost:8090/api/v1/employee/userLogin", { email, password });
     console.log(res);
 
     //   const data = await response.json();
@@ -43,22 +45,28 @@ export default function Login() {
 
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.data));
+        Cookies.set('access_token', res.data.token  );
+        console.log(res.data.token);
+
+    const role = res.data.data.role;
 
         setTimeout(() => {
-          if (res.data.data.role === 3) {
-            navigate("/admin/dashboard");
-          } else if (res.data.data.role === 2) {
-            navigate("/manager/dashboard");
-          } else {
-            navigate("/employee/dashboard");
-          }
-        }, 1000);
+  if (role === 3) {
+    navigate("/admin/dashboard");
+  } else if (role === 2) {
+    navigate("/manager/dashboard"); // manager uses user dashboard
+  } else if (role === 1) {
+    navigate("/user/dashboard"); // employee
+  } else {
+    navigate("/login");
+  }
+}, 1000);
       } else {
         setError(res.data.message || "Login failed");
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Unable to connect to server. Please check if the backend is running.");
+      setError("Something went wrong!. please check your password and email");
     } finally {
       setLoading(false);
     }
