@@ -1,5 +1,5 @@
 import LeaveRequest from "../models/LeaveRequest.js";
-import User from "../models/EmployeeModel.js";
+import User from "../models/User.js";
 import {
   validateUserIdFromToken,
   checkUserExists,
@@ -10,7 +10,6 @@ import {
   handleControllerError,
   validateLeaveRequest
 } from "../helpers/leaveRequestHelper.js";
-import { sendLeaveStatusEmail } from "../helpers/emailHelper.js";
 
 // LEAVE POLICY (YEARLY)
 const LEAVE_POLICY = {
@@ -146,20 +145,6 @@ export const updateLeaveStatus = async (req, res) => {
       LeaveRequest
     );
 
-    // Send email notification
-    if (
-  populatedLeave.requestedBy &&
-  populatedLeave.requestedBy.email &&
-  (sts === "approved" || sts === "rejected")
-) {
-  const fullName = `${populatedLeave.requestedBy.FirstName} ${populatedLeave.requestedBy.LastName}`;
-  await sendLeaveStatusEmail(
-    populatedLeave.requestedBy.email,
-    fullName,
-    sts
-  );
-}
-
     res.json({
       success: true,
       message: `Leave request ${sts} successfully.`,
@@ -189,17 +174,8 @@ export const getLeavesByUser = async (req, res) => {
 
     const leaves = await LeaveRequest.find({ requestedBy: uid })
       .sort({ createdAt: -1 })
-      .populate({
-        path: "requestedBy",
-        select: "FirstName LastName email departmentID",
-        populate: { 
-          path: "departmentID", 
-          select: "name departmentCode location email" 
-        }
-      })
-      .populate("approvedBy", "FirstName LastName email");
-
-
+      .populate("requestedBy", "username fullName email department")
+      .populate("approvedBy", "username fullName email");
 
     res.json({
       success: true,
@@ -254,16 +230,8 @@ export const getAllLeaves = async (req, res) => {
 
     const leaves = await LeaveRequest.find()
       .sort({ createdAt: -1 })
-      .populate({
-        path: "requestedBy",
-        select: "FirstName LastName email departmentID",
-        populate: { 
-          path: "departmentID", 
-          select: "name departmentCode location email" 
-        }
-      })
-      .populate("approvedBy", "FirstName LastName email");
-
+      .populate("requestedBy", "username fullName email department")
+      .populate("approvedBy", "username fullName email");
 
     res.json({
       success: true,
@@ -292,17 +260,13 @@ export const getLeaveBalance = async (req, res) => {
     const used = { sick: 0, annual: 0, casual: 0 };
     let approved = 0;
     let rejected = 0;
-     let pending = 0;
 
-    leaves.forEach(l => {
+    leaves.forEach((l) => {
       if (l.sts === "approved") {
         approved++;
         if (used[l.leaveType] !== undefined) used[l.leaveType]++;
-      } else if (l.sts === "rejected") {
-        rejected++;
-      } else if (l.sts === "pending") {
-        pending++;
       }
+      if (l.sts === "rejected") rejected++;
     });
 
     res.json({
@@ -315,7 +279,6 @@ export const getLeaveBalance = async (req, res) => {
       counts: {
         approved,
         rejected,
-        pending,
       },
     });
   } catch (error) {
