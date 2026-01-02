@@ -22,26 +22,24 @@ export default function TaskDonut({ data = [] }) {
     <div className="bg-white p-4 text-center rounded-xl border-2 border-[#087990] shadow-lg">
       <h3 className="font-semibold mb-4">Task Status</h3>
 
-      <div className="w-full h-48">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={45}
-              outerRadius={70}
-              paddingAngle={3}
-            >
-              {chartData.map((_, index) => (
-                <Cell key={index} fill={COLORS[index]} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
+      <ResponsiveContainer width="100%" height={180}>
+        <PieChart>
+          <Pie
+            data={chartData}
+            dataKey="value"
+            nameKey="name"
+            innerRadius={45}
+            outerRadius={70}
+            paddingAngle={3}
+          >
+            {chartData.map((_, index) => (
+              <Cell key={index} fill={COLORS[index]} />
+            ))}
+          </Pie>
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
 
       <p className="mt-3 text-sm text-gray-500">
         Completed: {completed}, Pending: {pending}
