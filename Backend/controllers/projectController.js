@@ -1,4 +1,41 @@
+import mongoose from "mongoose";
+import PDFDocument from "pdfkit";
+
 import Project from "../models/ProjectModel.js";
+import ProjectTeam from "../models/ProjectTeam.js";
+import Milestone from "../models/milestoneModel.js";
+import Task from "../models/Task.js";
+
+
+
+const fmtDate = (d) => {
+  if (!d) return "-";
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return "-";
+  return dt.toISOString().slice(0, 10);
+};
+
+const namesOrDash = (arr) => {
+  if (!Array.isArray(arr) || arr.length === 0) return "-";
+  const names = arr
+    .map((u) => {
+      if (!u || typeof u !== "object") return null;
+      const fn = u.FirstName || "";
+      const ln = u.LastName || "";
+      const full = `${fn} ${ln}`.trim();
+      return full || null;
+    })
+    .filter(Boolean);
+
+  return names.length ? names.join(", ") : "-";
+};
+
+const ensureSpace = (doc, needed = 60) => {
+  const bottom = doc.page.height - doc.page.margins.bottom;
+  if (doc.y + needed > bottom) doc.addPage();
+};
+
+
 
 // Create a new project
 export const createProjectController = async (req, res) => {
@@ -228,4 +265,154 @@ export const deleteProjectController = async (req,res) => {
             error: error.message
         });
     }
+};
+
+
+
+// Project Report PDF generation
+export const projectProgressReportController = async (req, res) => {
+  let doc; // keep reference so we can safely end/destroy on errors
+
+  try {
+    const { id: projectId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ success: false, message: "Invalid project ID" });
+    }
+
+    // ✅ 1) DB WORK FIRST (no doc.pipe yet)
+    const project = await Project.findById(projectId)
+      .populate("createdBy", "FirstName LastName email")
+      .populate("teamLeader", "FirstName LastName email")
+      .lean();
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: "Project not found" });
+    }
+
+    const milestones = await Milestone.find({ projectID: projectId })
+      .populate("assignedTo", "FirstName LastName email")
+      .sort({ Start_Date: 1 })
+      .lean();
+
+    const milestoneIds = milestones.map((m) => m._id);
+
+    const tasks = milestoneIds.length
+      ? await Task.find({ milestone: { $in: milestoneIds } })
+          .populate("assignedTo", "FirstName LastName email")
+          .populate("milestone", "milestoneName")
+          .sort({ createdAt: 1 })
+          .lean()
+      : [];
+
+    const tasksByMilestone = new Map();
+    for (const t of tasks) {
+      const msId =
+        t.milestone && typeof t.milestone === "object"
+          ? String(t.milestone._id)
+          : String(t.milestone);
+
+      if (!tasksByMilestone.has(msId)) tasksByMilestone.set(msId, []);
+      tasksByMilestone.get(msId).push(t);
+    }
+
+    // ✅ 2) NOW START STREAMING PDF (only after all possible DB errors are done)
+    doc = new PDFDocument({ margin: 30, size: "A4" });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=project-progress-report-${projectId}.pdf`
+    );
+
+    // If client disconnects while streaming, stop writing
+    res.on("close", () => {
+      if (doc) doc.destroy();
+    });
+
+    doc.on("error", (e) => {
+      console.error("PDFKit error:", e);
+      // can't send JSON if headers already sent
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: "PDF generation error" });
+      } else {
+        res.end();
+      }
+    });
+
+    doc.pipe(res);
+
+    // ✅ 3) PDF CONTENT
+    doc.fontSize(18).text("Project Progress Report", { align: "center" });
+    doc.moveDown(0.8);
+
+    doc.fontSize(12).text(`Project Name: ${project.name || "-"}`);
+    doc.text(`Status: ${project.status || "-"}`);
+    doc.text(`Start Date: ${fmtDate(project.startDate)}    End Date: ${fmtDate(project.endDate)}`);
+    doc.text(`Team Leader: ${namesOrDash([project.teamLeader].filter(Boolean))}`);
+    doc.text(`Created By: ${namesOrDash([project.createdBy].filter(Boolean))}`);
+    doc.moveDown(0.8);
+
+    doc.moveTo(doc.page.margins.left, doc.y)
+      .lineTo(doc.page.width - doc.page.margins.right, doc.y)
+      .stroke();
+    doc.moveDown(0.8);
+
+    if (!milestones.length) {
+      doc.text("No milestones found for this project.");
+      doc.end();
+      return;
+    }
+
+    milestones.forEach((ms, idx) => {
+      ensureSpace(doc, 90);
+
+      doc.fontSize(14).text(`${idx + 1}. Milestone: ${ms.milestoneName || "-"}`, { underline: true });
+      doc.moveDown(0.2);
+
+      doc.fontSize(11).text(`Status: ${ms.Status || "-"}`);
+      doc.text(`Start: ${fmtDate(ms.Start_Date)}    End: ${fmtDate(ms.End_Date)}`);
+      doc.text(`Assigned To: ${namesOrDash(ms.assignedTo)}`);
+      if (ms.Description) doc.text(`Description: ${ms.Description}`);
+      doc.moveDown(0.4);
+
+      const msTasks = tasksByMilestone.get(String(ms._id)) || [];
+      doc.fontSize(12).text("Tasks:", { underline: true });
+      doc.moveDown(0.2);
+
+      if (!msTasks.length) {
+        doc.fontSize(11).text("- No tasks under this milestone");
+        doc.moveDown(0.6);
+        return;
+      }
+
+      msTasks.forEach((t) => {
+        ensureSpace(doc, 50);
+        doc.fontSize(11).text(
+          `- ${t.title || "-"} | ${t.status || "-"} | ${t.priority || "-"} | Deadline: ${fmtDate(t.deadline)} | Assigned: ${namesOrDash(t.assignedTo)}`
+        );
+        if (t.description) doc.fontSize(10).text(`  ${t.description}`);
+      });
+
+      doc.moveDown(0.8);
+    });
+
+    doc.end();
+  } catch (error) {
+    console.error("projectProgressReportController error:", error);
+
+    // ✅ Important: if streaming already started, do NOT send JSON
+    if (res.headersSent) {
+      try {
+        if (doc) doc.end();
+      } catch {}
+      return res.end();
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Error generating project progress report",
+      error: error.message,
+    });
+  }
 };
