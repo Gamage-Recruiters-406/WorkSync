@@ -6,7 +6,7 @@ import File from "../models/AnnouncemetAttachmet.js";
 import fs from "fs";
 import path from "path";
 
-// Create Announcement
+// Create Announcements
 export async function createAnnouncement(req, res) {
   try {
     const {
