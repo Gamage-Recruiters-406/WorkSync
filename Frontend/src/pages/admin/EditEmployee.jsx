@@ -10,7 +10,7 @@ const EditEmployee = () => {
   const { id } = useParams();
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
+    employeeId: '',
     role: '',
     department: '',
   });
@@ -47,7 +47,7 @@ const EditEmployee = () => {
         if (data.success) {
           setFormData({
             name: data.data.name || '',
-            email: data.data.email || '',
+            employeeId: data.data.employeeId || '',
             role: data.data.role === 2 ? 'Manager' : 'Employee',
             department: data.data.departmentID || '',
           });
@@ -85,14 +85,8 @@ const EditEmployee = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+    if (!formData.employeeId.trim()) {
+      newErrors.employeeId = 'Employee ID is required';
     }
 
     if (!formData.role) {
@@ -120,7 +114,7 @@ const EditEmployee = () => {
     try {
       const payload = {
         name: formData.name,
-        email: formData.email,
+        employeeId: formData.employeeId,
         role: formData.role === 'Manager' ? 2 : 1,
         departmentID: formData.department,
       };
@@ -138,7 +132,7 @@ const EditEmployee = () => {
       if (response.ok && data.success) {
         // Success - redirect back to employee list
         alert('Employee updated successfully!');
-        navigate('/admin/employee-list');
+        navigate('/admin/users');
       } else {
         setErrors({ submit: data.message || 'Failed to update employee' });
       }
@@ -175,26 +169,26 @@ const EditEmployee = () => {
         <DashboardHeader />
 
         {/* Content Area */}
-        <main className="pt-24 pb-32 px-8" style={{ backgroundColor: '#FFFFFF' }}>
+        <main className="pt-24 pb-32 px-8" style={{ backgroundColor: '#F8FAFC' }}>
           {/* Back Button */}
           <button
-            onClick={() => navigate('/admin/employee-list')}
-            className="flex items-center gap-2 mb-8 text-sm font-medium transition-colors hover:opacity-80"
+            onClick={() => navigate('/admin/users')}
+            className="flex items-center gap-2 mb-8 text-sm font-medium transition-all hover:gap-3"
             style={{ color: '#0E7C86' }}
           >
             <ArrowLeft size={18} />
             Back to Employee List
           </button>
 
-          {/* Page Title */}
-          <div className="mb-8">
+          {/* Page Title with Gradient Background */}
+          <div className="mb-10 p-6 rounded-xl" style={{ backgroundColor: '#E8F5F7' }}>
             <h1
-              className="text-3xl font-bold mb-2"
-              style={{ color: '#2D3748' }}
+              className="text-4xl font-bold mb-2"
+              style={{ color: '#0E7C86' }}
             >
               Edit Employee
             </h1>
-            <p style={{ color: '#718096' }} className="text-sm">
+            <p style={{ color: '#0E7C86', opacity: 0.7 }} className="text-sm font-medium">
               Update the employee information below
             </p>
           </div>
@@ -204,96 +198,72 @@ const EditEmployee = () => {
             {/* Form Section */}
             <div className="lg:col-span-2">
               <div
-                className="bg-white rounded-lg shadow-sm border p-8"
-                style={{ borderColor: '#D9E2EC' }}
+                className="bg-white rounded-xl shadow-lg border-0 p-8 hover:shadow-xl transition-shadow duration-300"
+                style={{ backgroundColor: '#FFFFFF' }}
               >
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Name Field */}
+                  {/* Name Field - Read Only */}
                   <div>
                     <label
-                      htmlFor="name"
-                      className="block text-sm font-semibold mb-2"
+                      className="block text-sm font-semibold mb-3"
                       style={{ color: '#2D3748' }}
                     >
-                      Name <span style={{ color: '#E53E3E' }}>*</span>
+                      Name
+                    </label>
+                    <div
+                      className="w-full px-4 py-4 rounded-lg border font-medium text-base"
+                      style={{
+                        borderColor: '#D9E2EC',
+                        backgroundColor: '#F8FAFC',
+                        color: '#0E7C86',
+                      }}
+                    >
+                      {formData.name || 'N/A'}
+                    </div>
+                  </div>
+
+                  {/* Employee ID Field */}
+                  <div>
+                    <label
+                      htmlFor="employeeId"
+                      className="block text-sm font-semibold mb-3"
+                      style={{ color: '#2D3748' }}
+                    >
+                      Employee ID <span style={{ color: '#E53E3E' }}>*</span>
                     </label>
                     <input
                       type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
+                      id="employeeId"
+                      name="employeeId"
+                      value={formData.employeeId}
                       onChange={handleChange}
-                      placeholder="Enter employee name"
-                      className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition-all"
+                      placeholder="Enter employee ID"
+                      className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition-all text-sm"
                       style={{
-                        borderColor: errors.name ? '#E53E3E' : '#D9E2EC',
+                        borderColor: errors.employeeId ? '#E53E3E' : '#D9E2EC',
+                        backgroundColor: '#FFFFFF',
                       }}
                       onFocus={(e) => {
-                        e.target.style.borderColor = errors.name
+                        e.target.style.borderColor = errors.employeeId
                           ? '#E53E3E'
                           : '#0E7C86';
-                        e.target.style.boxShadow = errors.name
-                          ? '0 0 0 3px rgba(229, 62, 62, 0.1)'
-                          : '0 0 0 3px rgba(14, 124, 134, 0.1)';
+                        e.target.style.boxShadow = errors.employeeId
+                          ? '0 0 0 4px rgba(229, 62, 62, 0.15)'
+                          : '0 0 0 4px rgba(14, 124, 134, 0.15)';
                       }}
                       onBlur={(e) => {
-                        e.target.style.borderColor = errors.name
+                        e.target.style.borderColor = errors.employeeId
                           ? '#E53E3E'
                           : '#D9E2EC';
                         e.target.style.boxShadow = 'none';
                       }}
                     />
-                    {errors.name && (
+                    {errors.employeeId && (
                       <p
-                        className="text-xs mt-1"
+                        className="text-xs mt-2 font-medium"
                         style={{ color: '#E53E3E' }}
                       >
-                        {errors.name}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Email Field */}
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-semibold mb-2"
-                      style={{ color: '#2D3748' }}
-                    >
-                      Email <span style={{ color: '#E53E3E' }}>*</span>
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="Enter employee email"
-                      className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition-all"
-                      style={{
-                        borderColor: errors.email ? '#E53E3E' : '#D9E2EC',
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = errors.email
-                          ? '#E53E3E'
-                          : '#0E7C86';
-                        e.target.style.boxShadow = errors.email
-                          ? '0 0 0 3px rgba(229, 62, 62, 0.1)'
-                          : '0 0 0 3px rgba(14, 124, 134, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = errors.email
-                          ? '#E53E3E'
-                          : '#D9E2EC';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                    />
-                    {errors.email && (
-                      <p
-                        className="text-xs mt-1"
-                        style={{ color: '#E53E3E' }}
-                      >
-                        {errors.email}
+                        {errors.employeeId}
                       </p>
                     )}
                   </div>
@@ -302,7 +272,7 @@ const EditEmployee = () => {
                   <div>
                     <label
                       htmlFor="role"
-                      className="block text-sm font-semibold mb-2"
+                      className="block text-sm font-semibold mb-3"
                       style={{ color: '#2D3748' }}
                     >
                       Role <span style={{ color: '#E53E3E' }}>*</span>
@@ -312,10 +282,10 @@ const EditEmployee = () => {
                       name="role"
                       value={formData.role}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition-all appearance-none bg-white cursor-pointer"
+                      className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition-all appearance-none bg-white cursor-pointer text-sm"
                       style={{
                         borderColor: errors.role ? '#E53E3E' : '#D9E2EC',
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232D3748' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230E7C86' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 1rem center',
                         paddingRight: '2.5rem',
@@ -325,8 +295,8 @@ const EditEmployee = () => {
                           ? '#E53E3E'
                           : '#0E7C86';
                         e.target.style.boxShadow = errors.role
-                          ? '0 0 0 3px rgba(229, 62, 62, 0.1)'
-                          : '0 0 0 3px rgba(14, 124, 134, 0.1)';
+                          ? '0 0 0 4px rgba(229, 62, 62, 0.15)'
+                          : '0 0 0 4px rgba(14, 124, 134, 0.15)';
                       }}
                       onBlur={(e) => {
                         e.target.style.borderColor = errors.role
@@ -344,7 +314,7 @@ const EditEmployee = () => {
                     </select>
                     {errors.role && (
                       <p
-                        className="text-xs mt-1"
+                        className="text-xs mt-2 font-medium"
                         style={{ color: '#E53E3E' }}
                       >
                         {errors.role}
@@ -356,7 +326,7 @@ const EditEmployee = () => {
                   <div>
                     <label
                       htmlFor="department"
-                      className="block text-sm font-semibold mb-2"
+                      className="block text-sm font-semibold mb-3"
                       style={{ color: '#2D3748' }}
                     >
                       Department <span style={{ color: '#E53E3E' }}>*</span>
@@ -366,12 +336,12 @@ const EditEmployee = () => {
                       name="department"
                       value={formData.department}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition-all appearance-none bg-white cursor-pointer"
+                      className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition-all appearance-none bg-white cursor-pointer text-sm"
                       style={{
                         borderColor: errors.department
                           ? '#E53E3E'
                           : '#D9E2EC',
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232D3748' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230E7C86' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 1rem center',
                         paddingRight: '2.5rem',
@@ -381,8 +351,8 @@ const EditEmployee = () => {
                           ? '#E53E3E'
                           : '#0E7C86';
                         e.target.style.boxShadow = errors.department
-                          ? '0 0 0 3px rgba(229, 62, 62, 0.1)'
-                          : '0 0 0 3px rgba(14, 124, 134, 0.1)';
+                          ? '0 0 0 4px rgba(229, 62, 62, 0.15)'
+                          : '0 0 0 4px rgba(14, 124, 134, 0.15)';
                       }}
                       onBlur={(e) => {
                         e.target.style.borderColor = errors.department
@@ -400,7 +370,7 @@ const EditEmployee = () => {
                     </select>
                     {errors.department && (
                       <p
-                        className="text-xs mt-1"
+                        className="text-xs mt-2 font-medium"
                         style={{ color: '#E53E3E' }}
                       >
                         {errors.department}
@@ -411,11 +381,11 @@ const EditEmployee = () => {
                   {/* Submit Error Message */}
                   {errors.submit && (
                     <div
-                      className="p-4 rounded-lg text-sm"
+                      className="p-4 rounded-lg text-sm font-medium border-l-4"
                       style={{
                         backgroundColor: 'rgba(229, 62, 62, 0.1)',
                         color: '#E53E3E',
-                        borderLeft: '4px solid #E53E3E',
+                        borderColor: '#E53E3E',
                       }}
                     >
                       {errors.submit}
@@ -423,15 +393,15 @@ const EditEmployee = () => {
                   )}
 
                   {/* Form Buttons */}
-                  <div className="flex gap-4 pt-4">
+                  <div className="flex gap-4 pt-6 border-t" style={{ borderColor: '#E2E8F0' }}>
                     <button
                       type="submit"
                       disabled={loading}
-                      className="flex-1 px-6 py-3 rounded-lg text-white font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50"
+                      className="flex-1 px-6 py-3 rounded-lg text-white font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50 shadow-md hover:shadow-lg transform hover:scale-105"
                       style={{ backgroundColor: '#0E7C86' }}
                       onMouseEnter={(e) => {
                         if (!loading)
-                          e.currentTarget.style.backgroundColor = '#0A6670';
+                          e.currentTarget.style.backgroundColor = '#0A5C65';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = '#0E7C86';
@@ -441,15 +411,15 @@ const EditEmployee = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigate('/admin/employee-list')}
-                      className="flex-1 px-6 py-3 rounded-lg font-semibold border transition-all duration-200 cursor-pointer"
+                      onClick={() => navigate('/admin/users')}
+                      className="flex-1 px-6 py-3 rounded-lg font-semibold border transition-all duration-200 cursor-pointer hover:shadow-md"
                       style={{
                         borderColor: '#D9E2EC',
                         color: '#2D3748',
                         backgroundColor: '#FFFFFF',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#F7FAFC';
+                        e.currentTarget.style.backgroundColor = '#F1F5F9';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = '#FFFFFF';
@@ -464,7 +434,7 @@ const EditEmployee = () => {
 
             {/* Illustration Section */}
             <div className="lg:col-span-1 hidden lg:flex items-center justify-center">
-              <div className="w-full flex items-center justify-center">
+              <div className="w-full flex items-center justify-center p-6 bg-white rounded-xl shadow-lg">
                 <img
                   src={EditEmployeeImg}
                   alt="Edit Employee"

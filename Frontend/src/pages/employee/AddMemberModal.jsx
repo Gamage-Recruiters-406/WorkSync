@@ -27,15 +27,13 @@ const AddMemberModal = ({ onClose, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const user = users.find((u) => u.id === selectedUserId);
+    const user = users.find((u) => u._id === selectedUserId);
     if (!user) return;
 
 
     onSave({
-      name: user.name,
-      email: user.email,
+      id: user._id,
       role: selectedRole,
-      id: user.id,
     });
   };
 
@@ -62,8 +60,8 @@ const AddMemberModal = ({ onClose, onSave }) => {
             >
               <option value="">Select User</option>
               {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name || user.email}
+                <option key={user._id} value={user._id}>
+                  {user.FirstName} {user.LastName} ({user.email})
                 </option>
               ))}
             </select>

@@ -16,7 +16,7 @@ export const startAutoCheckoutJob = () => {
             // Get ALL Employees (Role 1) from Employee Table
             const allEmployees = await Employee.find({ role: 1 }).select("_id");
 
-            // Get everyone who has ALREADY clocked in today
+            //  Get everyone who has ALREADY clocked in today
             const presentAttendance = await attendanceModel.find({ date: todayStr }).select("userId");
             const presentIds = presentAttendance.map(record => record.userId.toString());
 

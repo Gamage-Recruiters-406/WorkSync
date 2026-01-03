@@ -43,7 +43,7 @@ const getEmployeeIdFromUser = async (idFromToken) => {
 export const clockInController = async (req, res) => {
     try {
         const { date } = req.body; 
-        const idFromToken = req.user.userid; 
+        const userId = req.user.userid; 
 
         if (!date) return res.status(400).send({ message: "Date is required" });
 
@@ -67,6 +67,7 @@ export const clockInController = async (req, res) => {
                     attendance
                 });
             } else {
+                // Real duplicate check-in (they actually clocked in earlier)
                 return res.status(400).send({
                     success: false,
                     message: "You have already clocked in for this date."
@@ -75,7 +76,7 @@ export const clockInController = async (req, res) => {
         }
 
         const newAttendance = new attendanceModel({
-            userId: employeeId, 
+            userId,  
             date,
             status: calculatedStatus,
             inTime: new Date()
@@ -97,12 +98,9 @@ export const clockInController = async (req, res) => {
 export const clockOutController = async (req, res) => {
     try {
         const { date } = req.body;
-        const idFromToken = req.user.userid; 
+        const userId = req.user.userid; 
 
-        const employeeId = await getEmployeeIdFromUser(idFromToken);
-        if (!employeeId) return res.status(404).send({ message: "Employee profile not found" });
-
-        const attendance = await attendanceModel.findOne({ userId: employeeId, date });
+        const attendance = await attendanceModel.findOne({ userId, date });
 
         if (!attendance) {
             return res.status(404).send({ success: false, message: "Attendance record not found for today" });
@@ -134,7 +132,6 @@ export const getAttendanceController = async (req, res) => {
         let query = {};
 
         if (role === 3) { 
-            // Admin sees all
         } else if (role === 2) { 
             const employees = await Employee.find({ role: 1 }).select("_id");
             const allowedIds = employees.map(emp => emp._id);
@@ -164,7 +161,7 @@ export const getAttendanceController = async (req, res) => {
         }
 
         const attendanceRecords = await attendanceModel.find(query)
-            .populate('userId', 'FirstName LastName name email role') 
+            .populate('userId', 'name email role employeeId') 
             .sort({ date: -1 })
             .lean(); 
 
@@ -173,21 +170,9 @@ export const getAttendanceController = async (req, res) => {
             if (record.inTime && !record.outTime) {
                 displayStatus = "Working";
             }
-            
-            const user = record.userId || {};
-            let fullName = "Unknown";
-
-            if (user.FirstName) {
-                fullName = `${user.FirstName} ${user.LastName}`;
-            } else if (user.name) {
-                fullName = user.name;
-            } else if (user.email) {
-                fullName = user.email;
-            }
 
             return { 
                 ...record, 
-                userId: { ...user, name: fullName }, 
                 status: displayStatus,
                 hoursWorked: calculateDuration(record.inTime, record.outTime) 
             }; 
@@ -209,7 +194,7 @@ export const getSingleUserAttendanceController = async (req, res) => {
     try {
         const { id } = req.params; 
         const attendanceRecords = await attendanceModel.find({ userId: id })
-            .populate('userId', 'FirstName LastName name email')
+            .populate('userId', 'name email')
             .sort({ date: -1 })
             .lean();
 
@@ -229,7 +214,6 @@ export const getSingleUserAttendanceController = async (req, res) => {
 
             return { 
                 ...record, 
-                userId: { ...user, name: fullName },
                 status: displayStatus,
                 hoursWorked: calculateDuration(record.inTime, record.outTime) 
             }; 
@@ -259,8 +243,7 @@ const buildExportQuery = async (req) => {
         if (managerEmpId) allowedIds.push(managerEmpId);
         query.userId = { $in: allowedIds };
     } else {
-        const employeeId = await getEmployeeIdFromUser(userid);
-        if(employeeId) query.userId = employeeId;
+        query.userId = userid;
     }
     const targetDate = date ? new Date(date) : new Date();
     if (viewType === 'month') {
@@ -297,7 +280,7 @@ const exportAttendanceExcel = async (req, res) => {
     try {
         const query = await buildExportQuery(req);
         const attendanceData = await attendanceModel.find(query)
-            .populate('userId', 'FirstName LastName name email _id') 
+            .populate('userId', 'name email _id') 
             .sort({ date: -1 });
 
         let totalHoursWorked = 0; 
@@ -351,7 +334,7 @@ const exportAttendanceExcel = async (req, res) => {
             worksheet.addRow({
                 date: record.date,
                 empId: uniqueId, 
-                name: fullName, 
+                name: record.userId ? record.userId.name : 'Unknown',
                 status: record.status,
                 inTime: formatSLTime(record.inTime),
                 outTime: formatSLTime(record.outTime),
@@ -380,7 +363,7 @@ const exportAttendancePDF = async (req, res) => {
     try {
         const query = await buildExportQuery(req);
         const attendanceData = await attendanceModel.find(query)
-            .populate('userId', 'FirstName LastName name email _id')
+            .populate('userId', 'name email _id')
             .sort({ date: -1 });
 
         let totalHoursWorked = 0;
@@ -446,7 +429,7 @@ const exportAttendancePDF = async (req, res) => {
 
             doc.text(record.date, 30, y);
             doc.text(uniqueId, 110, y);
-            doc.text(fullName, 160, y, { width: 130 }); 
+            doc.text(record.userId?.name || "Unknown", 160, y, { width: 130 });
             doc.text(formatSLTime(record.inTime), 300, y);
             doc.text(formatSLTime(record.outTime), 360, y);
             doc.text(hoursTxt, 420, y);
@@ -498,13 +481,10 @@ export const updateAttendanceController = async (req, res) => {
 // 7. EMPLOYEE: REQUEST CORRECTION
 export const requestCorrectionController = async (req, res) => {
     try {
-        const idFromToken = req.user.userid;
+        const userId = req.user.userid;
         const { date, type, requestedTime, reason } = req.body; 
 
-        const employeeId = await getEmployeeIdFromUser(idFromToken);
-        if(!employeeId) return res.status(404).send({ success: false, message: "Employee profile not found" });
-
-        const attendance = await attendanceModel.findOne({ userId: employeeId, date });
+        const attendance = await attendanceModel.findOne({ userId, date });
         if (!attendance) {
             return res.status(404).send({ success: false, message: "Attendance record not found for this date" });
         }
@@ -533,7 +513,7 @@ export const requestCorrectionController = async (req, res) => {
 export const getPendingCorrectionsController = async (req, res) => {
     try {
         const pendingRequests = await attendanceModel.find({ "correction.status": "Pending" })
-            .populate("userId", "FirstName LastName name email")
+            .populate("userId", "name email employeeId")
             .sort({ date: -1 });
 
         res.status(200).send({
@@ -609,7 +589,7 @@ export const getMyAttendanceHistoryController = async (req, res) => {
         const employeeId = await getEmployeeIdFromUser(idFromToken);
         if (!employeeId) return res.status(200).send({ success: true, count: 0, attendance: [] });
 
-        const attendanceRecords = await attendanceModel.find({ userId: employeeId })
+        const attendanceRecords = await attendanceModel.find({ userId })
             .sort({ date: -1 }) 
             .lean();
 
@@ -651,7 +631,9 @@ export const getDashboardStatsController = async (req, res) => {
         });
 
         const presentCount = todayAttendance.filter(doc => doc.status === "Present").length;
+        
         const lateCount = todayAttendance.filter(doc => doc.status === "Late").length;
+        
         const absentCount = todayAttendance.filter(doc => doc.status === "Absent").length;
 
         res.status(200).send({
@@ -735,8 +717,8 @@ export const getAnalyticsReportController = async (req, res) => {
 
             return {
                 id: emp._id,
-                employeeId: "EMP-" + emp._id.toString().slice(-4).toUpperCase(), 
-                name: fullName, 
+                employeeId: emp.employeeId || "EMP000",
+                name: emp.name,
                 daysPresent,
                 daysAbsent,
                 lateCount,

@@ -1,49 +1,58 @@
 import workSyncLogo from "../../assets/Logo.png";
 
 const CompanyInfoSettings = () => {
+  const company = {
+    name: "WorkSync",
+    address: "123 Main Street, Colombo, Sri Lanka",
+    email: "WorksYnc@worksync.com",
+    contact: "07XXXXXXXX",
+    website: "www.worksync.com",
+  };
+
+  const InputField = ({ label, value }) => (
+    <div className="flex justify-between items-center bg-white rounded-md p-3 shadow-sm">
+      <label className="font-medium text-gray-600">{label}</label>
+      <span className="text-gray-800">{value}</span>
+    </div>
+  );
+
   return (
-    <main className="flex-1 p-6 bg-gray-100">
-      <div className="flex-1 p-6 bg-gray-50  rounded-xl shadow overflow-hidden">
-        <h2 className="text-lg font-semibold">Company System Information</h2>
-        {/* Center Logo Card */}
-        <div className="flex justify-center mb-6">
-          <div className="w-48 h-40 bg-gray-100 rounded-xl shadow-md flex flex-col items-center justify-center">
+    <main className="flex-1 p-6 overflow-y-auto bg-gray-100">
+      <h2 className="text-heading font-semibold mb-6">Company Information</h2>
+
+      <div className="flex gap-8">
+        {/* Left Logo Card */}
+        <div className="w-72 rounded-2xl bg-[#0b7c8f] text-white flex flex-col items-center justify-center py-10 shadow-lg">
+          {/* Gray circle wrapping only the logo */}
+          <div className="bg-gray-300 rounded-full p-4 flex items-center justify-center mb-4">
             <img
               src={workSyncLogo}
-              alt="WorkingSync Logo"
-              className="w-20 h-20 object-contain mb-2"
+              alt="Company Logo"
+              className="h-24 w-24 object-contain"
             />
-            <span className="text-teal-600 font-semibold">WorkSync</span>
           </div>
+
+          {/* Company name outside the circle */}
+          <h3 className="text-xl font-semibold">{company.name}</h3>
         </div>
 
-        {/* Company Info Table */}
-        <div className="max-w-xl mx-auto bg-gray-100 rounded-xl shadow overflow-hidden">
-          <div className="bg-[#087990] text-white px-4 py-2 font-medium">
-            Company Name : <span className="font-normal">WorkSync</span>
-          </div>
-
-          <div className="divide-y">
-            <div className="flex px-4 py-2">
-              <span className="w-40 text-gray-600">Address</span>
-              <span className="text-gray-800">
-                : 123 Main Street, Colombo, Sri Lanka
-              </span>
-            </div>
-
-            <div className="flex px-4 py-2">
-              <span className="w-40 text-gray-600">Email</span>
-              <span className="text-gray-800">: info@worksync.com</span>
-            </div>
-
-            <div className="flex px-4 py-2">
-              <span className="w-40 text-gray-600">Contact Number</span>
-              <span className="text-gray-800">: 07XXXXXXXX</span>
-            </div>
-
-            <div className="flex px-4 py-2">
-              <span className="w-40 text-gray-600">Website</span>
-              <span className="text-gray-800">: www.worksync.com</span>
+        {/* Right Details Card */}
+        <div className="flex-1 rounded-2xl bg-gray-100 p-6 border-2 border-[#087990] shadow-lg">
+          <div className="space-y-4">
+            <InputField label="Company Name" value={company.name} />
+            <InputField label="Address" value={company.address} />
+            <InputField label="Email" value={company.email} />
+            <InputField label="Contact Number" value={company.contact} />
+            <div className="flex justify-between items-center bg-white rounded-md p-3 shadow-sm">
+              <label className="font-medium text-gray-600">Website</label>
+              <a
+                href="http://localhost:5173/admin/dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {company.website}
+              </a>
             </div>
           </div>
         </div>

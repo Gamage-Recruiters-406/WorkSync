@@ -26,12 +26,12 @@ const leaveRequestSchema = new mongoose.Schema(
     },
     requestedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Employees",
+      ref: "User",
       required: true,
     },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Employees",
+      ref: "User",
     },
   },
   {
