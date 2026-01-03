@@ -83,6 +83,12 @@ export const createProjectController = async (req, res) => {
             teamLeader: teamLeaderId,
         });
 
+        await ProjectTeam.create({
+            projectId: project._id,
+            userId: teamLeaderId,
+            assignedRole: "Team Lead"
+        });
+
         res.status(201).json({
             success:true,
             message: "Project created successfully",
