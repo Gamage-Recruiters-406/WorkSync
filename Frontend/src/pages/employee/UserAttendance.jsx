@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Clock, X, AlertCircle } from "lucide-react";
+import { Clock, X, AlertCircle, Check } from "lucide-react";
 import Sidebar from "../../components/sidebar/Sidebar";
 import TopBar from "../../components/sidebar/Topbar";
 import axios from "axios";
@@ -498,6 +498,13 @@ const UserAttendance = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   Reason For the Correction
                 </h3>
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087990] focus:border-transparent mb-3"
+                  placeholder="Type your reason here..."
+                />
                 <p className="text-sm text-gray-600 mb-3">
                   Please explain why you need this correction. Be specific and
                   honest. Example,
@@ -519,13 +526,6 @@ const UserAttendance = () => {
                     </span>
                   </li>
                 </ul>
-                <textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087990] focus:border-transparent"
-                  placeholder="Type your reason here..."
-                />
               </div>
 
               <div className="border-t border-gray-200 pt-6 flex justify-end">
@@ -606,8 +606,8 @@ const UserAttendance = () => {
             style={{ backgroundColor: "#E5E7EB" }}
           >
             <div className="flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-black flex items-center justify-center mb-4">
-                <Clock size={32} className="text-white" />
+              <div className="w-16 h-16 rounded-full bg-black flex items-center justify-center mb-4 text-white">
+                <Clock size={32} />
               </div>
 
               <h2 className="text-xl font-bold text-gray-900 mb-2">
@@ -617,7 +617,7 @@ const UserAttendance = () => {
               {!isCheckedIn ? (
                 <>
                   <div className="flex items-center gap-2 text-sm text-gray-700 mb-6">
-                    <div className="w-4 h-4 rounded-full border-2 border-gray-900"></div>
+                    <AlertCircle size={18} className="text-gray-900" />
                     <span>You haven't check in today</span>
                   </div>
 
@@ -633,11 +633,13 @@ const UserAttendance = () => {
               ) : (
                 <>
                   <div className="flex items-center gap-2 text-sm text-gray-700 mb-6">
-                    <div className="w-4 h-4 rounded-full bg-gray-900"></div>
+                    <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center">
+                      <Check size={16} className="text-white" strokeWidth={3} />
+                    </div>
                     <span>You are checked in</span>
                   </div>
 
-                  <div className="flex items-center gap-6 mb-6">
+                  <div className="flex items-center gap-20 mb-6">
                     <div className="bg-white rounded-lg px-10 py-4 text-center">
                       <p className="text-xs text-gray-600 mb-2">
                         Check IN Time
