@@ -4,17 +4,18 @@ import MilestoneDetailsModal from "./MilestoneDetailsModal";
 import axios from "axios";
 import EditMilestoneModal from "./EditMilestoneModal";
 import Toast from "../../components/Toast";
+import useIsTeamLeader from "../../hooks/useIsTeamLeader";
 
 
 
 const MilestonesTab = ({projectId, projectData}) => {
-  const projectRole = projectData?.role || projectData?.assignedRole;
+  const { isTeamLeader, loading } = useIsTeamLeader(projectId);
   const [milestones, setMilestones] = useState([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [editMilestone, setEditMilestone] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
@@ -41,7 +42,7 @@ const MilestonesTab = ({projectId, projectData}) => {
       console.error("Failed to fetch milestones", error);
       setMilestones([]);
     } finally {
-      setLoading(false);
+      setPageLoading(false);
     }
   };
 
@@ -136,8 +137,10 @@ const MilestonesTab = ({projectId, projectData}) => {
   };
 
   
-
-  const isTeamLeader = projectRole === "Team Leader";
+  if (loading) {
+    return <p className="m-6 text-center text-gray-500">Checking permissions...</p>;
+  }
+  
 
   return (
     <>
@@ -156,11 +159,11 @@ const MilestonesTab = ({projectId, projectData}) => {
         )}
       </div>
 
-      {loading && (
+      {pageLoading && (
         <p className="m-6 text-gray-500">Loading milestones...</p>
       )}
 
-      {!loading && milestones.length === 0 && (
+      {!pageLoading && milestones.length === 0 && (
         <p className="m-6 text-gray-500">No milestones found.</p>
       )}
       {/* conformation pop-up */}
