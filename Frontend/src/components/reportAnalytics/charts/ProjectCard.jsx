@@ -1,9 +1,18 @@
 import { useNavigate } from "react-router-dom";
 
-const statusColor = {
-  active: "bg-green-500",
-  "on-hold": "bg-orange-500",
-  completed: "bg-red-500",
+const statusStyles = {
+  active: {
+    badge: "bg-green-200 text-green-700",
+    bar: "bg-green-500",
+  },
+  "on-hold": {
+    badge: "bg-orange-100 text-green-700",
+    bar: "bg-orange-500",
+  },
+  complete: {
+    badge: "bg-blue-100 text-green-700",
+    bar: "bg-blue-500",
+  },
 };
 
 const ProjectCard = ({ project }) => {
@@ -13,38 +22,62 @@ const ProjectCard = ({ project }) => {
     navigate(`/user/project-team/${project.id}`, {state: {project}});
   };
 
+  const status = statusStyles[project.status] || statusStyles.active;
+
   return (
-    <div className="bg-white rounded-md shadow-md border border-gray-200 max-w-md mb-2 overflow-hidden">
-      <div className="bg-[#087990] text-white px-4 py-3 rounded-t-md">
-        <h2 className="font-semibold">{project.name}</h2>
-        <p className="text-xs mt-1">Role: {project.role}</p>
+    <div className="bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-md transition-shadow duration-200">
+      {/* Header */}
+      <div className="flex justify-between items-start bg-[#087990] text-white px-5 py-4 rounded-t-lg">
+        <div>
+          <h2 className="font-semibold text-lg">{project.name}</h2>
+          <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded bg-white/20">
+            Role: {project.role}
+            </span>
+        </div>
+        <span className={`px-2 py-1 text-xs rounded ${status.badge}`}>
+          {project.status}
+        </span>
       </div>
 
-      <div className="px-4 py-4 text-sm text-gray-700 space-y-3">
-        
-        <div className="mt-3">
-          <p className="mb-1">Progress:</p>
-          <div className="w-full bg-gray-200 h-3 rounded-full">
+      {/* Body */}
+      <div className="px-5 py-4 text-sm text-gray-700 space-y-4">
+        {/* Progress */}
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="font-medium">Progress</span>
+            <span className="text-xs">{project.progress}%</span>
+
+          </div>
+          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
             <div
-              className="h-3 bg-[#087990] rounded-full"
+              className={`h-2 ${status.bar}`}
               style={{ width: `${project.progress}%` }}
             />
           </div>
-          <p className="text-right text-xs mt-1">{project.progress}%</p>
+          {project.dueSoon > 0 && (
+            <p className="text-xs text-orange-600 mt-2">
+              Milestones due soon: {project.dueSoon}
+            </p>
+          )}
+
         </div>
 
-        <p className="mt-2">
-          Deadline: <span className="font-medium">{project.deadline}</span>
+        {/* Deadline */}
+        <p>
+          Deadline:{" "} 
+          <span className="font-medium text-gray-900">
+            {project.deadline}
+          </span>
         </p>
 
-        <div className="mt-4 flex items-center justify-between">
-          <span
-            className={`w-4 h-4 rounded-full ${statusColor[project.status]}`}
+        <div className="flex justify-end pt-2">
+          {/* <span
+            className={`w-4 h-4 rounded-full ${[project.status]}`}
             aria-label={project.status}
-          ></span>
+          ></span> */}
           <button
             onClick={handleView}
-            className="px-4 py-1 rounded-md bg-[#087990] text-white text-sm hover:bg-teal-800"
+            className="px-4 py-2 rounded-md bg-[#087990] text-white text-sm hover:bg-teal-900"
           >
             View
           </button>
