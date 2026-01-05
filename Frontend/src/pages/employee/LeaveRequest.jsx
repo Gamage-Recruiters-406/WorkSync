@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/sidebar/Sidebar";
 import { Edit2, Trash2, X } from "lucide-react";
 import { AiOutlineCheckCircle, AiOutlineCloseCircle } from "react-icons/ai";
-import api from "../../api/axios"; // baseURL: http://localhost:8090/api/v1/leave-request
+import api from "../../api/axios";
 
 // -------------------- Custom Alert Modal --------------------
 const CustomAlert = ({ message, type, onClose }) => {
@@ -373,7 +373,7 @@ const LeaveRequest = () => {
               const display = `${used}/${total}`;
 
               const color =
-                type === "annual" ? "bg-blue-500" : type === "casual" ? "bg-green-500" : "bg-purple-500";
+                type === "annual" ? "bg-blue-600" : type === "casual" ? "bg-green-600" : "bg-purple-600";
 
               return (
                 <div key={idx} className="mb-6">
