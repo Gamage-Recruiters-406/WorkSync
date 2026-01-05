@@ -14,25 +14,25 @@ const ProjectDetailsAdmin = () => {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploadFile, setUploadFile] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [downloadingReport, setDownloadingReport] = useState(false);
 
     const URL_API = "http://localhost:8090";
 
     useEffect(() => {
         const fetchProject = async () => {
             try {
-                console.log(`Fetching project with ID: ${id}`);
                 
                 // Try using ProjectService first
                 try {
                     const response = await getProject(id);
                     if (response && response.data) {
-                        console.log('Project fetched via ProjectService:', response);
+                     
                         setProjectData(response.data);
                         setLoading(false);
                         return;
                     } else if (response) {
                         // If response doesn't have nested data, it might be the data itself
-                        console.log('Project fetched via ProjectService (direct):', response);
+                        
                         setProjectData(response);
                         setLoading(false);
                         return;
@@ -46,7 +46,7 @@ const ProjectDetailsAdmin = () => {
                     const res = await axios.get(`${URL_API}/api/v1/project-team/getProject/${id}`, {
                         withCredentials: true,
                     });
-                    console.log('Project fetched via project-team route:', res.data);
+                    
                     setProjectData(res.data.data);
                     setLoading(false);
                     return;
@@ -59,7 +59,7 @@ const ProjectDetailsAdmin = () => {
                     const res = await axios.get(`${URL_API}/api/v1/projects/getProject/${id}`, {
                         withCredentials: true,
                     });
-                    console.log('Project fetched via projects route:', res.data);
+                    
                     setProjectData(res.data.data);
                     setLoading(false);
                     return;
@@ -72,7 +72,7 @@ const ProjectDetailsAdmin = () => {
                     const res = await axios.get(`${URL_API}/getProject/${id}`, {
                         withCredentials: true,
                     });
-                    console.log('Project fetched via direct route:', res.data);
+                    
                     setProjectData(res.data.data || res.data);
                     setLoading(false);
                     return;
@@ -92,9 +92,9 @@ const ProjectDetailsAdmin = () => {
         const fetchTeam = async () => {
             try {
                 const res = await axios.get(`${URL_API}/api/v1/project-team/getMembers/${id}`, { withCredentials: true });
-                console.log('Team API Response:', res);
+                
                 const members = res?.data?.data || res?.data;
-                console.log('Members data:', members);
+                
                 if (members) setProjectData(prev => ({ ...(prev || {}), team: members }));
             } catch (err) {
                 // If team API fails, keep whatever team is present
@@ -109,7 +109,7 @@ const ProjectDetailsAdmin = () => {
     const goBack = () => navigate("/admin/projects");
 
     const handleDeleteFile = async (fileName) => {
-        console.log("Delete file:", fileName);
+        
         // keep as placeholder — implement backend file-delete if available
     };
 
@@ -125,7 +125,9 @@ const ProjectDetailsAdmin = () => {
             );
             // refresh team
             const res = await axios.get(`${URL_API}/api/v1/project-team/getMembers/${id}`, { withCredentials: true });
+            
             setProjectData(prev => ({ ...(prev || {}), team: res?.data?.data || [] }));
+            
         } catch (err) {
             console.error('Failed to remove member:', err);
             alert('Failed to remove member');
@@ -211,7 +213,7 @@ const ProjectDetailsAdmin = () => {
         if (!projectData._id) return;
         setStatusChanging(true);
         try {
-            await axios.patch(`${URL_API}/api/v1/project/updateProjectStatus/${projectData._id}`, 
+            await axios.patch(`${URL_API}/api/v1/projects/updateProjectStatus/${projectData._id}`, 
                 { status: newStatus }, 
                 { withCredentials: true }
             );
@@ -221,6 +223,40 @@ const ProjectDetailsAdmin = () => {
             alert('Failed to update project status');
         } finally {
             setStatusChanging(false);
+        }
+    };
+
+    const handleDownloadReport = async () => {
+        if (!projectData?._id) {
+            alert('Project ID not found');
+            return;
+        }
+
+        setDownloadingReport(true);
+        try {
+            const response = await axios.get(
+                `${URL_API}/api/v1/projects/projectReport/${projectData._id}`,
+                {
+                    withCredentials: true,
+                    responseType: 'blob'
+                }
+            );
+
+            // Create a blob URL and trigger download
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `project-report-${projectData.name || projectData._id}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+            console.error('Failed to download report:', err);
+            alert('Failed to download project report');
+        } finally {
+            setDownloadingReport(false);
         }
     };
 
@@ -255,10 +291,22 @@ const ProjectDetailsAdmin = () => {
 
                         <h1 className="text-2xl font-bold text-gray-800">{projectData?.name || 'Project'}</h1>
 
-                        <div className="text-right text-sm">
-                            <p className="text-gray-600">
-                                Deadline: <span className="font-semibold text-gray-800">{projectData?.endDate ? new Date(projectData.endDate).toLocaleDateString() : 'N/A'}</span>
-                            </p>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={handleDownloadReport}
+                                disabled={downloadingReport}
+                                className="flex items-center gap-2 px-4 py-2 bg-[#087990] text-white rounded-md hover:bg-[#066a7a] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                {downloadingReport ? 'Downloading...' : 'Project Report'}
+                            </button>
+                            <div className="text-right text-sm">
+                                <p className="text-gray-600">
+                                    Deadline: <span className="font-semibold text-gray-800">{projectData?.endDate ? new Date(projectData.endDate).toLocaleDateString() : 'N/A'}</span>
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -381,7 +429,7 @@ const ProjectDetailsAdmin = () => {
                                             <tbody>
                                                 {projectData.team?.map((member, idx) => (
                                                     <tr key={member._id || idx} className="border-b border-gray-100 hover:bg-gray-50">
-                                                        <td className="py-3 px-4 text-gray-800">{member.userId?.name || 'N/A'}</td>
+                                                        <td className="py-3 px-4 text-gray-800">{member.userId?.email || 'N/A'}</td>
                                                         <td className="py-3 px-4 text-gray-700">{member.assignedRole || 'N/A'}</td>
                                                         <td className="py-3 px-4 text-right">
                                                             <button
