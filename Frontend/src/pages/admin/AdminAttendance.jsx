@@ -64,6 +64,20 @@ const AdminAttendance = () => {
     return "EMP000";
   };
 
+  // Get employee name from backend-populated user data
+  const getEmployeeName = (user) => {
+    if (!user) return "Unknown";
+    // If FirstName and LastName exist, use them
+    if (user.FirstName && user.LastName) {
+      return `${user.FirstName} ${user.LastName}`;
+    }
+    // Fallback to name field
+    if (user.name) return user.name;
+    // Fallback to email prefix
+    if (user.email) return user.email.split("@")[0];
+    return "Unknown";
+  };
+
   const fetchDashboardStats = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -1062,7 +1076,7 @@ const AdminAttendance = () => {
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
                                 <h4 className="font-semibold text-gray-800">
-                                  {correction.userId?.name || "Unknown"}
+                                  {getEmployeeName(correction.userId)}
                                 </h4>
                                 <span className="text-sm text-gray-600">
                                   ({getEmployeeId(correction.userId || correction.userID || correction.userid)})
