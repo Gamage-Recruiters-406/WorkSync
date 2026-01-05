@@ -8,7 +8,7 @@ import {
     SignOut,
     RemoveEmployee,
     updateEmployee,
-    getSingleEmployeeByID
+    getSingleEmployeeByID,
  } from '../controllers/Employeecontroller.js';
 import { isAdmin, requiredSignIn } from '../middlewares/AuthMiddleware.js';
 
@@ -16,6 +16,9 @@ import { isAdmin, requiredSignIn } from '../middlewares/AuthMiddleware.js';
 const router = express.Router();
 
 router.post("/userLogin", loginUser);
+
+//signout function
+router.post("/Signout", requiredSignIn, SignOut)
 
 //add new employee route
 router.post("/RejisterEmployee/:id", requiredSignIn, isAdmin, rejisterEmployee );
