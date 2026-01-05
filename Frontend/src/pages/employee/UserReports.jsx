@@ -13,6 +13,7 @@ import {
   getLeavesByUser,
   getAllUserTasks,
   getTaskReport,
+  getAttendance,
 } from "../../services/adminReportsApi";
 
 export default function UserReports() {
@@ -41,7 +42,7 @@ export default function UserReports() {
     const loadUserData = async () => {
       try {
         // --- Attendance ---
-        const attendanceRes = await getSingleUserAttendance(userId);
+        const attendanceRes = await getAttendance(userId);
 
         const attendance = attendanceRes?.data?.attendance || [];
         console.log(attendance);
@@ -50,7 +51,7 @@ export default function UserReports() {
         const tasksRes = await getAllUserTasks(userId);
 
         const tasks = tasksRes?.data?.data || [];
-        console.log(tasksRes);
+
         // --- Leaves ---
         const leavesRes = await getLeavesByUser(userId);
 
@@ -79,7 +80,7 @@ export default function UserReports() {
   useEffect(() => {
     const loadUserCharts = async () => {
       try {
-        const attendanceRes = await getSingleUserAttendance(userId);
+        const attendanceRes = await getAttendance(userId);
 
         const attendance = attendanceRes.data.attendance || [];
 
@@ -95,7 +96,7 @@ export default function UserReports() {
         ];
 
         const taskRes = await getAllUserTasks();
-        console.log(taskRes);
+
         const taskChartData = taskRes?.data?.data || [];
         //const taskChartData = [
         //{
