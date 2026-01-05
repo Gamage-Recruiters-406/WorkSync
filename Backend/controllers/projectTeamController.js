@@ -143,7 +143,7 @@ export const getProjectsOfUser = async (req, res) => {
         const { uid } = req.params;
 
         const projects = await ProjectTeam.find({ userId: uid })
-            .populate("projectId", "name description");
+            .populate("projectId", "name description endDate status teamLeader");
 
         res.status(200).json({
             success: true,
