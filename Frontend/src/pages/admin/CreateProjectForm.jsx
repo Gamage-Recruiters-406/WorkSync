@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createProject, getAllUsers } from '../../services/ProjectService';
+import { createProject,getAllEmployee, } from '../../services/ProjectService';
 
 const CreateProjectModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -25,9 +25,10 @@ const CreateProjectModal = ({ isOpen, onClose, onSuccess }) => {
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
-      const response = await getAllUsers();
+      const response = await getAllEmployee();
+      console.log(response.Employees);
       if (response.success) {
-        setUsers(response.data || []);
+        setUsers(response.Employees || []);
       }
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -36,7 +37,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSuccess }) => {
       setLoadingUsers(false);
     }
   };
-
+    
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
