@@ -33,6 +33,10 @@ const leaveRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    rejectionReason: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
