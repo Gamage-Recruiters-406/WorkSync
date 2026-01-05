@@ -1,5 +1,5 @@
 import ProjectTeam from "../models/ProjectTeam.js";
-import User from "../models/User.js";
+import User from "../models/EmployeeModel.js";
 import Project from "../models/ProjectModel.js";
 import mongoose from "mongoose";
 
