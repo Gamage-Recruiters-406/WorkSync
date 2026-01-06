@@ -15,6 +15,7 @@ const DocumentsTab = ({projectId, projectData}) => {
   const [toast, setToast] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const { isTeamLeader, loading } = useIsTeamLeader(projectId);
+  const MAX_DOCUMENTS = 5;
 
 
   const URL_API = "http://localhost:8090";
@@ -79,6 +80,7 @@ const DocumentsTab = ({projectId, projectData}) => {
     return <p className="m-6 text-center text-gray-500">Checking permissions...</p>;
   }
   
+  const hasReachedLimit = documents.length >= MAX_DOCUMENTS;
 
   return (
     <>
@@ -98,11 +100,32 @@ const DocumentsTab = ({projectId, projectData}) => {
           </select>
 
           <button
-            onClick={() => setIsUploadOpen(true)}
-            className="px-5 py-2 rounded-md bg-[#087990] text-white text-sm hover:bg-teal-800"
+            onClick={() => {
+              if (hasReachedLimit){
+                setToast({
+                  message: "You can upload a maximum of 5 documents. Please delete one to upload a new file.",
+                  type: "error",
+                });
+                return;
+              }
+              setIsUploadOpen(true);
+            }}
+            disabled={hasReachedLimit}
+            className={`px-5 py-2 rounded-md text-white text-sm 
+              ${hasReachedLimit
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-[#087990] hover:bg-teal-900"
+            }`}
+            
           >
             Upload File
           </button>
+          {hasReachedLimit && (
+            <p className="text-xs text-red-500 mt-1">
+              Maximum of 5 documents allowed per project.
+            </p>
+          )}
+
         </div>
       </div>
 
