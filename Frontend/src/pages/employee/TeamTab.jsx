@@ -3,6 +3,8 @@ import AddMemberModal from "./AddMemberModal";
 import axios from "axios";
 import Toast from "../../components/Toast";
 import useIsTeamLeader from "../../hooks/useIsTeamLeader";
+import { Trash2 } from "lucide-react";
+
 
 
 
@@ -235,9 +237,10 @@ const TeamTab = ({projectId, projectData}) => {
                     id: member.userId._id,
                     name: `${member.userId.FirstName} ${member.userId.LastName}`,
                   })}
-                  className="ml-4 px-4 py-1 rounded-md bg-red-500 text-white text-xs hover:bg-red-600"
+                  className="p-2 rounded hover:bg-gray-100 hover:text-red-500 text-[#087990]"
+                  title="Remove"
                 >
-                  Remove
+                  <Trash2 size={18} />
                 </button>
               )}
             </div>

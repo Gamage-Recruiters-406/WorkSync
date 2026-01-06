@@ -55,7 +55,7 @@ const ProjectCard = ({ project }) => {
             />
           </div>
           {project.dueSoon > 0 && (
-            <p className="text-xs text-orange-600 mt-2">
+            <p className="text-xs text-orange-600 mt-4">
               Milestones due soon: {project.dueSoon}
             </p>
           )}

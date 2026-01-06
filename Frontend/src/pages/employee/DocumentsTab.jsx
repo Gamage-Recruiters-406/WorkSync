@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import UploadModal from "./UploadModal";
 import Toast from "../../components/Toast";
 import useIsTeamLeader from "../../hooks/useIsTeamLeader";
+import { Trash2 } from "lucide-react";
+
 
 
 const DocumentsTab = ({projectId, projectData}) => {
@@ -142,13 +144,14 @@ const DocumentsTab = ({projectId, projectData}) => {
                 {(doc.fileSize/1024).toFixed(2)} KB
               </p>
             </div>
-            <div className="px-4 py-3 border-t flex justify-end gap-2">
+            <div className="px-4 py-3 border-t flex justify-between gap-2">
             {isTeamLeader && (
               <button
                 onClick={() => setConfirmDelete(doc)}
-                className="px-4 py-1 rounded-md bg-red-500 text-white text-sm hover:bg-red-600"
+                className="p-2 rounded hover:bg-gray-100 hover:text-red-500 text-[#087990]"
+                title="Delete"
               >
-                Delete
+                <Trash2 size={18} />
               </button>
             )}
               <button className="px-4 py-1 rounded-md bg-[#087990] text-white text-sm hover:bg-teal-800">
