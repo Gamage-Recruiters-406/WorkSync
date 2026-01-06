@@ -311,19 +311,18 @@ const ProjectDetailsAdmin = () => {
                     </div>
 
                     {/* Status Row */}
-                    <div className="flex items-center gap-2 mb-6 pb-4 border-b">
-                        <span className="font-medium text-gray-700">Status:</span>
-                        <select
-                            value={projectData?.status || "Active"}
-                            onChange={(e) => handleStatusChange(e.target.value)}
-                            disabled={statusChanging}
-                            className="px-3 py-1 border border-[#087990] rounded-md text-gray-800 font-medium cursor-pointer hover:bg-gray-50 disabled:opacity-50"
-                        >
-                            <option value="Active">Active</option>
-                            <option value="On-Hold">On-Hold</option>
-                            <option value="Completed">Completed</option>
-                        </select>
-                    </div>
+                                        <div className="flex items-center gap-3 mb-6 pb-4 border-b">
+                                                <span className="font-medium text-gray-700 text-[18px]">Status :</span>
+                                                <span className={`w-3 h-3 rounded-full inline-block mr-2 ${
+                                                    projectData?.status?.toLowerCase() === 'active' ? 'bg-green-500' :
+                                                    projectData?.status?.toLowerCase() === 'on-hold' ? 'bg-yellow-500' :
+                                                    projectData?.status?.toLowerCase() === 'completed' ? 'bg-blue-500' :
+                                                    'bg-gray-400'
+                                                }`}></span>
+                                                <span className="font-semibold text-gray-700 text-[18px] capitalize">
+                                                    {projectData?.status ? projectData.status : 'Active'}
+                                                </span>
+                                        </div>
 
                     {/* Tabs */}
                     <div className="flex gap-3 mb-6 border-b pb-2">
@@ -429,7 +428,11 @@ const ProjectDetailsAdmin = () => {
                                             <tbody>
                                                 {projectData.team?.map((member, idx) => (
                                                     <tr key={member._id || idx} className="border-b border-gray-100 hover:bg-gray-50">
-                                                        <td className="py-3 px-4 text-gray-800">{member.userId?.email || 'N/A'}</td>
+                                                        <td className="py-3 px-4 text-gray-800">{member.userId
+                                ? `${member.userId.FirstName || ""} ${
+                                    member.userId.LastName || ""
+                                  }`.trim()
+                                : "N/A"}</td>
                                                         <td className="py-3 px-4 text-gray-700">{member.assignedRole || 'N/A'}</td>
                                                         <td className="py-3 px-4 text-right">
                                                             <button
