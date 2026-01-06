@@ -102,15 +102,41 @@ const ProjectDetailsAdmin = () => {
             }
         };
 
+        const fetchFiles = async () => {
+            try {
+                const res = await axios.get(`${URL_API}/api/v1/projects/${id}/attachments`, { withCredentials: true });
+                const files = res?.data?.data || [];
+                setProjectData(prev => ({ ...(prev || {}), files }));
+            } catch (err) {
+                console.warn('Could not fetch files:', err);
+            }
+        };
+
         fetchProject();
         fetchTeam();
+        fetchFiles();
     }, [id]);
 
     const goBack = () => navigate("/admin/projects");
 
-    const handleDeleteFile = async (fileName) => {
-        
-        // keep as placeholder — implement backend file-delete if available
+    const handleDeleteFile = async (attachmentId) => {
+        if (!attachmentId) return;
+        if (!window.confirm('Are you sure you want to delete this file?')) return;
+        try {
+            await axios.delete(`${URL_API}/api/v1/projects/${id}/attachments/${attachmentId}`, {
+                withCredentials: true
+            });
+            // Refresh files list
+            const res = await axios.get(`${URL_API}/api/v1/projects/${id}/attachments`, {
+                withCredentials: true
+            });
+            const files = res?.data?.data || [];
+            setProjectData(prev => ({ ...(prev || {}), files }));
+            alert('File deleted successfully');
+        } catch (err) {
+            console.error('Failed to delete file:', err);
+            alert('Failed to delete file');
+        }
     };
 
     const handleRemoveMember = async (memberId) => {
@@ -173,19 +199,18 @@ const ProjectDetailsAdmin = () => {
             return;
         }
 
-        if (uploadFile.size > 20 * 1024 * 1024) { // 20MB
-            alert('File size must be less than 20MB');
+        if (uploadFile.size > 10 * 1024 * 1024) { // 10MB
+            alert('File size must be less than 10MB');
             return;
         }
 
         setUploading(true);
         try {
             const formData = new FormData();
-            formData.append('file', uploadFile);
-            formData.append('projectId', id);
+            formData.append('attachments', uploadFile);
 
-            // Replace with your actual upload endpoint
-            await axios.post(`${URL_API}/api/v1/project-attachment/upload`, formData, {
+            // Correct backend endpoint: /api/v1/projects/:projectId/attachments
+            await axios.post(`${URL_API}/api/v1/projects/${id}/attachments`, formData, {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'multipart/form-data'
@@ -195,10 +220,17 @@ const ProjectDetailsAdmin = () => {
             alert('File uploaded successfully');
             setShowUploadModal(false);
             setUploadFile(null);
-            // Optionally refresh files list here
+            
+            // Refresh files list
+            const res = await axios.get(`${URL_API}/api/v1/projects/${id}/attachments`, {
+                withCredentials: true
+            });
+            const files = res?.data?.data || [];
+            setProjectData(prev => ({ ...(prev || {}), files }));
         } catch (err) {
             console.error('Upload failed:', err);
-            alert('Failed to upload file');
+            const errorMsg = err.response?.data?.message || 'Failed to upload file';
+            alert(errorMsg);
         } finally {
             setUploading(false);
         }
@@ -508,33 +540,47 @@ const ProjectDetailsAdmin = () => {
                                 </div>
 
                                 <div className="mt-6 overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b-2 border-gray-200">
-                                                <th className="text-left py-3 px-4 font-semibold text-gray-700">File Name</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-gray-700">Uploaded By</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
-                                                <th className="text-right py-3 px-4 font-semibold text-gray-700">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {projectData.files?.map((file, idx) => (
-                                                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                                                    <td className="py-3 px-4 text-gray-800 font-medium">{file.name}</td>
-                                                    <td className="py-3 px-4 text-gray-700">{file.uploadedBy}</td>
-                                                    <td className="py-3 px-4 text-gray-700">{file.date}</td>
-                                                    <td className="py-3 px-4 text-right">
-                                                        <button
-                                                            onClick={() => handleDeleteFile(file.name)}
-                                                            className="px-4 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm font-medium"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </td>
+                                    {!projectData.files || projectData.files.length === 0 ? (
+                                        <p className="text-center text-gray-500 py-8">No files uploaded yet</p>
+                                    ) : (
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="border-b-2 border-gray-200">
+                                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">File Name</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Size</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
+                                                    <th className="text-right py-3 px-4 font-semibold text-gray-700">Actions</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {projectData.files.map((file) => (
+                                                    <tr key={file._id} className="border-b border-gray-100 hover:bg-gray-50">
+                                                        <td className="py-3 px-4 text-gray-800 font-medium">{file.originalName || file.filename}</td>
+                                                        <td className="py-3 px-4 text-gray-700">{(file.fileSize / 1024 / 1024).toFixed(2)} MB</td>
+                                                        <td className="py-3 px-4 text-gray-700">{new Date(file.createdAt).toLocaleDateString()}</td>
+                                                        <td className="py-3 px-4 text-right">
+                                                            <div className="flex gap-2 justify-end">
+                                                                <a
+                                                                    href={`${URL_API}/api/v1/projects/${id}/attachments/file/${file._id}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="px-3 py-1.5 bg-[#087990] text-white rounded-md hover:bg-[#076a7a] transition-colors text-sm font-medium"
+                                                                >
+                                                                    View
+                                                                </a>
+                                                                <button
+                                                                    onClick={() => handleDeleteFile(file._id)}
+                                                                    className="px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm font-medium"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
                                 </div>
                             </section>
                         )}
@@ -587,7 +633,7 @@ const ProjectDetailsAdmin = () => {
 
                         {/* File Requirements */}
                         <p className="text-xs text-gray-600 text-center mb-6">
-                            Max size: 20MB | Allowed: PDF, DOCX, PPT, JPG, PNG, ZIP
+                            Max size: 10MB | Allowed: PDF, DOCX, PPT, JPG, PNG, ZIP
                         </p>
 
                         {/* Action Buttons */}

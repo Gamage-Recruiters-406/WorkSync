@@ -5,6 +5,8 @@ import axios from "axios";
 import EditMilestoneModal from "./EditMilestoneModal";
 import Toast from "../../components/Toast";
 import useIsTeamLeader from "../../hooks/useIsTeamLeader";
+import { Pencil, Trash2 } from "lucide-react";
+
 
 
 
@@ -248,16 +250,18 @@ const MilestonesTab = ({projectId, projectData}) => {
                 <>
                 <button
                   onClick={() => openEdit(m)}
-                  className="px-4 py-2 rounded-md bg-yellow-600 text-white text-sm hover:bg-yellow-700"
+                  className="p-2 rounded hover:bg-gray-100 hover:text-yellow-500 text-[#087990]"
+                  title="Edit"
                 >
-                  Edit
+                   <Pencil size={18} />
                 </button>
         
                 <button
                   onClick={() => setConfirmDelete(m)}
-                  className="px-4 py-2 rounded-md bg-red-500 text-white text-sm hover:bg-red-600"
+                  className="p-2 rounded hover:bg-gray-100 hover:text-red-500 text-[#087990]"
+                  title="Delete"
                 >
-                  Delete
+                  <Trash2 size={18} />
                 </button>
               </>
               )}

@@ -81,7 +81,7 @@ const ProjectDetails = () => {
   const handleDownloadReport = async () => {
     try {
       const res = await axios.get(
-        `${URL_API}/api/v1/projects/${projectId}/report`, // Need to change with real API
+        `${URL_API}/api/v1/projects/projectReport/${projectId}`, // Need to change with real API
         {
           withCredentials: true,
           responseType: "blob", // IMPORTANT for file download
@@ -97,6 +97,7 @@ const ProjectDetails = () => {
       link.click();
   
       window.URL.revokeObjectURL(url);
+      console.log("project Report: ", res);
     } catch (error) {
       console.error("Failed to download report", error);
     }
