@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import UploadModal from "./UploadModal";
 import Toast from "../../components/Toast";
 import useIsTeamLeader from "../../hooks/useIsTeamLeader";
+import { Trash2 } from "lucide-react";
+
 
 
 const DocumentsTab = ({projectId, projectData}) => {
@@ -13,6 +15,7 @@ const DocumentsTab = ({projectId, projectData}) => {
   const [toast, setToast] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const { isTeamLeader, loading } = useIsTeamLeader(projectId);
+  const MAX_DOCUMENTS = 5;
 
 
   const URL_API = "http://localhost:8090";
@@ -77,6 +80,7 @@ const DocumentsTab = ({projectId, projectData}) => {
     return <p className="m-6 text-center text-gray-500">Checking permissions...</p>;
   }
   
+  const hasReachedLimit = documents.length >= MAX_DOCUMENTS;
 
   return (
     <>
@@ -96,11 +100,32 @@ const DocumentsTab = ({projectId, projectData}) => {
           </select>
 
           <button
-            onClick={() => setIsUploadOpen(true)}
-            className="px-5 py-2 rounded-md bg-[#087990] text-white text-sm hover:bg-teal-800"
+            onClick={() => {
+              if (hasReachedLimit){
+                setToast({
+                  message: "You can upload a maximum of 5 documents. Please delete one to upload a new file.",
+                  type: "error",
+                });
+                return;
+              }
+              setIsUploadOpen(true);
+            }}
+            disabled={hasReachedLimit}
+            className={`px-5 py-2 rounded-md text-white text-sm 
+              ${hasReachedLimit
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-[#087990] hover:bg-teal-900"
+            }`}
+            
           >
             Upload File
           </button>
+          {hasReachedLimit && (
+            <p className="text-xs text-red-500 mt-1">
+              Maximum of 5 documents allowed per project.
+            </p>
+          )}
+
         </div>
       </div>
 
@@ -142,13 +167,14 @@ const DocumentsTab = ({projectId, projectData}) => {
                 {(doc.fileSize/1024).toFixed(2)} KB
               </p>
             </div>
-            <div className="px-4 py-3 border-t flex justify-end gap-2">
+            <div className="px-4 py-3 border-t flex justify-between gap-2">
             {isTeamLeader && (
               <button
                 onClick={() => setConfirmDelete(doc)}
-                className="px-4 py-1 rounded-md bg-red-500 text-white text-sm hover:bg-red-600"
+                className="p-2 rounded hover:bg-gray-100 hover:text-red-500 text-[#087990]"
+                title="Delete"
               >
-                Delete
+                <Trash2 size={18} />
               </button>
             )}
               <button className="px-4 py-1 rounded-md bg-[#087990] text-white text-sm hover:bg-teal-800">
