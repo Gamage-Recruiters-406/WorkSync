@@ -1,9 +1,45 @@
-import { useState } from 'react';
+
+import { useState,useEffect } from 'react';
 import axios from 'axios';
+import ProjectCardAdminEdit from './ProjectCardAdminEdit';
+import { getAllEmployee } from '../../services/ProjectService';
 
 const ProjectCardAdmin = ({ project, onView, onRemove }) => {
   const [isRemoving, setIsRemoving] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [employees, setEmployees] = useState([]);
 
+useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const res = await getAllEmployee();
+        setEmployees(res.Employees);
+      } catch (error) {
+        console.error("Failed to fetch employees", error);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
+
+  let teamLeaderName = "-";
+
+  if (project.teamLeader?.email) {
+    const leader = Array.isArray(employees)
+      ? employees.find((emp) => emp.email === project.teamLeader.email)
+      : null;
+
+    if (leader) {
+      teamLeaderName = `${leader.FirstName} ${leader.LastName}`;
+    } else if (project.teamLeader.email === "admin@example.com") {
+      teamLeaderName = "Admin";
+    } else {
+      teamLeaderName = project.teamLeader.email;
+    }
+  }
+
+
+console.log("TEAM LEADER NAME 👉", project?.teamLeaderName);
   // Calculate progress percentage (mock calculation )
   const calculateProgress = () => {
     if (!project.startDate || !project.endDate) return 0;
@@ -77,32 +113,37 @@ const ProjectCardAdmin = ({ project, onView, onRemove }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 flex flex-col gap-4">
-      {/* Card Title */}
-      <h3 className="text-[20px] font-bold text-gray-800">Project Card</h3>
+    <>
+      <div className="bg-white rounded-lg shadow-md p-6 flex flex-col gap-4">
+
 
       {/* Project Name Bar */}
       <div className="bg-[#087990] text-white px-4 py-2 rounded">
         <p className="text-[16px] font-semibold">{project.name || 'Name'}</p>
       </div>
 
-      {/* Project Details */}
+
+      {/* PROJECT DETAILS */}
       <div className="flex flex-col gap-3">
         {/* Team Leader */}
-        {project.teamLeaderName && (
-          <div className="bg-blue-50 px-3 py-2 rounded">
-            <span className="text-xs font-semibold text-blue-700 uppercase">Team Leader</span>
-            <p className="text-sm text-gray-800 font-medium">{project.teamLeaderName}</p>
+        {teamLeaderName && (
+          <div className="flex items-center justify-between">
+            <span className="text-[16px] text-gray-700 font-semibold">
+              Team Leader:
+            </span>
+            <span className="text-[16px] text-gray-800 font-medium">
+              {teamLeaderName}
+            </span>
           </div>
         )}
 
         {/* Progress */}
         <div className="flex items-center justify-between">
-          <span className="text-[16px] text-gray-700">Progress:</span>
+          <span className="text-[16px] text-gray-700 font-semibold">Progress :</span>
           <div className="flex items-center gap-2">
-            <span className="text-[16px] font-semibold text-gray-800">{progress}%</span>
-            <div className="relative w-12 h-12">
-              <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+            <span className="text-[16px] font-medium text-gray-800">{progress}%</span>
+            <div className="relative w-6 h-6">
+              <svg className="w-6 h-6 transform -rotate-90" viewBox="0 0 36 36">
                 <circle
                   cx="18"
                   cy="18"
@@ -128,16 +169,16 @@ const ProjectCardAdmin = ({ project, onView, onRemove }) => {
 
         {/* Deadline */}
         <div className="flex items-center justify-between">
-          <span className="text-[16px] text-gray-700">Deadline:</span>
-          <span className="text-[16px] text-gray-800">{formatDate(project.endDate)}</span>
+          <span className="text-[16px] text-gray-700 font-semibold">Deadline :</span>
+          <span className="text-[16px] text-gray-800 font-medium">{formatDate(project.endDate)}</span>
         </div>
 
         {/* Status */}
         <div className="flex items-center justify-between">
-          <span className="text-[16px] text-gray-700">Status:</span>
+          <span className="text-[16px] text-gray-700 font-semibold">Status :</span>
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`}></span>
-            <span className="text-[16px] text-gray-800 capitalize">
+            <span className={`w-3 h-3 rounded-full ${getStatusColor(project.status)}`}></span>
+            <span className="text-[16px] text-gray-800 font-medium capitalize">
               {project.status || 'Active'}
             </span>
           </div>
@@ -159,9 +200,26 @@ const ProjectCardAdmin = ({ project, onView, onRemove }) => {
         >
           View
         </button>
+        <button
+          onClick={() => setShowEdit(true)}
+          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-[16px] font-medium transition-colors"
+        >
+          Edit
+        </button>
       </div>
     </div>
+      {showEdit && (
+        <ProjectCardAdminEdit
+          project={project}
+          onClose={() => setShowEdit(false)}
+          onUpdate={() => {
+            setShowEdit(false);
+            if (typeof window !== 'undefined') window.location.reload(); // or trigger parent refresh
+          }}
+        />
+      )}
+    </>
   );
-};
+}
 
 export default ProjectCardAdmin;
