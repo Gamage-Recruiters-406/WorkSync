@@ -4,6 +4,7 @@ import LogoImg from "../assets/Logo.jpg";
 import axios from "axios";
 import Cookies from 'js-cookie';
 
+
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -34,7 +35,7 @@ export default function Login() {
     //     credentials: "include",
     //     body: JSON.stringify({ email, password }),
     //   });
-    const res = await axios.post("http://localhost:8090/api/v1/userAuth/userLogin", { email, password });
+    const res = await axios.post("http://localhost:8090/api/v1/employee/userLogin", { email, password }, { withCredentials: true });
     console.log(res);
 
     //   const data = await response.json();
@@ -44,10 +45,8 @@ export default function Login() {
 
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.data));
-        Cookies.set('access_token', res.data.token, { httpOnly: true ,
-          secure:false,
-          samesize:'Lax',expires:7
-        });
+        Cookies.set('access_token', res.data.token  );
+        console.log(res.data.token);
 
     const role = res.data.data.role;
 

@@ -1,16 +1,41 @@
 import Announcement from "../models/Announcement.js";
 import { v4 as uuidv4 } from "uuid";
-import User from "../models/User.js";
+import Employees from "../models/EmployeeModel.js"
 import Notification from "../models/Notification.js";
+import File from "../models/AnnouncemetAttachmet.js";
+import fs from "fs";
+import path from "path";
 
-// Create Announcement
+// Create Announcements
 export async function createAnnouncement(req, res) {
- 
   try {
-    const {title, message, startDate, endDate, priority, audience, isPinned, notifyRoles} = req.body;
+    const {
+      title,
+      message,
+      startDate,
+      endDate,
+      priority,
+      audience,
+      isPinned,
+      notifyRoles,
+      neverExpire,
+    } = req.body;
+
+    const announcementId = uuidv4();
+    const attachments = [];
+
+    // Handle multiple files
+    if (req.files && req.files.length > 0) {
+      for (const fileData of req.files) {
+         // Create file object using static method, adding announcementId
+         const file = File.fromMulterFile({ ...fileData, announcementId }); 
+         await file.save();
+         attachments.push(file._id);
+      }
+    }
 
     const newAnnouncement = await Announcement.create({
-      announcementId: uuidv4(),
+      announcementId,
       title,
       startDate,
       endDate,
@@ -18,27 +43,27 @@ export async function createAnnouncement(req, res) {
       audience,
       isPinned,
       message,
-      notifyRoles,// ["1", "2","3"]
+      notifyRoles, // ["1", "2","3"]
+      neverExpire,
+      attachments, // Store array of file IDs
     });
 
-   // NOTIFICATION LOGIC
- if ( notifyRoles?.length > 0) {
-  const roles = notifyRoles?.map(Number);
+    // NOTIFICATION LOGIC
+    if (audience?.length > 0) {
+      const roles = audience?.map(Number);
 
-  const users = await User.find(
-    { role: { $in: roles } }
-  ).select("_id");
+      const users = await Employees.find({ role: { $in: roles } }).select("_id");
 
-  const notifications = users.map(user => ({
-    user: user._id,
-    title: "New Announcement",
-    message: title,
-    announcementId: newAnnouncement.announcementId,
-  }));
+      const notifications = users.map((employee) => ({
+        user: employee._id,
+        title: "New Announcement",
+        message: title,
+        announcementId: newAnnouncement.announcementId,
+      }));
 
-  await Notification.insertMany(notifications);
-}
-    
+      await Notification.insertMany(notifications);
+    }
+
     res.status(201).json({
       success: true,
       message: "Announcement created successfully",
@@ -50,9 +75,11 @@ export async function createAnnouncement(req, res) {
 }
 
 //Get All Announcements for manager
-export async function getManagerAnnouncements(req, res) { 
+export async function getManagerAnnouncements(req, res) {
   try {
-    const announcements = await Announcement.find({ audience: "Manager" }).sort({ createdAt: -1 });
+    const announcements = await Announcement.find({ audience: "2" }).sort(
+      { createdAt: -1 }
+    );
 
     res.status(200).json({
       success: true,
@@ -63,9 +90,11 @@ export async function getManagerAnnouncements(req, res) {
   }
 }
 //get announcement for employee
-export async function getEmployeeAnnouncements(req, res) { 
+export async function getEmployeeAnnouncements(req, res) {
   try {
-    const announcements = await Announcement.find({ audience: "Employee" }).sort({ createdAt: -1 });
+    const announcements = await Announcement.find({
+      audience: "1",
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -74,12 +103,14 @@ export async function getEmployeeAnnouncements(req, res) {
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
-} 
+}
 
-//get announcement for admin 
-export async function getAdminAnnouncements(req, res) { 
+//get announcement for admin
+export async function getAdminAnnouncements(req, res) {
   try {
-    const announcements = await Announcement.find({ audience: "Admin" }).sort({ createdAt: -1 });
+    const announcements = await Announcement.find({ audience: "3" }).sort({
+      createdAt: -1,
+    });
 
     res.status(200).json({
       success: true,
@@ -92,24 +123,20 @@ export async function getAdminAnnouncements(req, res) {
 
 // Get All Announcements
 export async function getAllAnnouncements(req, res) {
- 
   try {
-      const announcements = await Announcement.find().sort({ createdAt: -1 });
+    const announcements = await Announcement.find().sort({ createdAt: -1 });
 
-      res.status(200).json({
-        success: true,
-        data: announcements,
-      });
-    }
-
-   catch (error) {
+    res.status(200).json({
+      success: true,
+      data: announcements,
+    });
+  } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 }
 
 // Get Announcement by ID
 export async function getAnnouncementbyID(req, res) {
-
   try {
     const AId = req.params;
     const announcement = await Announcement.findOne({ announcementId: AId.id });
@@ -149,19 +176,38 @@ export async function getActiveAnnouncements(req, res) {
 // Update Announcement
 export async function updateAnnouncement(req, res) {
   try {
-    const Aid = req.params;
-    console.log("recived id", Aid.id);
-    const updated = await Announcement.findOneAndUpdate(
-      { announcementId: Aid.id }, req.body,
-      { new: true }
-    );
+    const { id } = req.params;
+    const updateData = req.body;
 
-    if (!updated) {
+    const announcement = await Announcement.findOne({ announcementId: id });
+    if (!announcement) {
       return res.status(404).json({
         success: false,
         message: "Announcement not found",
       });
     }
+
+    const isExpired =
+      announcement.endDate && new Date(announcement.endDate) < new Date();
+
+    const removingNeverExpire =
+      announcement.neverExpire === true && updateData.neverExpire === false;
+
+    //  instant delete rule
+    if (isExpired && removingNeverExpire) {
+      await deleteAnnouncementByAnnouncementId(id);
+
+      return res.status(200).json({
+        success: true,
+        message: "Announcement expired and deleted",
+      });
+    }
+
+    const updated = await Announcement.findOneAndUpdate(
+      { announcementId: id },
+      updateData,
+      { new: true }
+    );
 
     res.status(200).json({
       success: true,
@@ -169,25 +215,67 @@ export async function updateAnnouncement(req, res) {
       data: updated,
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 }
 
-// Delete Announcement
-export async function deleteAnnouncement(req, res) {
-  try {
-    const { id } = req.params;
+// Delete Announcement  
+//delete announcement releted notification and files
 
-    const deleted = await Announcement.findOneAndDelete({
-      announcementId: id,
-    });
-
-    if (!deleted) {
+export async function deleteAnnouncement(req, res) 
+{
+  const { id } = req.params;
+    if(!id){
       return res.status(404).json({
         success: false,
-        message: "Announcement not found",
+        message: "announcement id is required",
       });
     }
+   
+  try {   
+     const deletedAnnouncement = await Announcement.findOne({ announcementId: id });
+   
+      if (!deletedAnnouncement) {
+        return res.status(404).json({
+          success: false,
+          message: "Announcement not found",
+        });
+      }
+      
+      const deletedNotificationsResult = await Notification.deleteMany({ announcementId: id });
+        
+       if (deletedNotificationsResult.deletedCount > 0) {
+      console.log(`Auto-deleted ${deletedNotificationsResult.deletedCount} related notifications`);
+    }
+
+    // Delete associated files
+    const associatedFiles = await File.find({ announcementId: id });
+    for (const file of associatedFiles) {
+        
+        const filePath = path.resolve(file.path);
+        try {
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            } else {
+                console.warn(`[DeleteAnnouncement] File NOT found at path: ${filePath}`);
+                
+                // Fallback attempt: check 'uploads' folder directly
+                const fallbackPath = path.join(process.cwd(), "uploads", path.basename(file.path));
+                if (filePath !== fallbackPath && fs.existsSync(fallbackPath)) {
+                    console.log(`[DeleteAnnouncement] Found at fallback path: ${fallbackPath}, deleting...`);
+                    fs.unlinkSync(fallbackPath);
+                }
+            }
+        } catch (err) {
+            console.error(`[DeleteAnnouncement] Error deleting file: ${filePath}`, err);
+        }
+        //delet main announcement
+         await file.deleteOne();
+    }
+      await deletedAnnouncement.deleteOne();
 
     res.status(200).json({
       success: true,
@@ -197,7 +285,6 @@ export async function deleteAnnouncement(req, res) {
     res.status(500).json({ success: false, error: error.message });
   }
 }
-
 
 //like announcement
 export async function likeAnnouncement(req, res) {
@@ -224,9 +311,7 @@ export async function likeAnnouncement(req, res) {
     }
 
     //Clean bad data
-    announcement.likes = announcement.likes.filter(
-      (uid) => uid !== null
-    );
+    announcement.likes = announcement.likes.filter((uid) => uid !== null);
 
     const alreadyLiked = announcement.likes.some(
       (uid) => uid.toString() === userId.toString()
@@ -257,9 +342,9 @@ export async function likeAnnouncement(req, res) {
   }
 }
 
-
 //notification
 export async function getMyNotifications(req, res) {
+  console.log("vvvvvvvv",req.header)
   const notifications = await Notification.find({
     user: req.user.userid,
   }).sort({ createdAt: -1 });
@@ -271,16 +356,19 @@ export async function getMyNotifications(req, res) {
 }
 
 export async function markAsRead(req, res) {
- try{
-  const notification = await Notification.findById(req.params.id);
-  if(req.params.id == notification._id){
-  }
-  await Notification.findByIdAndUpdate(req.params.id, {
-    isRead: true,
-  });
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (req.params.id == notification._id) {
+    }
+    await Notification.findByIdAndUpdate(req.params.id, {
+      isRead: true,
+    });
 
-  res.status(200).json({ success: true });
- }catch(error){
-  res.status(500).json({ success: false, error: error.message });
- }
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 }
+
+
+

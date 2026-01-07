@@ -16,6 +16,8 @@ import {
   getTaskReport,
   getAllTasks,
   getAllProjects,
+  getAllUsers,
+  getAllEmployee,
 } from "../../services/adminReportsApi";
 
 export default function AdminReport() {
@@ -43,25 +45,34 @@ export default function AdminReport() {
   useEffect(() => {
     const loadKpis = async () => {
       try {
-        const [attendanceRes, leaveRes] = await Promise.all([
+        const [attendanceRes, leaveRes, totEmp] = await Promise.all([
           getAttendance(),
           getAllLeaves(),
+          getAllEmployee(),
         ]);
 
         const attendance = attendanceRes?.data?.attendance || [];
 
-        const leaves = Array.isArray(leaveRes?.data)
-          ? leaveRes.data
-          : leaveRes?.data?.leaves || [];
+        const leaves = leaveRes.data.data || [];
+
+        const today = new Date().toISOString().split("T")[0];
+
+        const todayAttendance = attendance.filter((a) => a.date === today);
 
         setKpis((prev) => ({
           ...prev,
-          presentToday: attendance.filter((a) => a.status === "Present").length,
-          absentToday: attendance.filter((a) => a.status === "Absent").length,
-          pendingLeaves: leaves.filter((l) => l.status === "Pending").length,
+          totalEmployees: totEmp.data.Employees.length,
+
+          presentToday: todayAttendance.filter((a) => a.status === "Present")
+            .length,
+
+          absentToday: todayAttendance.filter((a) => a.status === "Absent")
+            .length,
+
+          pendingLeaves: leaves.length, // unchanged
         }));
       } catch (error) {
-        console.error("❌ Error loading KPI data:", error);
+        console.error(" Error loading KPI data:", error);
       }
     };
 
@@ -72,22 +83,19 @@ export default function AdminReport() {
   useEffect(() => {
     const loadCharts = async () => {
       try {
-        const [attendanceReportRes, leavesRes, taskReportRes] =
-          await Promise.all([
-            getAttendanceReport(),
-            getAllLeaves(),
-            getTaskReport(),
-          ]);
+        const [attendanceRes, leavesRes, taskReportRes] = await Promise.all([
+          getAttendance(),
+          getAllLeaves(),
+          getAllTasks(),
+        ]);
 
-        const attendance = attendanceReportRes?.data?.attendance || [];
+        const attendance = attendanceRes?.data?.attendance || [];
 
-        const leaves = Array.isArray(leavesRes?.data)
-          ? leavesRes.data
-          : leavesRes?.data?.leaves || [];
+        const leaves = leavesRes.data.data;
 
-        const tasks = Array.isArray(taskReportRes?.data)
-          ? taskReportRes.data
-          : taskReportRes?.data?.tasks || [];
+        const tasks = Array.isArray(taskReportRes?.data?.data)
+          ? taskReportRes.data.data
+          : [];
 
         setChartData({
           attendance,
@@ -106,21 +114,20 @@ export default function AdminReport() {
   useEffect(() => {
     const loadTables = async () => {
       try {
-        const [attendanceRes, tasksRes, projectsRes] = await Promise.all([
+        const [attendanceRes, projectsRes, tasksRes] = await Promise.all([
           getAttendance(),
-          getAllTasks(),
-          getAllProjects(),
-        ]);
 
+          getAllProjects(),
+          getAllTasks(),
+        ]);
+        console.log(projectsRes);
         const attendance = attendanceRes?.data?.attendance || [];
 
-        const tasks = Array.isArray(tasksRes?.data)
-          ? tasksRes.data
-          : tasksRes?.data?.tasks || [];
+        const tasks = Array.isArray(tasksRes?.data?.data)
+          ? tasksRes.data.data
+          : [];
 
-        const projects = Array.isArray(projectsRes?.data)
-          ? projectsRes.data
-          : projectsRes?.data?.projects || [];
+        const projects = projectsRes?.data?.data || [];
 
         setAttendanceData(attendance);
         setTaskData(tasks);
@@ -146,14 +153,22 @@ export default function AdminReport() {
             <KpiCards title="Total Employees" value={kpis.totalEmployees} />
             <KpiCards title="Present Today" value={kpis.presentToday} />
             <KpiCards title="Absent Today" value={kpis.absentToday} />
-            <KpiCards title="Pending Leaves" value={kpis.pendingLeaves} />
+            <KpiCards title="Leaves" value={kpis.pendingLeaves} />
           </div>
 
           {/* CHARTS */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <AttendanceBarChart data={chartData.attendance} />
-            <LeaveDonutChart data={chartData.leaves} />
-            <TaskDonutChart data={chartData.tasks} />
+            <div className="min-w-0 min-h-0">
+              <AttendanceBarChart data={chartData.attendance} />
+            </div>
+
+            <div className="min-w-0 min-h-0">
+              <LeaveDonutChart data={chartData.leaves} />
+            </div>
+
+            <div className="min-w-0 min-h-0">
+              <TaskDonutChart data={chartData.tasks} />
+            </div>
           </div>
 
           {/* TABLES */}

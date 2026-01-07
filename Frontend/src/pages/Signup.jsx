@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import LogoImg from "../assets/Logo.jpg";
 
 export default function SignUp() {
@@ -8,7 +9,7 @@ export default function SignUp() {
     firstName: "",
     lastName: "",
     NIC: "",
-    cv: null,
+    resume: null,
     contactNumber: "",
     gender: "",
     email: "",
@@ -26,7 +27,6 @@ export default function SignUp() {
     return oldNIC.test(nic) || newNIC.test(nic);
   };
   
-
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -54,7 +54,7 @@ export default function SignUp() {
       return;
     }
 
-    setFormData({ ...formData, cv: file });
+    setFormData({ ...formData, resume: file });
     setFileName(file.name);
     setError("");
   };
@@ -69,6 +69,11 @@ export default function SignUp() {
       return;
     }
 
+    if (!formData.NIC || !formData.contactNumber || !formData.gender) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
     // ===== NIC VALIDATION =====
     if (formData.NIC && !isValidNIC(formData.NIC)) {
       setError("Please enter a valid Sri Lankan NIC number");
@@ -79,34 +84,46 @@ export default function SignUp() {
 
     try {
       const submitData = new FormData();
-      submitData.append("name", `${formData.firstName} ${formData.lastName}`);
-      submitData.append("role", 1);
+      submitData.append("FirstName", formData.firstName);
+      submitData.append("LastName", formData.lastName);
       submitData.append("email", formData.email);
+      submitData.append("NIC", formData.NIC);
+      submitData.append("ContactNumber", formData.contactNumber);
+      submitData.append("Gender", formData.gender);
+      
+      if (formData.resume) {
+        submitData.append("resume", formData.resume);
+      }
 
-      if (formData.NIC) submitData.append("NIC", formData.NIC);
-      if (formData.contactNumber) submitData.append("contactNumber", formData.contactNumber);
-      if (formData.gender) submitData.append("gender", formData.gender);
-      if (formData.cv) submitData.append("cv", formData.cv);
-
-      const response = await fetch(
+      const response = await axios.post(
         "http://localhost:8090/api/v1/userAuth/userRegistration",
+        submitData,
         {
-          method: "POST",
-          body: submitData,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.data.success) {
         setSuccess("Account created successfully! Redirecting to login...");
         setTimeout(() => navigate("/login"), 2000);
       } else {
-        setError(data.message || "Registration failed");
+        setError(response.data.message || "Registration failed");
       }
     } catch (err) {
       console.error("Registration error:", err);
-      setError("Unable to connect to server. Please check if the backend is running.");
+      
+      if (err.response) {
+        // Server responded with error
+        setError(err.response.data.message || "Registration failed");
+      } else if (err.request) {
+        // No response from server
+        setError("Unable to connect to server. Please check if the backend is running.");
+      } else {
+        // Other errors
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -118,15 +135,16 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen w-full bg-white flex items-center justify-center px-4 relative overflow-hidden">
-  {/* Background Decorative Shapes */}
-  <div className="absolute inset-0 z-0">
-    {/* Top Right Corner */}
-    <div className="absolute top-0 right-0 w-72 h-72 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem]  bg-[#E5E7EB] rounded-bl-[160px]"></div>
-    <div className="absolute top-0 right-0 w-56 h-56  md:w-72 md:h-72 lg:w-[22rem] lg:h-[22rem] bg-[#087990] rounded-bl-[120px]"></div>
+      {/* Background Decorative Shapes */}
+      <div className="absolute inset-0 z-0">
+        {/* Top Right Corner */}
+        <div className="absolute top-0 right-0 w-72 h-72 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem]  bg-[#E5E7EB] rounded-bl-[160px]"></div>
+        <div className="absolute top-0 right-0 w-56 h-56  md:w-72 md:h-72 lg:w-[22rem] lg:h-[22rem] bg-[#087990] rounded-bl-[120px]"></div>
 
-    {/* Bottom Left Corner */}
-    <div className="absolute bottom-0 left-0 w-72 h-72 md:w-96 md:h-96  lg:w-[28rem] lg:h-[28rem] bg-[#E5E7EB] rounded-tr-[160px]"></div>
-    <div className="absolute bottom-0 left-0 w-56 h-56 md:w-72 md:h-72 lg:w-[22rem] lg:h-[22rem] bg-[#087990] rounded-tr-[120px]"> </div></div>
+        {/* Bottom Left Corner */}
+        <div className="absolute bottom-0 left-0 w-72 h-72 md:w-96 md:h-96  lg:w-[28rem] lg:h-[28rem] bg-[#E5E7EB] rounded-tr-[160px]"></div>
+        <div className="absolute bottom-0 left-0 w-56 h-56 md:w-72 md:h-72 lg:w-[22rem] lg:h-[22rem] bg-[#087990] rounded-tr-[120px]"></div>
+      </div>
 
       {/* Card wrapper */}
       <div className="relative z-10 flex w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden">
@@ -157,7 +175,7 @@ export default function SignUp() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name
+                    First Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -172,7 +190,7 @@ export default function SignUp() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name
+                    Last Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -187,45 +205,45 @@ export default function SignUp() {
                 </div>
               </div>
 
-             <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nationa Identity No
-                  </label>
-                  <input
-                    type="text"
-                    name="NIC"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087990] focus:border-transparent transition-all"
-                    placeholder="22222222v"
-                    value={formData.NIC}
-                    onChange={handleChange}
-                    onKeyPress={handleKeyPress}
-                    disabled={loading}
-                  />
-                </div>
-
-              {/* CV Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Upload CV (Optional)
+                  National Identity No <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="NIC"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087990] focus:border-transparent transition-all"
+                  placeholder="200012345678 or 965432109V"
+                  value={formData.NIC}
+                  onChange={handleChange}
+                  onKeyPress={handleKeyPress}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Resume Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Upload Resume (Optional)
                 </label>
                 <div className="relative">
                   <input
                     type="file"
-                    id="cv-upload"
+                    id="resume-upload"
                     accept=".pdf,.doc,.docx"
                     onChange={handleFileChange}
                     disabled={loading}
                     className="hidden"
                   />
                   <label
-                    htmlFor="cv-upload"
+                    htmlFor="resume-upload"
                     className="w-full px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#087990] transition-all flex items-center justify-center bg-gray-50 hover:bg-gray-100"
                   >
                     <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
                     <span className="text-sm text-gray-600">
-                      {fileName || "Click to upload CV (PDF, DOC, DOCX - Max 5MB)"}
+                      {fileName || "Click to upload Resume (PDF, DOC, DOCX - Max 5MB)"}
                     </span>
                   </label>
                 </div>
@@ -238,7 +256,7 @@ export default function SignUp() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Contact Number
+                    Contact Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -253,7 +271,7 @@ export default function SignUp() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Gender
+                    Gender <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="gender"
@@ -273,7 +291,7 @@ export default function SignUp() {
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
+                  Email <span className="text-red-500">*</span>
                 </label>
                 <p className="text-xs text-gray-500 mb-1">
                   This will function as your username
@@ -290,8 +308,6 @@ export default function SignUp() {
                 />
               </div>
 
-              {/* Password and Confirm Password */}
-              
               {/* Create Account Button */}
               <button
                 onClick={handleSubmit}
