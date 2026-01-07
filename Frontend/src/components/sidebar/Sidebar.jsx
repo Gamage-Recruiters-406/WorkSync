@@ -95,7 +95,7 @@ const sidebarContent = {
         key: "dashboard",
         label: "Dashboard",
         icon: HouseIcon,
-        path: "/user/user-dashboard",
+        path: "/user/dashboard",
       },
       {
         key: "project-team",
