@@ -3,13 +3,27 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../../components/sidebar/Sidebar";
 import { getProject } from "../../services/ProjectService";
+import { getAllMilestones } from "../../services/ProjectService";
 
 const ProjectDetailsAdmin = () => {
+    // For description see more/less
+    const [showFullDescription, setShowFullDescription] = useState(false);
+    const DESCRIPTION_LIMIT = 10;
     const { id } = useParams();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("Overview");
     const [projectData, setProjectData] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    // Milestone progress calculation (must be after projectData is defined)
+    let completedMilestones = 0;
+    let totalMilestones = 0;
+    let milestoneProgress = 0;
+    if (projectData && Array.isArray(projectData.milestones)) {
+        totalMilestones = projectData.milestones.length;
+        completedMilestones = projectData.milestones.filter(m => (m.Status || m.status || '').toLowerCase() === 'complete').length;
+        milestoneProgress = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
+    }
     const [statusChanging, setStatusChanging] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploadFile, setUploadFile] = useState(null);
@@ -19,103 +33,87 @@ const ProjectDetailsAdmin = () => {
     const URL_API = "http://localhost:8090";
 
     useEffect(() => {
-        const fetchProject = async () => {
-            try {
-                
-                // Try using ProjectService first
-                try {
-                    const response = await getProject(id);
-                    if (response && response.data) {
-                     
-                        setProjectData(response.data);
-                        setLoading(false);
-                        return;
-                    } else if (response) {
-                        // If response doesn't have nested data, it might be the data itself
-                        
-                        setProjectData(response);
-                        setLoading(false);
-                        return;
-                    }
-                } catch (serviceError) {
-                    console.warn('ProjectService failed, trying direct axios calls:', serviceError);
-                }
+    let isMounted = true;
 
-                // Fallback 1: Try /api/v1/project-team/getProject
-                try {
-                    const res = await axios.get(`${URL_API}/api/v1/project-team/getProject/${id}`, {
-                        withCredentials: true,
-                    });
-                    
-                    setProjectData(res.data.data);
-                    setLoading(false);
-                    return;
-                } catch (err1) {
-                    console.warn('project-team route failed:', err1);
-                }
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        let project = null;
 
-                // Fallback 2: Try /api/v1/projects/getProject
-                try {
-                    const res = await axios.get(`${URL_API}/api/v1/projects/getProject/${id}`, {
-                        withCredentials: true,
-                    });
-                    
-                    setProjectData(res.data.data);
-                    setLoading(false);
-                    return;
-                } catch (err2) {
-                    console.warn('projects route failed:', err2);
-                }
+        // Fetch project
+        try {
+          const response = await getProject(id);
+          project = response?.data || response;
+        } catch {
+          const res = await axios.get(
+            `${URL_API}/api/v1/projects/getProject/${id}`,
+            { withCredentials: true }
+          );
+          project = res?.data?.data;
+        }
 
-                // Fallback 3: Try /getProject
-                try {
-                    const res = await axios.get(`${URL_API}/getProject/${id}`, {
-                        withCredentials: true,
-                    });
-                    
-                    setProjectData(res.data.data || res.data);
-                    setLoading(false);
-                    return;
-                } catch (err3) {
-                    console.warn('direct route failed:', err3);
-                }
+        if (!project) throw new Error("Project not found");
 
-                // All endpoints failed
-                console.error("Failed to fetch project from all endpoints");
-                setProjectData(null);
-                setLoading(false);
-            } finally {
-                // setLoading is already set in each try block
-            }
-        };
+        // Fetch team
+        let team = [];
+        try {
+          const res = await axios.get(
+            `${URL_API}/api/v1/project-team/getMembers/${id}`,
+            { withCredentials: true }
+          );
+          team = res?.data?.data || [];
+        } catch (err) {
+          console.warn("Team fetch failed", err);
+        }
 
-        const fetchTeam = async () => {
-            try {
-                const res = await axios.get(`${URL_API}/api/v1/project-team/getMembers/${id}`, { withCredentials: true });
-                
-                const members = res?.data?.data || res?.data;
-                
-                if (members) setProjectData(prev => ({ ...(prev || {}), team: members }));
-            } catch (err) {
-                // If team API fails, keep whatever team is present
-                console.warn('Could not fetch team members:', err);
-            }
-        };
+        // Fetch milestones
+        let milestones = [];
+        try {
+          const res = await getAllMilestones(id);
+          const allMilestones = res?.data?.data || res?.data || [];
+          milestones = allMilestones.filter(
+            (milestone) =>
+              Array.isArray(milestone.projectID) &&
+              milestone.projectID.some((pid) => String(pid) === String(id))
+          );
+        } catch (err) {
+          console.warn("Milestone fetch failed", err);
+        }
 
-        const fetchFiles = async () => {
-            try {
-                const res = await axios.get(`${URL_API}/api/v1/projects/${id}/attachments`, { withCredentials: true });
-                const files = res?.data?.data || [];
-                setProjectData(prev => ({ ...(prev || {}), files }));
-            } catch (err) {
-                console.warn('Could not fetch files:', err);
-            }
-        };
+        // Fetch files
+        let files = [];
+        try {
+          const res = await axios.get(
+            `${URL_API}/api/v1/projects/${id}/attachments`,
+            { withCredentials: true }
+          );
+          files = res?.data?.data || [];
+        } catch (err) {
+          console.warn("File fetch failed", err);
+        }
 
-        fetchProject();
-        fetchTeam();
-        fetchFiles();
-    }, [id]);
+        if (isMounted) {
+          setProjectData({
+            ...project,
+            team,
+            milestones,
+            files,
+          });
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+        if (isMounted) {
+          setProjectData(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchAllData();
+    return () => (isMounted = false);
+  }, [id]);
+
 
     const goBack = () => navigate("/admin/projects");
 
@@ -386,12 +384,17 @@ const ProjectDetailsAdmin = () => {
                                 <div className="mb-6 mt-4">
                                     <div className="flex items-center gap-3 mb-2">
                                         <span className="text-sm font-medium text-gray-700">Progress:</span>
-                                        <span className="text-sm font-semibold text-gray-800">{projectData?.progress || 0}%</span>
+                                        <span className="text-sm font-semibold text-gray-800">
+                                            {milestoneProgress}%
+                                            {totalMilestones > 0 && (
+                                                <span className="ml-2 text-xs text-gray-500">({completedMilestones} of {totalMilestones} milestones completed)</span>
+                                            )}
+                                        </span>
                                     </div>
                                     <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-[#087990] transition-all duration-300"
-                                            style={{ width: `${projectData?.progress || 0}%` }}
+                                            style={{ width: `${milestoneProgress}%` }}
                                         />
                                     </div>
                                 </div>
@@ -402,30 +405,85 @@ const ProjectDetailsAdmin = () => {
                                     <div className="border-l-4 border-[#087990] pl-4">
                                         <h3 className="font-semibold text-gray-800 mb-3">Projects Summary</h3>
                                         <div className="space-y-2 text-sm text-gray-700">
-                                            <p><span className="font-medium">Created by:</span> {typeof projectData.createdBy === 'object' ? projectData.createdBy?.name : projectData.createdBy || 'N/A'}</p>
+                                            <p><span className="font-medium">Project Name:</span> {projectData.name || 'N/A'}</p>
+                                            <p>
+                                                <span className="font-medium">Description:</span> {
+                                                    projectData.description
+                                                        ? (
+                                                            projectData.description.length > DESCRIPTION_LIMIT && !showFullDescription
+                                                                ? <>
+                                                                    {projectData.description.slice(0, DESCRIPTION_LIMIT)}...
+                                                                    <button
+                                                                        className="ml-2 text-blue-600 underline cursor-pointer text-xs"
+                                                                        onClick={() => setShowFullDescription(true)}
+                                                                    >See more</button>
+                                                                </>
+                                                                : <>
+                                                                    {projectData.description}
+                                                                    {projectData.description.length > DESCRIPTION_LIMIT && (
+                                                                        <button
+                                                                            className="ml-2 text-blue-600 underline cursor-pointer text-xs"
+                                                                            onClick={() => setShowFullDescription(false)}
+                                                                        >See less</button>
+                                                                    )}
+                                                                </>
+                                                        )
+                                                        : 'N/A'
+                                                }
+                                            </p>
                                             <p><span className="font-medium">Start Date:</span> {projectData.startDate ? new Date(projectData.startDate).toLocaleDateString() : 'N/A'}</p>
                                             <p><span className="font-medium">End Date:</span> {projectData.endDate ? new Date(projectData.endDate).toLocaleDateString() : 'N/A'}</p>
                                         </div>
                                     </div>
 
-                                    {/* Upcoming Milestones */}
+                                    {/* Completed Milestones */}
                                     <div className="border-l-4 border-[#087990] pl-4">
-                                        <h3 className="font-semibold text-gray-800 mb-3">Upcoming Milestones</h3>
+                                        <h3 className="font-semibold text-gray-800 mb-3">Completed Milestones</h3>
                                         <div className="space-y-2 text-sm text-gray-700">
-                                            {projectData.upcomingMilestones?.map((milestone, idx) => (
-                                                <p key={idx}>{milestone}</p>
-                                            ))}
+                                            {Array.isArray(projectData.milestones) && projectData.milestones.length > 0 ? (
+                                                projectData.milestones
+                                                    .filter(milestone => {
+                                                        const status = (milestone.Status || milestone.status || '').toLowerCase();
+                                                        return status === 'complete';
+                                                    })
+                                                    .map((milestone, idx) => (
+                                                        <div key={idx} className="font-semibold text-black">
+                                                            <span>{milestone.milestoneName || milestone.title || milestone.name}</span>
+                                                            {milestone.End_Date || milestone.endDate ? (
+                                                                <span> — <span className="text-green-700">Completed</span>: {new Date(milestone.End_Date || milestone.endDate).toLocaleDateString()}</span>
+                                                            ) : null}
+                                                            {/* Show who completed if available */}
+                                                            {milestone.completedBy ? (
+                                                                <span> — By: {Array.isArray(milestone.completedBy)
+                                                                    ? milestone.completedBy.map((user, i) => `${user.FirstName || user.name || ''} ${user.LastName || ''}`).join(', ')
+                                                                    : (milestone.completedBy.FirstName || milestone.completedBy.name || '') + ' ' + (milestone.completedBy.LastName || '')}
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                    ))
+                                            ) : (
+                                                <p className="text-gray-500 italic">No completed milestones found.</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Recent Activity */}
+                                {/* Recent Activity (Active Members) */}
                                 <div className="border-l-4 border-[#087990] pl-4 mt-6">
-                                    <h3 className="font-semibold text-gray-800 mb-3">Recent Activity</h3>
+                                    <h3 className="font-semibold text-gray-800 mb-3">Active Members</h3>
                                     <div className="space-y-2 text-sm text-gray-700">
-                                        {projectData.recentActivity?.map((activity, idx) => (
-                                            <p key={idx}>{activity}</p>
-                                        ))}
+                                        {Array.isArray(projectData.team) && projectData.team.length > 0 ? (
+                                            projectData.team.map((member, idx) => (
+                                                <p key={member._id || idx}>
+                                                    {member.userId
+                                                        ? `${member.userId.FirstName || ""} ${member.userId.LastName || ""}`.trim()
+                                                        : "N/A"}
+                                                    {member.assignedRole ? ` (${member.assignedRole})` : ""}
+                                                </p>
+                                            ))
+                                        ) : (
+                                            <p className="text-gray-500 italic">No active members found.</p>
+                                        )}
                                     </div>
                                 </div>
                             </section>
@@ -483,46 +541,98 @@ const ProjectDetailsAdmin = () => {
                             </section>
                         )}
 
-                        {/* Milestones Tab */}
-                        {activeTab === "Milestones" && (
-                            <section className="bg-white rounded-lg shadow-sm p-6">
-                                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b-2 border-[#087990] inline-block">
-                                    Milestones
-                                </h2>
+                         {/* Milestones Tab */}
+            {activeTab === "Milestones" && (
+              <section className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b-2 border-[#087990] inline-block">
+                  Milestones
+                </h2>
 
-                                <div className="mt-6 space-y-4">
-                                    {projectData.milestones?.map((milestone, idx) => (
-                                        <div
-                                            key={idx}
-                                            className="border-2 border-[#087990] rounded-lg p-5 hover:shadow-md transition-shadow"
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1">
-                                                    <h3 className="font-semibold text-gray-800 mb-3 text-lg">
-                                                        {milestone.title}
-                                                    </h3>
-                                                    <div className="space-y-1.5 text-sm text-gray-700">
-                                                        <p>
-                                                            <span className="font-medium">Start Date:</span> {milestone.startDate}
-                                                        </p>
-                                                        <p>
-                                                            <span className="font-medium">End Date:</span> {milestone.endDate}
-                                                        </p>
-                                                        <p>
-                                                            <span className="font-medium">Assigned To You:</span>{" "}
-                                                            {milestone.assignedToYou ? "Yes" : "No"}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <button className="px-5 py-2 bg-[#087990] text-white rounded-md hover:bg-[#076a7a] transition-colors text-sm font-medium">
-                                                    Details
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
+                <div className="mt-6 space-y-4">
+                  {Array.isArray(projectData.milestones) &&
+                  projectData.milestones.length > 0 ? (
+                    projectData.milestones.map((milestone) => {
+                      // If you want to check assigned user, implement logic here
+                      // const currentUserId = "actualUserIdHere";
+                      // const assignedToYou = milestone.assignedTo?.some(u => u._id === currentUserId);
+
+                      return (
+                        <div
+                          key={milestone._id}
+                          className="border-2 border-[#087990] rounded-lg p-5 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-800 mb-3 text-lg">
+                                {milestone.milestoneName || "Unnamed Milestone"}
+                              </h3>
+
+                                {/* Description */}
+                                <p className="text-sm text-gray-600 mb-3">
+                                  <span className="font-medium">
+                                    Description:
+                                  </span>{" "}
+                                  {milestone.Description ||
+                                    "No description provided"}
+                                </p>
+
+                              <div className="space-y-1.5 text-sm text-gray-700">
+                                <p>
+                                  <span className="font-medium">
+                                    Start Date:
+                                  </span>{" "}
+                                  {milestone.Start_Date
+                                    ? new Date(
+                                        milestone.Start_Date
+                                      ).toLocaleDateString()
+                                    : "N/A"}
+                                </p>
+                                <p>
+                                  <span className="font-medium">End Date:</span>{" "}
+                                  {milestone.End_Date
+                                    ? new Date(
+                                        milestone.End_Date
+                                      ).toLocaleDateString()
+                                    : "N/A"}
+                                </p>
+                                <p>
+                                  <span className="font-medium">
+                                    Assigned To You:
+                                  </span>{" "}
+                                  {/* assignedToYou ? "Yes" : "No" */ "—"}
+                                </p>
+
+                                {/* Status */}
+                                <p>
+                                  <span className="font-medium">Status:</span>{" "}
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-xs font-semibold
+                ${
+                  milestone.Status === "Complete"
+                    ? "bg-green-100 text-green-700"
+                    : milestone.Status === "In Progress"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-gray-100 text-gray-700"
+                }`}
+                                  >
+                                    {milestone.Status || "Unknown"}
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                            
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-500 italic">
+                      No milestones found for this project.
+                    </p>
+                  )}
+                </div>
+              </section>
+            )}
 
                         {/* Files Tab */}
                         {activeTab === "Files" && (
