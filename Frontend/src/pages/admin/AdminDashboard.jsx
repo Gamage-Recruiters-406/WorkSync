@@ -147,22 +147,41 @@ const AdminDashboard = () => {
   const hideTooltip = () => setTooltip({ ...tooltip, visible: false });
 
   useEffect(() => {
+    // Get userId from localStorage
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      navigate("/login");
+      return;
+    }
+    const user = JSON.parse(storedUser);
+    const userId = user.userid;
+
     // Fetch logged-in user data
     const fetchUserData = async () => {
       setUserLoading(true);
       try {
+        // Extract token from cookies
+        const getToken = () =>
+          document.cookie
+            .split(";")
+            .find((c) => c.trim().startsWith("access_token="))
+            ?.split("=")[1] || null;
+
+        const token = getToken();
+
         const response = await axios.get(
-          `${API_BASE_URL}employee/getSingleEmployee`,
+          `${API_BASE_URL}employee/getSingleEmployeeByID/${userId}`,
           {
             withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
         );
         if (response.data.success && response.data.data) {
           const { firstName, lastName } = response.data.data;
-          setUserName(
-            `${firstName ? `${firstName[0]}.` : ""} ${lastName || ""}`.trim() ||
-              "User"
-          );
+          setUserName(`${firstName || ""} ${lastName || ""}`.trim() || "User");
         }
       } catch (err) {
         console.error("Fetch user data error:", err);
@@ -174,6 +193,7 @@ const AdminDashboard = () => {
         setUserLoading(false);
       }
     };
+
     const fetchDepartments = async () => {
       setDepartmentsLoading(true);
       try {
@@ -898,18 +918,18 @@ const AdminDashboard = () => {
                 Quick Actions
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                <QuickActionButton icon={UserPlus} label="Add Employee" />
-                <QuickActionButton icon={ListChecks} label="Create Task" />
-                <QuickActionButton icon={FolderPlus} label="New Project" />
-                <QuickActionButton icon={Megaphone} label="Announcement" />
+                <QuickActionButton icon={UserPlus} label="Add Employee" onClick={() => navigate("/admin/users")} />
+                <QuickActionButton icon={ListChecks} label="Create Task" onClick={() => navigate("/admin/assign-task")} />
+                <QuickActionButton icon={FolderPlus} label="New Project" onClick={() => navigate("/admin/projects")} />
+                <QuickActionButton icon={Megaphone} label="Announcement"onClick={() => navigate("/admin/announcements")} />
                 <QuickActionButton
                   icon={Building2}
                   label="Add New Department"
                   onClick={() => setShowCreateModal(true)}
                 />
-                <QuickActionButton icon={FileText} label="Export Report" />
-                <QuickActionButton icon={UserCog} label="Edit Profiles" />
-                <QuickActionButton icon={Settings} label="Settings" />
+                <QuickActionButton icon={FileText} label="Export Report" onClick={() => navigate("/admin/reports")} />
+                <QuickActionButton icon={UserCog} label="Edit Profiles" onClick={() => navigate("/admin/edit-employee/:id")} />
+                <QuickActionButton icon={Settings} label="Settings" onClick={() => navigate("/admin/system-settings")} />
               </div>
             </div>
           </div>
