@@ -95,7 +95,7 @@ function App() {
         <Route path="/admin/D-details/:id" element={<DepartmentDetails />} />
 
         {/* Employee Routes */}
-        <Route path="/user/dashboard" element={<UserDashboard />} />
+        <Route path="/user/dashboard" element={<DashboardUI />} />
         <Route path="/user/project-team" element={<ProjectTeam />} />
         <Route path="/user/task" element={<Task />} />
         <Route path="/user/attendance" element={<UserAttendance />} />
@@ -107,6 +107,7 @@ function App() {
         <Route path="/user/profile" element={<UserProfile />} />
         <Route path="/user/profile/edit" element={<UserProfileEdit />} />
         <Route path="/task-details/:id" element={<TaskDetail />} />
+>>>>
 
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />
