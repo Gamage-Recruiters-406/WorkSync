@@ -66,7 +66,7 @@ const ProjectCard = ({ project }) => {
         <p>
           Deadline:{" "} 
           <span className="font-medium text-gray-900">
-            {project.deadline}
+            {new Date(project.deadline).toLocaleDateString()}
           </span>
         </p>
 

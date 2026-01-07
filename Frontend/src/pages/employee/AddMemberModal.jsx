@@ -17,7 +17,7 @@ const AddMemberModal = ({ onClose, onSave }) => {
       try {
         const res = await axios.get(`${URL_API}/api/v1/project-team/all`,{withCredentials: true});
         setUsers(res.data.data || []);
-        console.log("Users: ", res);
+        // console.log("Users: ", res);
       } catch (error) {
         console.error("Failed to fetch users:", error);
       }
