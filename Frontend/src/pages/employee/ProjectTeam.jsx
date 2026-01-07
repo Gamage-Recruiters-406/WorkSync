@@ -46,9 +46,7 @@ const ProjectTeam = () => {
       let userId;
       try{
         const decoded = jwtDecode(token);
-        console.log("Decoded JWT:", decoded);
         userId = decoded.userid;
-        console.log(userId);
 
       } catch(err){
         console.warn("Failed to decode JWT:", err);
@@ -99,7 +97,7 @@ const ProjectTeam = () => {
                   name: p.projectId.name,
                   role: p.assignedRole,
                   description: p.projectId.description,
-                  deadline: p.projectId.deadline || "-",
+                  deadline: p.projectId.endDate || "-",
                   status: p.projectId.status || "Active",
                   progress: summary.progress,
                   dueSoon: summary.dueSoon,
@@ -122,7 +120,7 @@ const ProjectTeam = () => {
       
         console.log("Full response:", res.data);
         setProjects(enrichedProjects);
-        console.log("Mapped projects:", enrichedProjects);
+        // console.log("Mapped projects:", enrichedProjects);
 
       } catch (error) {
         console.error("Error fetching projects:", error.response?.data || error);

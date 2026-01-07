@@ -97,7 +97,6 @@ const ProjectDetails = () => {
       link.click();
   
       window.URL.revokeObjectURL(url);
-      console.log("project Report: ", res);
     } catch (error) {
       console.error("Failed to download report", error);
     }
@@ -110,10 +109,9 @@ const ProjectDetails = () => {
   const statusColor = {
     Active: "bg-green-500",
     "On Hold": "bg-orange-500",
-    Completed: "bg-red-500",
+    Complete: "bg-red-500",
   };
 
-  // const isTeamLeader = projectData.role || projectData.assignedRole === "Team Leader";
 
   if (pageLoading) return <p className="p-6 text-center">Loading project details...</p>;
   if (!projectData) return <p className="p-6 text-center">Project data not found.</p>;
