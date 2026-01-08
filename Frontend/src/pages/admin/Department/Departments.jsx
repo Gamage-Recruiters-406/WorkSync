@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import DashboardHeader from "../../../components/DashboardHeader";
 
 const Departments = () => {
   const navigate = useNavigate();
@@ -407,7 +408,7 @@ const handleExport = () => {
     <div className="flex bg-[#F8FAFC] min-h-screen">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+      <DashboardHeader/>
 
         {/* Success/Error Messages */}
         {(success || error) && (
