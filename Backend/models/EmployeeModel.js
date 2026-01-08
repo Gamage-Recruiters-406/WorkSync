@@ -4,9 +4,6 @@ const EmployeeSchema = new mongoose.Schema({
     EmployeeID: {
         type: String,
         default: null,
-        set: v => v === "" ? null : v,
-        unique: true,
-        sparse: true
     },
     FirstName: { 
         type: String, 
