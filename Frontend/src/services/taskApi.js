@@ -170,28 +170,32 @@ export const taskApi = {
   // Get user tasks (tasks assigned to current user)
   getUserTasks: async (userEmail, userId) => {
     try {
-      const response = await axiosInstance.get('/task/getAllTasks');
+      console.log("Fetching tasks for user:");
+      const response = await axiosInstance.get('http://localhost:8090/api/v1/task/getAllUserTasks');
+console.log("Response in getUserTasks:", response);
+       const tasks = response.data.data.filter((task) => {
+      if (!Array.isArray(task.assignedTo)) return false;
 
-      if (response.data.success && response.data.data) {
-        const tasks = response.data.data.filter(
-          (task) =>
-            task.assignedTo &&
-            Array.isArray(task.assignedTo) &&
-            task.assignedTo.some((assigned) => {
-              if (typeof assigned === 'object' && assigned.email === userEmail)
-                return true;
-              if (typeof assigned === 'string' && assigned === userEmail)
-                return true;
-              if (typeof assigned === 'object' && assigned._id === userId)
-                return true;
-              if (typeof assigned === 'string' && assigned === userId)
-                return true;
-              return false;
-            })
-        );
-        return tasks;
-      }
-      return [];
+        return task.assignedTo.some((assigned) => {
+          // case 1: assignedTo = ["USER_ID"]
+          if (typeof assigned === 'string') {
+            return (
+              assigned.toString() === userId?.toString() ||
+              assigned.toString() === userEmail
+            );
+          }
+
+          // case 2: assignedTo = [{ _id, email }]
+          if (assigned && typeof assigned === 'object') {
+            if (assigned._id?.toString() === userId?.toString()) return true;
+            if (assigned.email && assigned.email === userEmail) return true;
+          }
+
+          return false;
+        });
+      });
+console.log("Filtered tasks in getUserTasks:", tasks);
+      return tasks;
     } catch (error) {
       console.error('Error fetching user tasks:', error);
       throw error;
