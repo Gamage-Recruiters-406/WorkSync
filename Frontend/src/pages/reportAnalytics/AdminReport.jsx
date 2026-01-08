@@ -7,7 +7,7 @@ import TaskDonutChart from "../../components/reportAnalytics/charts/TaskDonutCha
 import AttendanceTable from "../../components/reportAnalytics/tables/AttendanceTable";
 import TaskTable from "../../components/reportAnalytics/tables/TaskTable";
 import ProjectTable from "../../components/reportAnalytics/tables/ProjectTable";
-
+import DashboardHeader from "../../components/DashboardHeader";
 import Sidebar from "../../components/sidebar/Sidebar";
 import {
   getAttendance,
@@ -145,40 +145,44 @@ export default function AdminReport() {
   return (
     <div className="flex h-screen">
       <Sidebar />
-      <main className="flex-1 p-6 bg-gray-100">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">
-          Admin Report & Analytics{" "}
-        </h1>
-        <div className="flex-1 p-6 overflow-y-auto space-y-8 p-">
-          {/* KPI GRID */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCards title="Total Employees" value={kpis.totalEmployees} />
-            <KpiCards title="Present Today" value={kpis.presentToday} />
-            <KpiCards title="Absent Today" value={kpis.absentToday} />
-            <KpiCards title="Leaves" value={kpis.pendingLeaves} />
+
+      <div className="flex-1 flex flex-col min-h-0">
+        <DashboardHeader />
+        <main className="flex-1 p-6 bg-gray-100 overflow-y-auto min-h-0">
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">
+            Admin Report & Analytics{" "}
+          </h1>
+          <div className="flex-1 p-6 overflow-y-auto space-y-8 p-">
+            {/* KPI GRID */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <KpiCards title="Total Employees" value={kpis.totalEmployees} />
+              <KpiCards title="Present Today" value={kpis.presentToday} />
+              <KpiCards title="Absent Today" value={kpis.absentToday} />
+              <KpiCards title="Leaves" value={kpis.pendingLeaves} />
+            </div>
+
+            {/* CHARTS */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="min-w-0 min-h-0">
+                <AttendanceBarChart data={chartData.attendance} />
+              </div>
+
+              <div className="min-w-0 min-h-0">
+                <LeaveDonutChart data={chartData.leaves} />
+              </div>
+
+              <div className="min-w-0 min-h-0">
+                <TaskDonutChart data={chartData.tasks} />
+              </div>
+            </div>
+
+            {/* TABLES */}
+            <AttendanceTable data={attendanceData} />
+            <TaskTable data={taskData} />
+            <ProjectTable data={projectData} />
           </div>
-
-          {/* CHARTS */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="min-w-0 min-h-0">
-              <AttendanceBarChart data={chartData.attendance} />
-            </div>
-
-            <div className="min-w-0 min-h-0">
-              <LeaveDonutChart data={chartData.leaves} />
-            </div>
-
-            <div className="min-w-0 min-h-0">
-              <TaskDonutChart data={chartData.tasks} />
-            </div>
-          </div>
-
-          {/* TABLES */}
-          <AttendanceTable data={attendanceData} />
-          <TaskTable data={taskData} />
-          <ProjectTable data={projectData} />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
