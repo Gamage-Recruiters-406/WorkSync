@@ -108,7 +108,6 @@ function App() {
         <Route path="/user/profile" element={<UserProfile />} />
         <Route path="/user/profile/edit" element={<UserProfileEdit />} />
         <Route path="/task-details/:id" element={<TaskDetail />} />
->>>>
 
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />
