@@ -1,5 +1,5 @@
+import mongoose from "mongoose";
 import LeaveRequest from "../models/LeaveRequest.js";
-import User from "../models/User.js";
 import {
   validateUserIdFromToken,
   checkUserExists,
@@ -8,7 +8,12 @@ import {
   canDeleteLeaveRequest,
   populateLeaveRequestDetails,
   handleControllerError,
-  validateLeaveRequest
+  validateLeaveRequest,
+  isAdminOrManager,
+  canUpdateLeaveRequest,
+  calculateWorkingDays,
+  checkLeaveOverlap,
+  hasLeavePermission
 } from "../helpers/leaveRequestHelper.js";
 import { sendLeaveStatusEmail } from "../helpers/emailHelper.js";
 
@@ -19,29 +24,36 @@ const LEAVE_POLICY = {
   casual: 5,
 };
 
+// Helper to calculate days between dates (including both start and end)
+const calculateDays = (start, end) => {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const diffTime = Math.abs(endDate - startDate);
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) +1;
+};
+
 // Create Leave Request
 export const createLeaveRequest = async (req, res) => {
   try {
-    // Authentication and validation
     validateUserIdFromToken(req.user?.userid);
-    await checkUserExists(req.user?.userid);
+    await checkUserExists(req.user.userid);
 
-    // Validate request body
-    await validateLeaveRequest(req.body);
+    validateLeaveRequest(req.body);
 
-    // Create leave request
+    // Check for overlapping leaves
+    await checkLeaveOverlap(
+      req.user.userid,
+      req.body.startDate,
+      req.body.endDate
+    );
+
     const leaveRequest = new LeaveRequest({
       ...req.body,
-      requestedBy: req.user?.userid
+      requestedBy: new mongoose.Types.ObjectId(req.user.userid)
     });
 
     await leaveRequest.save();
-
-    // Populate and return
-    const populatedLeave = await populateLeaveRequestDetails(
-      leaveRequest._id,
-      LeaveRequest
-    );
+    const populatedLeave = await populateLeaveRequestDetails(leaveRequest._id);
 
     res.status(201).json({
       success: true,
@@ -57,51 +69,56 @@ export const createLeaveRequest = async (req, res) => {
 export const updateLeaveRequest = async (req, res) => {
   try {
     validateUserIdFromToken(req.user?.userid);
-
     const { id } = req.params;
 
-    // Find leave request
-    const leaveRequest = await checkLeaveRequestExists(id, LeaveRequest);
+    const leaveRequest = await checkLeaveRequestExists(id);
 
-    // Only requester can update
-    if (!isRequester(leaveRequest.requestedBy, req.user?.userid)) {
+    // Use unified permission checker
+    if (!hasLeavePermission(leaveRequest, req.user, 'update')) {
       throw {
         status: 403,
         message: "You don't have permission to update this leave request.",
       };
     }
 
-    // Only pending leaves can be updated
-    if (leaveRequest.sts !== "pending") {
-      throw {
-        status: 400,
-        message: "Only pending leave requests can be updated.",
-      };
-    }
-
-    // Validate body
-    await validateLeaveRequest(req.body);
-
     // Only allow specific fields to be updated
     const allowedUpdates = ["leaveType", "reason", "startDate", "endDate"];
     const updates = {};
+    
     allowedUpdates.forEach((field) => {
       if (req.body[field] !== undefined) {
         updates[field] = req.body[field];
       }
     });
 
-    // Update leave request
+    if (Object.keys(updates).length === 0) {
+      throw {
+        status: 400,
+        message: "No valid fields provided for update.",
+      };
+    }
+
+    // Create temporary object for validation
+    const tempData = { ...leaveRequest.toObject(), ...updates };
+    validateLeaveRequest(tempData);
+
+    // Check for overlapping leaves (excluding current leave)
+    if (updates.startDate || updates.endDate) {
+      await checkLeaveOverlap(
+        req.user.userid,
+        updates.startDate || leaveRequest.startDate,
+        updates.endDate || leaveRequest.endDate,
+        id
+      );
+    }
+
     const updatedLeave = await LeaveRequest.findByIdAndUpdate(
       id,
       updates,
-      { new: true }
+      { new: true, runValidators: true }
     );
 
-    const populatedLeave = await populateLeaveRequestDetails(
-      updatedLeave._id,
-      LeaveRequest
-    );
+    const populatedLeave = await populateLeaveRequestDetails(updatedLeave._id);
 
     res.json({
       success: true,
@@ -117,41 +134,69 @@ export const updateLeaveRequest = async (req, res) => {
 export const updateLeaveStatus = async (req, res) => {
   try {
     validateUserIdFromToken(req.user?.userid);
-
     const { id } = req.params;
-    const { sts } = req.body;
+    const { sts, rejectionReason } = req.body;
 
-    // Validate status
-    if (!["approved", "rejected", "pending"].includes(sts)) {
+    if (!["approved", "rejected", "pending", "cancelled"].includes(sts)) {
       throw {
         status: 400,
         message: "Invalid leave status.",
       };
     }
 
-    // Find leave request
-    const leaveRequest = await checkLeaveRequestExists(id, LeaveRequest);
+    const leaveRequest = await checkLeaveRequestExists(id);
 
-    // Update status
-    leaveRequest.sts = sts;
-    leaveRequest.approvedBy =
-      sts === "approved" || sts === "rejected"
-        ? req.user?.userid
-        : null;
+    // Determine permission based on status
+    let hasPermission = false;
+    if (["approved", "rejected"].includes(sts)) {
+      hasPermission = hasLeavePermission(leaveRequest, req.user, 'approve');
+    } else if (sts === "cancelled") {
+      hasPermission = hasLeavePermission(leaveRequest, req.user, 'cancel');
+    } else if (sts === "pending") {
+      // Only requester can set back to pending
+      hasPermission = isRequester(leaveRequest.requestedBy, req.user.userid);
+    }
 
-    await leaveRequest.save();
+    if (!hasPermission) {
+      throw {
+        status: 403,
+        message: "You don't have permission to perform this action.",
+      };
+    }
 
-    const populatedLeave = await populateLeaveRequestDetails(
-      leaveRequest._id,
-      LeaveRequest
+    // Prepare update data
+    const updateData = {
+      sts,
+      approvedBy: ["approved", "rejected"].includes(sts)
+        ? new mongoose.Types.ObjectId(req.user.userid)
+        : null,
+    };
+
+    // Add rejection reason if provided
+    if (sts === "rejected" && rejectionReason) {
+      updateData.rejectionReason = rejectionReason;
+    }
+
+    const updatedLeave = await LeaveRequest.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
     );
 
+    const populatedLeave = await populateLeaveRequestDetails(updatedLeave._id);
+
     // Send email notification
-    if (populatedLeave.requestedBy && populatedLeave.requestedBy.email && (sts === "approved" || sts === "rejected")) {
+    if (
+      populatedLeave.requestedBy &&
+      populatedLeave.requestedBy.email &&
+      ["approved", "rejected"].includes(sts)
+    ) {
+      const fullName = `${populatedLeave.requestedBy.FirstName} ${populatedLeave.requestedBy.LastName}`;
       await sendLeaveStatusEmail(
         populatedLeave.requestedBy.email,
-        populatedLeave.requestedBy.name,
-        sts
+        fullName,
+        sts,
+        rejectionReason
       );
     }
 
@@ -171,11 +216,11 @@ export const getLeavesByUser = async (req, res) => {
     validateUserIdFromToken(req.user?.userid);
     const { uid } = req.params;
 
-    // Check user exists
     await checkUserExists(uid);
 
-    // If current user is not Admin/Manager, they can only view their own leaves
-    if (![2, 3].includes(req.user.role) && req.user.userid !== uid) {
+    // Check if user is viewing their own leaves or is Admin/Manager
+    const isOwnLeaves = req.user.userid === uid;
+    if (!isOwnLeaves && !isAdminOrManager(req.user.role)) {
       throw {
         status: 403,
         message: "You can only view your own leave requests.",
@@ -184,8 +229,15 @@ export const getLeavesByUser = async (req, res) => {
 
     const leaves = await LeaveRequest.find({ requestedBy: uid })
       .sort({ createdAt: -1 })
-      .populate("requestedBy", "username fullName email department")
-      .populate("approvedBy", "username fullName email");
+      .populate({
+        path: "requestedBy",
+        select: "FirstName LastName email departmentID role",
+        populate: { 
+          path: "departmentID", 
+          select: "name departmentCode location email" 
+        }
+      })
+      .populate("approvedBy", "FirstName LastName email");
 
     res.json({
       success: true,
@@ -203,11 +255,9 @@ export const getSingleLeave = async (req, res) => {
     validateUserIdFromToken(req.user?.userid);
     const { id } = req.params;
 
-    // Find leave
     const leave = await checkLeaveRequestExists(id);
 
-    // If current user is not Admin/Manager, they can only view their own leave
-    if (![2, 3].includes(req.user.role) && !isRequester(leave.requestedBy, req.user.userid)) {
+    if (!hasLeavePermission(leave, req.user, 'view')) {
       throw {
         status: 403,
         message: "You are not allowed to view this leave request.",
@@ -230,8 +280,7 @@ export const getAllLeaves = async (req, res) => {
   try {
     validateUserIdFromToken(req.user?.userid);
 
-    // Only Admin (3) or Manager (2) can access all leaves
-    if (![2, 3].includes(req.user.role)) {
+    if (!isAdminOrManager(req.user.role)) {
       throw {
         status: 403,
         message: "Access denied. Only Admin or Manager can view all leave requests.",
@@ -240,8 +289,15 @@ export const getAllLeaves = async (req, res) => {
 
     const leaves = await LeaveRequest.find()
       .sort({ createdAt: -1 })
-      .populate("requestedBy", "username fullName email department")
-      .populate("approvedBy", "username fullName email");
+      .populate({
+        path: "requestedBy",
+        select: "FirstName LastName email departmentID role",
+        populate: { 
+          path: "departmentID", 
+          select: "name departmentCode location email" 
+        }
+      })
+      .populate("approvedBy", "FirstName LastName email");
 
     res.json({
       success: true,
@@ -253,77 +309,197 @@ export const getAllLeaves = async (req, res) => {
   }
 };
 
-//get leave balance per year
+// Get leave balance per year - FIXED VERSION
 export const getLeaveBalance = async (req, res) => {
   try {
     validateUserIdFromToken(req.user?.userid);
     const userId = req.user.userid;
 
-    const yearStart = new Date(new Date().getFullYear(), 0, 1);
-    const yearEnd = new Date(new Date().getFullYear(), 11, 31);
+    const currentYear = new Date().getFullYear();
+    const yearStart = new Date(currentYear, 0, 1);
+    const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
 
+    // Get approved leaves that overlap with the current year
     const leaves = await LeaveRequest.find({
       requestedBy: userId,
-      createdAt: { $gte: yearStart, $lte: yearEnd },
+      sts: "approved",
+      $or: [
+        { 
+          startDate: { $lte: yearEnd },
+          endDate: { $gte: yearStart }
+        }
+      ]
     });
 
     const used = { sick: 0, annual: 0, casual: 0 };
-    let approved = 0;
-    let rejected = 0;
-     let pending = 0;
 
-    leaves.forEach(l => {
-      if (l.sts === "approved") {
-        approved++;
-        if (used[l.leaveType] !== undefined) used[l.leaveType]++;
-      } else if (l.sts === "rejected") {
-        rejected++;
-      } else if (l.sts === "pending") {
-        pending++;
+    leaves.forEach(leave => {
+      // Calculate overlapping days with current year
+      const overlapStart = leave.startDate < yearStart ? yearStart : leave.startDate;
+      const overlapEnd = leave.endDate > yearEnd ? yearEnd : leave.endDate;
+      
+      if (overlapStart <= overlapEnd) {
+        const days = calculateDays(overlapStart, overlapEnd);
+        if (used[leave.leaveType] !== undefined) {
+          used[leave.leaveType] += days;
+        }
       }
     });
 
     res.json({
       success: true,
-      balance: {
+      year: currentYear,
+      policy: LEAVE_POLICY,
+      used,
+      remaining: {
+        sick: Math.max(0, LEAVE_POLICY.sick - used.sick),
+        annual: Math.max(0, LEAVE_POLICY.annual - used.annual),
+        casual: Math.max(0, LEAVE_POLICY.casual - used.casual)
+      },
+      usage: {
         sick: `${used.sick}/${LEAVE_POLICY.sick}`,
         annual: `${used.annual}/${LEAVE_POLICY.annual}`,
         casual: `${used.casual}/${LEAVE_POLICY.casual}`,
-      },
-      counts: {
-        approved,
-        rejected,
-        pending,
-      },
+      }
     });
   } catch (error) {
     handleControllerError(error, res);
   }
 };
 
+// Get leave status counts for a user (employee + admin/manager)
+export const getLeaveStatusCounts = async (req, res) => {
+  try {
+    validateUserIdFromToken(req.user?.userid);
+
+    let targetUserId;
+    let requestedBy = 'self'; // Default to self
+
+    // Route parameter: /status/:employeeId
+    if (req.params.employeeId) {
+      targetUserId = req.params.employeeId;
+      requestedBy = 'admin';
+      
+      // This route is protected by isManagerOrAdmin middleware,
+      // but double-check for safety
+      if (!isAdminOrManager(req.user.role)) {
+        throw {
+          status: 403,
+          message: "Only Admin/Manager can view other employee's leave statistics."
+        };
+      }
+    } 
+    // No parameter: /status (self-view)
+    else {
+      targetUserId = req.user.userid;
+    }
+
+    // Validate user exists
+    await checkUserExists(targetUserId);
+
+    // Decide which statuses to include
+    let statusFilter = {};
+    let resultTemplate;
+
+    if (targetUserId === req.user.userid) {
+      // Employee viewing self → all statuses
+      resultTemplate = { 
+        pending: 0, 
+        approved: 0, 
+        rejected: 0, 
+        cancelled: 0, 
+        total: 0 
+      };
+    } else if (isAdminOrManager(req.user.role)) {
+      // Admin/Manager viewing someone else → only pending + rejected
+      statusFilter.sts = { $in: ["pending", "rejected"] };
+      resultTemplate = { 
+        pending: 0, 
+        rejected: 0, 
+        total: 0 
+      };
+    } else {
+      // Should not happen due to middleware, but safety check
+      throw { 
+        status: 403, 
+        message: "Unauthorized to view leave statistics." 
+      };
+    }
+
+    // Aggregate leave counts
+    const counts = await LeaveRequest.aggregate([
+      {
+        $match: {
+          requestedBy: new mongoose.Types.ObjectId(targetUserId),
+          ...statusFilter
+        }
+      },
+      {
+        $group: {
+          _id: "$sts",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Fill result
+    const result = { ...resultTemplate };
+    counts.forEach(c => {
+      if (result.hasOwnProperty(c._id)) {
+        result[c._id] = c.count;
+        result.total += c.count;
+      }
+    });
+
+    // Calculate percentages
+    const percentages = {};
+    if (result.total > 0) {
+      Object.keys(result).forEach(key => {
+        if (key !== 'total' && typeof result[key] === 'number') {
+          percentages[key] = ((result[key] / result.total) * 100).toFixed(1) + '%';
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        counts: result,
+        percentages: result.total > 0 ? percentages : null
+      },
+      meta: {
+        employeeId: targetUserId,
+        requestedBy,
+        currentUser: req.user.userid,
+        role: req.user.role,
+        endpoint: req.params.employeeId ? 'admin-view' : 'self-view'
+      },
+      message: requestedBy === 'self' 
+        ? "Your leave status counts retrieved successfully." 
+        : `Leave status counts for employee ${targetUserId} retrieved successfully.`
+    });
+
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+};
 
 // Delete Leave Request - Requester only
 export const deleteLeaveRequest = async (req, res) => {
   try {
     validateUserIdFromToken(req.user?.userid);
-
     const { id } = req.params;
 
-    // Find and validate leave request
-    const leaveRequest = await checkLeaveRequestExists(id, LeaveRequest);
+    const leaveRequest = await checkLeaveRequestExists(id);
 
-    // Only requester can delete
-    if (!isRequester(leaveRequest.requestedBy, req.user?.userid)) {
+    if (!hasLeavePermission(leaveRequest, req.user, 'delete')) {
       throw {
         status: 403,
         message: "You don't have permission to delete this leave request.",
       };
     }
 
-    // Status validation
     canDeleteLeaveRequest(leaveRequest.sts);
-
-    // Delete the leave request
     await LeaveRequest.findByIdAndDelete(id);
 
     res.json({

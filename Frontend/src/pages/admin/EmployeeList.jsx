@@ -1,38 +1,47 @@
 import React from 'react';
-import DashboardSidebar from '../../components/sidebar/DashboardSidebar';
-import DashboardHeader from '../../components/DashboardHeader';
+import Sidebar from '../../components/sidebar/Sidebar';
 import EmployeeTable from '../../components/EmployeeTable';
 
 const EmployeeList = () => {
   return (
-    <div className="flex">
-      {/* Sidebar */}
-      <DashboardSidebar activeItem="User" />
-
-      {/* Main Content */}
-      <div className="flex-1 ml-60">
-        {/* Header */}
-        <DashboardHeader />
-
-        {/* Content Area */}
-        <main className="pt-24 pb-32 px-8" style={{ backgroundColor: '#FFFFFF' }}>
-          {/* Page Title */}
-          <div className="mb-8">
-            <h1
-              className="text-3xl font-bold mb-2"
-              style={{ color: '#2D3748' }}
-            >
-              Employee List
-            </h1>
-            <p style={{ color: '#718096' }} className="text-sm">
-              Manage and view all employees in your organization
-            </p>
+    <div className="flex h-screen">
+      <Sidebar />
+      <main className="flex-1 p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 overflow-auto">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2" style={{ color: '#0E7C86' }}>
+                Employee Directory
+              </h1>
+              <p className="text-gray-600 text-sm font-medium">
+                Manage and view all employees in your organization
+              </p>
+            </div>
           </div>
+        </div>
 
-          {/* Employee Table */}
+        {/* Stats Cards - Optional */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-4" style={{ borderColor: '#E0F2FE' }}>
+            <p className="text-gray-600 text-xs font-semibold mb-1">Total Employees</p>
+            <p className="text-2xl font-bold" style={{ color: '#0E7C86' }}>08</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-4" style={{ borderColor: '#E0F2FE' }}>
+            <p className="text-gray-600 text-xs font-semibold mb-1">Active</p>
+            <p className="text-2xl font-bold" style={{ color: '#0E7C86' }}>07</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-4" style={{ borderColor: '#E0F2FE' }}>
+            <p className="text-gray-600 text-xs font-semibold mb-1">Inactive</p>
+            <p className="text-2xl font-bold" style={{ color: '#E53E3E' }}>01</p>
+          </div>
+        </div>
+
+        {/* Table Section */}
+        <div className="bg-white rounded-xl shadow-lg border-0 overflow-hidden hover:shadow-xl transition-shadow duration-300">
           <EmployeeTable />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 };

@@ -1,26 +1,39 @@
 import axios from "axios";
 import { useState } from "react";
+import Toast from "../../components/Toast";
 
 const UploadModal = ({ onClose, projectId, onUploadSuccess }) => {
+    const allowedTypes = ["application/pdf", "image/png", "image/jpeg"];
+    const maxSize = 10 * 1024 * 1024; // 10MB
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [isDragging, setIsDragging] = useState(false);
-    const [uploading, setUploading] = useState(false)
+    const [uploading, setUploading] = useState(false);
+    const [toast, setToast] = useState(null);
 
     const URL_API = "http://localhost:8090";
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      setUploading(true);
-      // handle files here
+
       if (selectedFiles.length === 0){
-        alert("Please select at least one file");
+        setToast({ message: "Please select at least one file", type: "error" });
         return;
       }
+
+      const validFiles = selectedFiles.filter(f => allowedTypes.includes(f.type) && f.size <= maxSize);
+      if(validFiles.length !== selectedFiles.length){
+        setToast({ message: "Some files are invalid or too large!", type: "error" });
+        return;
+      }
+
+      setUploading(true);
+      // handle files here
+      
 console.log("Files to upload:", selectedFiles);
 
       const formData = new FormData();
 
-      selectedFiles.forEach((file)=>{
+      validFiles.forEach((file)=>{
         formData.append("attachments", file);
       });
 
@@ -32,10 +45,14 @@ console.log("Files to upload:", selectedFiles);
         );
 
         onUploadSuccess?.();
-        onClose();
+        setToast({ message: "File Uploaded successfully", type: "success" });
+        setTimeout(() => {
+          onClose();
+        }, 3000);
+        
       } catch (error) {
         console.error("Upload failed", error);
-        alert("File upload failed");
+        setToast({ message: "File upload failed", type: "error" });
       } finally{
         setUploading(false);
       }
@@ -44,9 +61,29 @@ console.log("Files to upload:", selectedFiles);
     };
 
     const addFiles = (files) => {
+      const valid = [];
+      const invalid = [];
+
+      files.forEach((file)=> {
+        if (!allowedTypes.includes(file.type)) {
+          invalid.push(`${file.name} (invalid type)`);
+        } else if (file.size > maxSize) {
+          invalid.push(`${file.name} (too large)`);
+        } else {
+          valid.push(file);
+        }
+      });
+
+      if (invalid.length > 0) {
+        setToast({
+          message: `Invalid files: ${invalid.join(", ")}`,
+          type: "error",
+        });
+      }
+
       setSelectedFiles((prev)=>{
-        const newFiles = files.filter(
-          (f)=>!prev.some((file)=>file.name === f.name && file.size === f.size)
+        const newFiles = valid.filter(
+          (f)=>!prev.some((p)=>p.name === f.name && p.size === f.size)
         );
         return [...prev, ...newFiles];
       });
@@ -59,6 +96,14 @@ console.log("Files to upload:", selectedFiles);
           <div className="border-b px-6 py-4">
             <h2 className="text-lg font-semibold text-center">Upload Files</h2>
           </div>
+
+          {toast && (
+            <Toast
+              message={toast.message}
+              type={toast.type}
+              onClose={() => setToast(null)}
+            />
+          )}
   
           {/* body */}
           <form onSubmit={handleSubmit} className="px-8 py-6">
@@ -104,13 +149,14 @@ console.log("Files to upload:", selectedFiles);
                   <input
                     type="file"
                     multiple
+                    accept=".pdf,.png,.jpg,.jpeg"
                     className="hidden"
                     onChange={(e)=> addFiles(Array.from(e.target.files))}
                   />
                 </label>
   
                 <p className="mt-4 text-xs text-gray-500">
-                  (Max size: 20MB | Allowed: PDF, DOCX, PNG, JPG, ZIP)
+                  (Max size: 10MB| Max Files: 5 | Allowed: PDF, PNG, JPG) 
                 </p>
               </div>
             </div>

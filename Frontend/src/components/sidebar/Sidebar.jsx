@@ -13,10 +13,10 @@ import {
   User,
   UserCheck,
 } from "lucide-react";
-import { NavLink,useNavigate } from "react-router-dom";
-import { useState,} from "react";
+import { NavLink } from "react-router-dom";
+import { useState } from "react";
 
-const sidebarContent = { 
+const sidebarContent = {
   admin: {
     main: [
       {
@@ -153,11 +153,10 @@ const sidebarContent = {
 
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-   const navigate = useNavigate();
 
   const user = {
-    role: "employee",
-      role: "admin",
+    // role: "employee",
+    role: "admin",
   };
   const menumainItems = sidebarContent[user.role].main || [];
   const menufooterItems = sidebarContent[user.role].footer || [];
@@ -254,7 +253,7 @@ function Sidebar() {
         })}
 
         {/* Logout Button */}
-        <button  onClick={() => navigate("/login") }
+        <button
           className={`flex items-center gap-4 ${
             isCollapsed ? "justify-center" : ""
           } px-4 py-3 w-full rounded-lg text-sm font-medium text-[#087990] hover:bg-gray-300 hover:text-teal-800 transition-colors`}

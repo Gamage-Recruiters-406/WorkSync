@@ -21,11 +21,11 @@ export default function LeaveDonutChart({ data = [] }) {
   const COLORS = ["#fbbf24", "#087990", "#FF4949"]; // yellow, green
 
   return (
-    <div className="bg-white p-4 shadow text-center rounded-xl">
+    <div className="bg-white p-4 text-center rounded-xl border-2 border-[#087990] shadow-lg">
       <h3 className="font-semibold mb-4">Leave Status</h3>
 
-      <div className="w-full h-48">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full min-w-0">
+        <ResponsiveContainer width="100%" height={180}>
           <PieChart>
             <Pie
               data={chartData}

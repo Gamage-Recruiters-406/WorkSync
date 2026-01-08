@@ -17,6 +17,7 @@ import {
   getAllTasks,
   getAllProjects,
   getAllUsers,
+  getAllEmployee,
 } from "../../services/adminReportsApi";
 
 export default function AdminReport() {
@@ -47,26 +48,31 @@ export default function AdminReport() {
         const [attendanceRes, leaveRes, totEmp] = await Promise.all([
           getAttendance(),
           getAllLeaves(),
-          getAllUsers(),
+          getAllEmployee(),
         ]);
 
         const attendance = attendanceRes?.data?.attendance || [];
 
-        /*const leaves = Array.isArray(leaveRes?.data)
-          ? leaveRes.data
-          : leaveRes?.data?.leaves || [];*/
         const leaves = leaveRes.data.data || [];
+
+        const today = new Date().toISOString().split("T")[0];
+
+        const todayAttendance = attendance.filter((a) => a.date === today);
 
         setKpis((prev) => ({
           ...prev,
-          totalEmployees: totEmp.data.data.length,
-          presentToday: attendance.filter((a) => a.status === "Present").length,
-          absentToday: attendance.filter((a) => a.status === "Absent").length,
-          pendingLeaves:
-            leaves.length /*filter((l) => l.status === "Pending")*/,
+          totalEmployees: totEmp.data.Employees.length,
+
+          presentToday: todayAttendance.filter((a) => a.status === "Present")
+            .length,
+
+          absentToday: todayAttendance.filter((a) => a.status === "Absent")
+            .length,
+
+          pendingLeaves: leaves.length, // unchanged
         }));
       } catch (error) {
-        console.error("❌ Error loading KPI data:", error);
+        console.error(" Error loading KPI data:", error);
       }
     };
 
@@ -90,7 +96,7 @@ export default function AdminReport() {
         const tasks = Array.isArray(taskReportRes?.data?.data)
           ? taskReportRes.data.data
           : [];
-        console.log(tasks);
+
         setChartData({
           attendance,
           leaves,
@@ -114,7 +120,7 @@ export default function AdminReport() {
           getAllProjects(),
           getAllTasks(),
         ]);
-
+        console.log(projectsRes);
         const attendance = attendanceRes?.data?.attendance || [];
 
         const tasks = Array.isArray(tasksRes?.data?.data)
@@ -152,9 +158,17 @@ export default function AdminReport() {
 
           {/* CHARTS */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <AttendanceBarChart data={chartData.attendance} />
-            <LeaveDonutChart data={chartData.leaves} />
-            <TaskDonutChart data={chartData.tasks} />
+            <div className="min-w-0 min-h-0">
+              <AttendanceBarChart data={chartData.attendance} />
+            </div>
+
+            <div className="min-w-0 min-h-0">
+              <LeaveDonutChart data={chartData.leaves} />
+            </div>
+
+            <div className="min-w-0 min-h-0">
+              <TaskDonutChart data={chartData.tasks} />
+            </div>
           </div>
 
           {/* TABLES */}
