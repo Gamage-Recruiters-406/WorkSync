@@ -107,7 +107,7 @@ const ProjectDetails = () => {
   const goBack = () => navigate("/user/project-team"); // back to projects page
 
   const statusColor = {
-    Active: "bg-green-500",
+    active: "bg-green-500",
     "On Hold": "bg-orange-500",
     Complete: "bg-red-500",
   };
@@ -142,7 +142,7 @@ const ProjectDetails = () => {
               Role : <span className="font-medium">{projectData.role || projectData.assignedRole}</span>
             </p>
             <p>
-              Deadline: <span className="font-medium">{projectData.deadline || "-"}</span>
+              Deadline: <span className="font-medium">{new Date(projectData.deadline).toLocaleDateString() || "-"}</span>
             </p>
 
             {isTeamLeader && (
@@ -161,8 +161,8 @@ const ProjectDetails = () => {
         <div className="flex items-center justify-between border-b pb-3 mb-4 ml-6 text-sm">
           <div className="flex items-center gap-2">
             <span className="font-medium">Status :</span>
-            <span className={`w-3 h-3 rounded-full ${statusColor[projectData.status || "Active"]}`}></span>
-            <span>{projectData.status || "Active"}</span>
+            <span className={`w-3 h-3 rounded-full ${statusColor[projectData.status || "active"]}`}></span>
+            <span>{projectData.status || "active"}</span>
           </div>
         </div>
 
