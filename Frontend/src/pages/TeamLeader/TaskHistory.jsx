@@ -24,6 +24,7 @@ import {
   getCurrentUserInfo,
   taskTransformers
 } from '../../services/taskApi';
+import DashboardHeader from "../../components/DashboardHeader";
 
 const TaskHistory = () => {
   const [tasks, setTasks] = useState([]);
@@ -98,16 +99,8 @@ const TaskHistory = () => {
       const user = await getCurrentUserInfo();
       
       if (user) {
-        // Create enhanced user object
-        const enhancedUser = {
-          ...user,
-          isAdmin: user.role === 3,
-          isManager: user.role === 2,
-          isEmployee: user.role === 1,
-        };
-        
-        setCurrentUser(enhancedUser);
-        localStorage.setItem('currentUser', JSON.stringify(enhancedUser));
+        setCurrentUser(user);
+        localStorage.setItem('currentUser', JSON.stringify(user));
       } else {
         // Fallback to localStorage
         const stored = localStorage.getItem('currentUser');
@@ -252,28 +245,27 @@ const TaskHistory = () => {
   };
 
   const getEmployeeName = (employeeOrId) => {
-    if (!employeeOrId) return 'Unassigned';
+  if (!employeeOrId) return 'Unassigned';
 
-    if (typeof employeeOrId === 'object') {
-      return employeeOrId.FirstName && employeeOrId.LastName
-        ? `${employeeOrId.FirstName} ${employeeOrId.LastName}`.trim()
-        : employeeOrId.name ||
-            employeeOrId.email ||
-            `Employee ${employeeOrId._id?.substring(0, 6) || 'Unknown'}`;
-    }
+  if (typeof employeeOrId === 'object') {
+    return employeeOrId.FirstName && employeeOrId.LastName
+      ? `${employeeOrId.FirstName} ${employeeOrId.LastName}`.trim()
+      : employeeOrId.name ||
+          employeeOrId.email ||
+          `Employee ${employeeOrId._id?.substring(0, 6) || 'Unknown'}`;
+  }
 
-    if (typeof employeeOrId === 'string') {
-      const employee = employees.find(
-        (emp) => (emp._id || emp.id || emp.userId) === employeeOrId
-      );
-      return employee
-        ? getEmployeeName(employee)
-        : `Employee (${employeeOrId.substring(0, 6)}...)`;
-    }
+  if (typeof employeeOrId === 'string') {
+    const employee = employees.find(
+      (emp) => (emp._id || emp.id || emp.userId) === employeeOrId
+    );
+    return employee
+      ? getEmployeeName(employee)
+      : `Employee (${employeeOrId.substring(0, 6)}...)`;
+  }
 
-    return 'Unknown Employee';
-  };
-
+  return 'Unknown Employee';
+};
   const handleViewPDF = (task, pdfAttachment, e) => {
     if (e) e.stopPropagation();
     if (pdfAttachment) {
@@ -371,6 +363,46 @@ const TaskHistory = () => {
     }
   };
 
+  // Get user role tag 
+  const getUserRoleTag = () => {
+    if (!currentUser) return null;
+    
+    // Priority: Admin > Team Leader > Manager > Employee
+    if (currentUser.role === 3) {
+      return {
+        text: 'Admin',
+        bgColor: 'bg-red-100',
+        textColor: 'text-red-800',
+        icon: <Shield className="w-3 h-3" />
+      };
+    }
+    
+    if (currentUser.isTeamLeader) {
+      return {
+        text: 'Team Leader',
+        bgColor: 'bg-purple-100',
+        textColor: 'text-purple-800',
+        icon: null
+      };
+    }
+    
+    if (currentUser.role === 2) {
+      return {
+        text: 'Manager',
+        bgColor: 'bg-blue-100',
+        textColor: 'text-blue-800',
+        icon: null
+      };
+    }
+    
+    return {
+      text: 'Employee',
+      bgColor: 'bg-gray-100',
+      textColor: 'text-gray-800',
+      icon: null
+    };
+  };
+
   const clearFilters = () => {
     setDateRange({ start: '', end: '' });
     setSelectedEmployee('');
@@ -388,15 +420,8 @@ const TaskHistory = () => {
   // Only show loading when we're still checking team leader status
   if (loading || checkingTeamLeader) {
     return (
-      <div className="flex h-screen">
-        <Sidebar
-          role={
-            currentUser?.role
-              ? getRoleName(currentUser.role).toLowerCase()
-              : 'employee'
-          }
-          activeItem="task"
-        />
+      <div className="flex bg-[#F8FAFC] min-h-screen">
+        <Sidebar />
         <main className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -409,8 +434,10 @@ const TaskHistory = () => {
     );
   }
 
+  const roleTag = getUserRoleTag();
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex bg-[#F8FAFC] min-h-screen">
       <Sidebar
         role={
           currentUser?.role
@@ -421,46 +448,34 @@ const TaskHistory = () => {
         userName={currentUser?.name}
         userEmail={currentUser?.email}
       />
-
-      <div className="flex-1 ml-15 p-6">
-        <div className="bg-white border-b border-gray-200 px-6 py-4 rounded-lg shadow-sm mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">
-                Task History & Management
-              </h1>
-              {currentUser && (
-                <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
-                  <User className="w-4 h-4" />
-                  <span className="font-medium">{currentUser.name}</span>
-                  <span className="text-gray-500">•</span>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                    {getRoleName(currentUser.role)}
-                  </span>
-                  {currentUser.isAdmin && (
-                    <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full flex items-center gap-1">
-                      <Shield className="w-3 h-3" />
-                      Admin
-                    </span>
-                  )}
-                  {currentUser.isTeamLeader && (
-                    <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                      Team Leader
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search tasks..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+    
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* TOP BAR  */}
+        <DashboardHeader />
+        {/* SCROLLABLE CONTENT */}
+        <div className="flex-1 overflow-auto p-5">
+          {/* PAGE HEADER */}
+          <div className="mb-5">
+            <div className="flex justify-between items-center mb-3">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">
+                  Task History & Management
+                </h1>
+                {currentUser && (
+                  <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
+                    <User className="w-4 h-4" />
+                    <span className="font-medium">{currentUser.name}</span>
+                    <span className="text-gray-500">•</span>
+                    
+                    {/* Show only one role tag */}
+                    {roleTag && (
+                      <span className={`px-2 py-1 ${roleTag.bgColor} ${roleTag.textColor} text-xs rounded-full flex items-center gap-1`}>
+                        {roleTag.icon && roleTag.icon}
+                        {roleTag.text}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               {/* showing CREATE TASK button  ONLY FOR TEAM LEADERS */}
               {currentUser?.isTeamLeader && (
@@ -472,420 +487,422 @@ const TaskHistory = () => {
                 </button>
               )}
             </div>
-          </div>
 
-          <div className="flex items-center gap-6 mt-4">
-            {Object.entries(stats).map(([key, value]) => (
-              <div key={key} className="flex items-center gap-2">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    key === 'total'
-                      ? 'bg-gray-500'
-                      : key === 'active'
-                      ? 'bg-blue-500'
-                      : key === 'pending'
-                      ? 'bg-yellow-500'
-                      : 'bg-green-500'
-                  }`}
-                ></span>
-                <span className="text-sm text-gray-600 capitalize">{key}:</span>
-                <span
-                  className={`font-medium ${
-                    key === 'active'
-                      ? 'text-blue-600'
-                      : key === 'pending'
-                      ? 'text-yellow-600'
-                      : key === 'completed'
-                      ? 'text-green-600'
-                      : 'text-gray-800'
-                  }`}
-                >
-                  {value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-600" />
-              <span className="text-sm text-gray-600">Filters</span>
+            <div className="flex items-center gap-6 mt-4">
+              {Object.entries(stats).map(([key, value]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      key === 'total'
+                        ? 'bg-gray-500'
+                        : key === 'active'
+                        ? 'bg-blue-500'
+                        : key === 'pending'
+                        ? 'bg-yellow-500'
+                        : 'bg-green-500'
+                    }`}
+                  ></span>
+                  <span className="text-sm text-gray-600 capitalize">{key}:</span>
+                  <span
+                    className={`font-medium ${
+                      key === 'active'
+                        ? 'text-blue-600'
+                        : key === 'pending'
+                        ? 'text-yellow-600'
+                        : key === 'completed'
+                        ? 'text-green-600'
+                        : 'text-gray-800'
+                    }`}
+                  >
+                    {value}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date Range
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="date"
+          {/* FILTERS SECTION */}
+          <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-gray-600" />
+                <span className="text-sm text-gray-600">Filters</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date Range
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    value={dateRange.start}
+                    onChange={(e) =>
+                      setDateRange({ ...dateRange, start: e.target.value })
+                    }
+                  />
+                  <span className="self-center text-sm text-gray-500">to</span>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    value={dateRange.end}
+                    onChange={(e) =>
+                      setDateRange({ ...dateRange, end: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <User className="w-4 h-4 inline mr-1" />
+                  Assigned Employee
+                </label>
+                <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  value={dateRange.start}
-                  onChange={(e) =>
-                    setDateRange({ ...dateRange, start: e.target.value })
-                  }
-                />
-                <span className="self-center text-sm text-gray-500">to</span>
-                <input
-                  type="date"
+                  value={selectedEmployee}
+                  onChange={(e) => setSelectedEmployee(e.target.value)}
+                >
+                  <option value="">All Employees</option>
+                  {employees.map((employee) => (
+                    <option key={employee._id} value={employee._id}>
+                      {employee.name}{' '}
+                      {employee.role ? `(${getRoleName(employee.role)})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Priority
+                </label>
+                <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  value={dateRange.end}
-                  onChange={(e) =>
-                    setDateRange({ ...dateRange, end: e.target.value })
-                  }
-                />
+                  value={selectedPriority}
+                  onChange={(e) => setSelectedPriority(e.target.value)}
+                >
+                  <option value="">All Priorities</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  <option value="">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="in progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <User className="w-4 h-4 inline mr-1" />
-                Assigned Employee
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                value={selectedEmployee}
-                onChange={(e) => setSelectedEmployee(e.target.value)}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={clearFilters}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition"
               >
-                <option value="">All Employees</option>
-                {employees.map((employee) => (
-                  <option key={employee._id} value={employee._id}>
-                    {employee.name}{' '}
-                    {employee.role ? `(${getRoleName(employee.role)})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Priority
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                value={selectedPriority}
-                onChange={(e) => setSelectedPriority(e.target.value)}
-              >
-                <option value="">All Priorities</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-              >
-                <option value="">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="in progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
+                Clear All Filters
+              </button>
             </div>
           </div>
 
-          <div className="flex justify-end mt-4">
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition"
-            >
-              Clear All Filters
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-4 max-w-7xl mx-auto">
-          {filteredTasks.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-8 h-8 text-gray-400" />
+          {/* TASKS LIST */}
+          <div className="space-y-4">
+            {filteredTasks.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                  {searchTerm ||
+                  selectedPriority ||
+                  selectedEmployee ||
+                  selectedStatus ||
+                  dateRange.start ||
+                  dateRange.end
+                    ? 'No matching tasks found'
+                    : 'No tasks found'}
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  {searchTerm ||
+                  selectedPriority ||
+                  selectedEmployee ||
+                  selectedStatus ||
+                  dateRange.start ||
+                  dateRange.end
+                    ? 'Try adjusting your filters'
+                    : 'There are no tasks in the system yet.'}
+                </p>
+                {/* SHOW CREATE TASK BUTTON ONLY FOR TEAM LEADERS */}
+                {currentUser?.isTeamLeader && (
+                  <button
+                    onClick={() => navigateTo('create-task')}
+                    className="bg-[#087990] hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition"
+                  >
+                    + Create Task
+                  </button>
+                )}
               </div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                {searchTerm ||
-                selectedPriority ||
-                selectedEmployee ||
-                selectedStatus ||
-                dateRange.start ||
-                dateRange.end
-                  ? 'No matching tasks found'
-                  : 'No tasks found'}
-              </h3>
-              <p className="text-gray-500 mb-6">
-                {searchTerm ||
-                selectedPriority ||
-                selectedEmployee ||
-                selectedStatus ||
-                dateRange.start ||
-                dateRange.end
-                  ? 'Try adjusting your filters'
-                  : 'There are no tasks in the system yet.'}
-              </p>
-              {/* SHOW CREATE TASK BUTTON ONLY FOR TEAM LEADERS */}
-              {currentUser?.isTeamLeader && (
-                <button
-                  onClick={() => navigateTo('create-task')}
-                  className="bg-[#087990] hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition"
-                >
-                  + Create Task
-                </button>
-              )}
-            </div>
-          ) : (
-            filteredTasks.map((task) => {
-              const pdfAttachments = getPdfAttachments(task);
-              const projectName = getProjectName(task);
+            ) : (
+              filteredTasks.map((task) => {
+                const pdfAttachments = getPdfAttachments(task);
+                const projectName = getProjectName(task);
 
-              return (
-                <div
-                  key={task._id}
-                  className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-                >
-                  <div className="flex">
-                    <div className="w-2 bg-[#087990]" />
+                return (
+                  <div
+                    key={task._id}
+                    className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex">
+                      <div className="w-2 bg-[#087990]" />
 
-                    <div className="flex-1 p-5">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-800">
-                            {task.title || 'Untitled Task'}
-                            {pdfAttachments?.length > 0 && (
-                              <button
-                                onClick={(e) =>
-                                  handleViewPDF(task, pdfAttachments[0], e)
-                                }
-                                className="ml-3 px-2 py-1 text-sm text-red-600 border border-red-600 rounded hover:bg-red-50 transition"
-                              >
-                                <span className="flex items-center gap-1">
-                                  <File className="w-3 h-3" />
-                                  view task.pdf
-                                </span>
-                              </button>
-                            )}
-                          </h3>
-                          <div className="mt-1 text-gray-600 text-sm">
-                            {projectName && projectName !== 'No Project' && (
-                              <div className="flex items-center gap-1 mb-1">
-                                <Folder className="w-3 h-3 text-gray-500" />
-                                <span className="font-medium">Project:</span>
-                                <span className="ml-1 text-gray-700">
-                                  {projectName}
-                                </span>
-                              </div>
-                            )}
-                            {task.milestone && (
-                              <div>
-                                <span className="font-medium">Milestone:</span>
-                                <span className="ml-1">
-                                  {getMilestoneName(task.milestone)}
-                                </span>
-                              </div>
+                      <div className="flex-1 p-5">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-800">
+                              {task.title || 'Untitled Task'}
+                              {pdfAttachments?.length > 0 && (
+                                <button
+                                  onClick={(e) =>
+                                    handleViewPDF(task, pdfAttachments[0], e)
+                                  }
+                                  className="ml-3 px-2 py-1 text-sm text-red-600 border border-red-600 rounded hover:bg-red-50 transition"
+                                >
+                                  <span className="flex items-center gap-1">
+                                    <File className="w-3 h-3" />
+                                    view task.pdf
+                                  </span>
+                                </button>
+                              )}
+                            </h3>
+                            <div className="mt-1 text-gray-600 text-sm">
+                              {projectName && projectName !== 'No Project' && (
+                                <div className="flex items-center gap-1 mb-1">
+                                  <Folder className="w-3 h-3 text-gray-500" />
+                                  <span className="font-medium">Project:</span>
+                                  <span className="ml-1 text-gray-700">
+                                    {projectName}
+                                  </span>
+                                </div>
+                              )}
+                              {task.milestone && (
+                                <div>
+                                  <span className="font-medium">Milestone:</span>
+                                  <span className="ml-1">
+                                    {getMilestoneName(task.milestone)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => navigateTo('task-details', task._id)}
+                              className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 text-sm transition"
+                            >
+                              <Eye className="w-4 h-4" /> View Details
+                            </button>
+                            {/* SHOW EDIT AND DELETE BUTTONS ONLY FOR TEAM LEADERS */}
+                            {currentUser?.isTeamLeader && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    navigateTo('edit-task', task._id)
+                                  }
+                                  className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 text-sm transition"
+                                >
+                                  <Edit className="w-4 h-4" /> Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(task._id)}
+                                  className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm transition"
+                                >
+                                  <Trash2 className="w-4 h-4" /> Delete
+                                </button>
+                              </>
                             )}
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => navigateTo('task-details', task._id)}
-                            className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 text-sm transition"
-                          >
-                            <Eye className="w-4 h-4" /> View Details
-                          </button>
-                          {/* SHOW EDIT AND DELETE BUTTONS ONLY FOR TEAM LEADERS */}
-                          {currentUser?.isTeamLeader && (
-                            <>
-                              <button
-                                onClick={() =>
-                                  navigateTo('edit-task', task._id)
-                                }
-                                className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 text-sm transition"
-                              >
-                                <Edit className="w-4 h-4" /> Edit
-                              </button>
-                              <button
-                                onClick={() => handleDelete(task._id)}
-                                className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm transition"
-                              >
-                                <Trash2 className="w-4 h-4" /> Delete
-                              </button>
-                            </>
+
+                        <div className="flex flex-wrap gap-6 text-sm text-gray-700">
+                          <div>
+                            <strong>Deadline:</strong>{' '}
+                            <span
+                              className={
+                                isOverdue(task.deadline)
+                                  ? 'text-red-600 font-semibold'
+                                  : ''
+                              }
+                            >
+                              {formatDate(task.deadline)}
+                              {isOverdue(task.deadline) && ' (Overdue)'}
+                            </span>
+                          </div>
+                          <div>
+                            <strong>Priority:</strong>{' '}
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${getPriorityColor(
+                                task.priority
+                              )}`}
+                            >
+                              {task.priority
+                                ? task.priority.charAt(0).toUpperCase() +
+                                  task.priority.slice(1)
+                                : 'Not Set'}
+                            </span>
+                          </div>
+                          <div>
+                            <strong>Status:</strong>{' '}
+                            <span
+                              className={`font-semibold ${getStatusColor(
+                                task.status
+                              )}`}
+                            >
+                              {task.status
+                                ? task.status.charAt(0).toUpperCase() +
+                                  task.status.slice(1)
+                                : 'Not Set'}
+                            </span>
+                          </div>
+                          <div>
+                            <strong>Created:</strong>{' '}
+                            <span className="text-gray-800">
+                              {formatDateTime(task.createdAt)}
+                            </span>
+                          </div>
+                          {task.assignedTo?.length > 0 && (
+                            <div>
+                              <strong>Assignees:</strong>{' '}
+                              <span className="text-gray-800">
+                                {task.assignedTo.map(getEmployeeName).join(', ')}
+                              </span>
+                            </div>
                           )}
                         </div>
-                      </div>
 
-                      <div className="flex flex-wrap gap-6 text-sm text-gray-700">
-                        <div>
-                          <strong>Deadline:</strong>{' '}
-                          <span
-                            className={
-                              isOverdue(task.deadline)
-                                ? 'text-red-600 font-semibold'
-                                : ''
-                            }
-                          >
-                            {formatDate(task.deadline)}
-                            {isOverdue(task.deadline) && ' (Overdue)'}
-                          </span>
-                        </div>
-                        <div>
-                          <strong>Priority:</strong>{' '}
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${getPriorityColor(
-                              task.priority
-                            )}`}
-                          >
-                            {task.priority
-                              ? task.priority.charAt(0).toUpperCase() +
-                                task.priority.slice(1)
-                              : 'Not Set'}
-                          </span>
-                        </div>
-                        <div>
-                          <strong>Status:</strong>{' '}
-                          <span
-                            className={`font-semibold ${getStatusColor(
-                              task.status
-                            )}`}
-                          >
-                            {task.status
-                              ? task.status.charAt(0).toUpperCase() +
-                                task.status.slice(1)
-                              : 'Not Set'}
-                          </span>
-                        </div>
-                        <div>
-                          <strong>Created:</strong>{' '}
-                          <span className="text-gray-800">
-                            {formatDateTime(task.createdAt)}
-                          </span>
-                        </div>
-                        {task.assignedTo?.length > 0 && (
-                          <div>
-                            <strong>Assignees:</strong>{' '}
-                            <span className="text-gray-800">
-                              {task.assignedTo.map(getEmployeeName).join(', ')}
+                        {task.description && (
+                          <div className="mt-3 text-sm text-gray-600">
+                            {task.description.length > 150 ? (
+                              <>
+                                {task.description.substring(0, 150)}...
+                                <button
+                                  onClick={() =>
+                                    navigateTo('task-details', task._id)
+                                  }
+                                  className="ml-2 text-blue-600 hover:text-blue-800"
+                                >
+                                  Read more
+                                </button>
+                              </>
+                            ) : (
+                              task.description
+                            )}
+                          </div>
+                        )}
+
+                        {pdfAttachments?.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {pdfAttachments.map((pdf, index) => (
+                              <div
+                                key={pdf._id || index}
+                                className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded border"
+                              >
+                                <FileText className="w-4 h-4 text-red-500" />
+                                <span className="text-sm text-gray-700 truncate max-w-[150px]">
+                                  {pdf.originalName ||
+                                    `Document_${index + 1}.pdf`}
+                                </span>
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={(e) => handleViewPDF(task, pdf, e)}
+                                    className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
+                                    title="View PDF"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDownloadAttachment(
+                                        task._id,
+                                        pdf._id,
+                                        pdf.originalName || pdf.filename
+                                      )
+                                    }
+                                    className="p-1 text-green-600 hover:text-green-800 hover:bg-green-100 rounded"
+                                    title="Download PDF"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {task.attachments?.filter(
+                          (att) =>
+                            !att.fileType?.toLowerCase()?.includes('pdf') &&
+                            !att.originalName?.toLowerCase()?.endsWith('.pdf') &&
+                            !att.filename?.toLowerCase()?.endsWith('.pdf')
+                        ).length > 0 && (
+                          <div className="mt-3 text-sm text-gray-600">
+                            <span className="font-medium">
+                              Other Attachments:
                             </span>
+                            <div className="flex gap-2 mt-1">
+                              {task.attachments
+                                .filter(
+                                  (att) =>
+                                    !att.fileType
+                                      ?.toLowerCase()
+                                      ?.includes('pdf') &&
+                                    !att.originalName
+                                      ?.toLowerCase()
+                                      ?.endsWith('.pdf') &&
+                                    !att.filename?.toLowerCase()?.endsWith('.pdf')
+                                )
+                                .map((attachment, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={() =>
+                                      handleDownloadAttachment(
+                                        task._id,
+                                        attachment._id,
+                                        attachment.originalName ||
+                                          attachment.filename
+                                      )
+                                    }
+                                    className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium hover:bg-gray-200 transition"
+                                  >
+                                    <Download className="w-3 h-3" />{' '}
+                                    {attachment.originalName ||
+                                      attachment.filename}
+                                  </button>
+                                ))}
+                            </div>
                           </div>
                         )}
                       </div>
-
-                      {task.description && (
-                        <div className="mt-3 text-sm text-gray-600">
-                          {task.description.length > 150 ? (
-                            <>
-                              {task.description.substring(0, 150)}...
-                              <button
-                                onClick={() =>
-                                  navigateTo('task-details', task._id)
-                                }
-                                className="ml-2 text-blue-600 hover:text-blue-800"
-                              >
-                                Read more
-                              </button>
-                            </>
-                          ) : (
-                            task.description
-                          )}
-                        </div>
-                      )}
-
-                      {pdfAttachments?.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {pdfAttachments.map((pdf, index) => (
-                            <div
-                              key={pdf._id || index}
-                              className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded border"
-                            >
-                              <FileText className="w-4 h-4 text-red-500" />
-                              <span className="text-sm text-gray-700 truncate max-w-[150px]">
-                                {pdf.originalName ||
-                                  `Document_${index + 1}.pdf`}
-                              </span>
-                              <div className="flex gap-1">
-                                <button
-                                  onClick={(e) => handleViewPDF(task, pdf, e)}
-                                  className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
-                                  title="View PDF"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleDownloadAttachment(
-                                      task._id,
-                                      pdf._id,
-                                      pdf.originalName || pdf.filename
-                                    )
-                                  }
-                                  className="p-1 text-green-600 hover:text-green-800 hover:bg-green-100 rounded"
-                                  title="Download PDF"
-                                >
-                                  <Download className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {task.attachments?.filter(
-                        (att) =>
-                          !att.fileType?.toLowerCase()?.includes('pdf') &&
-                          !att.originalName?.toLowerCase()?.endsWith('.pdf') &&
-                          !att.filename?.toLowerCase()?.endsWith('.pdf')
-                      ).length > 0 && (
-                        <div className="mt-3 text-sm text-gray-600">
-                          <span className="font-medium">
-                            Other Attachments:
-                          </span>
-                          <div className="flex gap-2 mt-1">
-                            {task.attachments
-                              .filter(
-                                (att) =>
-                                  !att.fileType
-                                    ?.toLowerCase()
-                                    ?.includes('pdf') &&
-                                  !att.originalName
-                                    ?.toLowerCase()
-                                    ?.endsWith('.pdf') &&
-                                  !att.filename?.toLowerCase()?.endsWith('.pdf')
-                              )
-                              .map((attachment, index) => (
-                                <button
-                                  key={index}
-                                  onClick={() =>
-                                    handleDownloadAttachment(
-                                      task._id,
-                                      attachment._id,
-                                      attachment.originalName ||
-                                        attachment.filename
-                                    )
-                                  }
-                                  className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium hover:bg-gray-200 transition"
-                                >
-                                  <Download className="w-3 h-3" />{' '}
-                                  {attachment.originalName ||
-                                    attachment.filename}
-                                </button>
-                              ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
 

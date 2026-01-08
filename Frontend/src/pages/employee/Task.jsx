@@ -14,6 +14,7 @@ import {
   History,
 } from 'lucide-react';
 import { taskApi, getCurrentUserInfo, taskTransformers } from '../../services/taskApi';
+import DashboardHeader from "../../components/DashboardHeader";
 
 const Task = () => {
   const [tasks, setTasks] = useState([]);
@@ -198,6 +199,9 @@ const Task = () => {
   return (
     <div className="flex h-screen">
       <Sidebar role="employee" activeItem="task" />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* TOP BAR  */}
+        <DashboardHeader />
       <main className="flex-1 overflow-auto bg-gray-50">
         <div className="p-6">
           {/* HEADER SECTION WITH TASK HISTORY BUTTON */}
@@ -528,6 +532,7 @@ const Task = () => {
         </div>
       )}
     </div>
+   </div>
   );
 };
 
