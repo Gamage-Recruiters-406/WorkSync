@@ -5,6 +5,9 @@ import Project from "../models/ProjectModel.js";
 import ProjectTeam from "../models/ProjectTeam.js";
 import Milestone from "../models/milestoneModel.js";
 import Task from "../models/Task.js";
+import ProjectAttachment from "../models/ProjectAttachmentModel.js";
+import TaskAttachment from "../models/TaskAttachmentModel.js";
+import Notification from "../models/Notification.js";
 
 
 
@@ -257,11 +260,46 @@ export const deleteProjectController = async (req,res) => {
             });
         }
 
+        // Cascade delete: Delete all related data
+        
+        // 1. Find all milestones related to this project
+        const milestones = await Milestone.find({ projectID: id });
+        const milestoneIds = milestones.map(m => m._id);
+
+        if (milestoneIds.length > 0) {
+            // 2. Find all tasks related to these milestones
+            const tasks = await Task.find({ milestone: { $in: milestoneIds } });
+            const taskIds = tasks.map(t => t._id);
+
+            if (taskIds.length > 0) {
+                // 3. Delete all task attachments
+                await TaskAttachment.deleteMany({ taskId: { $in: taskIds } });
+                console.log(`Deleted task attachments for ${taskIds.length} tasks`);
+            }
+
+            // 4. Delete all tasks
+            await Task.deleteMany({ milestone: { $in: milestoneIds } });
+            console.log(`Deleted ${taskIds.length} tasks`);
+
+            // 5. Delete all milestones
+            await Milestone.deleteMany({ projectID: id });
+            console.log(`Deleted ${milestoneIds.length} milestones`);
+        }
+
+        // 6. Delete all project team members
+        await ProjectTeam.deleteMany({ projectId: id });
+        console.log(`Deleted project team members for project ${id}`);
+
+        // 7. Delete all project attachments
+        await ProjectAttachment.deleteMany({ projectId: id });
+        console.log(`Deleted project attachments for project ${id}`);
+
+        // 8. Delete the project itself
         await Project.findByIdAndDelete(id);
 
         return res.status(200).json({
             success: true,
-            message: "Project deleted successfully",
+            message: "Project and all related data deleted successfully",
         });
     } catch (error) {
         console.error("Error deleting project:", error);
