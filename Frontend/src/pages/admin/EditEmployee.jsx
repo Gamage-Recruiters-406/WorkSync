@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import DashboardSidebar from '../../components/sidebar/DashboardSidebar';
 import DashboardHeader from '../../components/DashboardHeader';
 import EditEmployeeImg from '../../assets/Editemployee.png';
+import axios from 'axios';
 
 const EditEmployee = () => {
   const navigate = useNavigate();
@@ -19,51 +20,54 @@ const EditEmployee = () => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
-  // Mock data for dropdowns
+  // Roles and Departments
   const roles = [
-    { value: 'Manager', label: 'Manager' },
-    { value: 'Employee', label: 'Employee' },
-    { value: 'Team Lead', label: 'Team Lead' },
-    { value: 'Intern', label: 'Intern' },
+    { value: '1', label: 'Employee' },
+    { value: '2', label: 'Manager' },
+    { value: '3', label: 'Admin' },
   ];
+  const [departments, setDepartments] = useState([]);
 
-  const departments = [
-    { value: 'Finance', label: 'Finance' },
-    { value: 'HR', label: 'HR' },
-    { value: 'Sales', label: 'Sales' },
-    { value: 'IT', label: 'IT' },
-    { value: 'Operations', label: 'Operations' },
-    { value: 'Marketing', label: 'Marketing' },
-  ];
-
-  // Fetch employee data
+  // Fetch employee and departments
   useEffect(() => {
-    const fetchEmployee = async () => {
+    const fetchData = async () => {
       try {
-        // Replace with actual API endpoint
-        const response = await fetch(`http://localhost:5000/api/v1/users/${id}`);
-        const data = await response.json();
+        setFetching(true);
+        // Employee details
+        const empRes = await axios.get(`http://localhost:8090/api/v1/employee/getSingleEmployeeByID/${id}`, { withCredentials: true });
+        if (empRes.data?.success && empRes.data?.user) {
+          const user = empRes.data.user;
+          const departmentID = user.departmentID ? String(user.departmentID) : '';
 
-        if (data.success) {
           setFormData({
-            name: data.data.name || '',
-            employeeId: data.data.employeeId || '',
-            role: data.data.role === 2 ? 'Manager' : 'Employee',
-            department: data.data.departmentID || '',
+            name: `${user.FirstName || ''} ${user.LastName || ''}`.trim(),
+            employeeId: user.EmployeeID || '',
+            role: String(user.role ?? ''),
+            department: departmentID,
           });
         } else {
-          setErrors({ submit: 'Failed to load employee data' });
+          setErrors({ submit: empRes.data?.message || 'Failed to load employee data' });
         }
+
+        // Departments list
+        const deptRes = await axios.get('http://localhost:8090/api/v1/department/getAllDepartments', { withCredentials: true });
+        const list =
+          deptRes.data?.data ||
+          deptRes.data?.Departments ||
+          deptRes.data?.departments ||
+          deptRes.data?.department ||
+          [];
+        setDepartments(list);
       } catch (error) {
-        console.error('Error fetching employee:', error);
-        setErrors({ submit: 'An error occurred while loading employee data' });
+        console.error('Error fetching employee/departments:', error);
+        setErrors({ submit: 'An error occurred while loading data' });
       } finally {
         setFetching(false);
       }
     };
 
     if (id) {
-      fetchEmployee();
+      fetchData();
     }
   }, [id]);
 
@@ -113,32 +117,27 @@ const EditEmployee = () => {
 
     try {
       const payload = {
-        name: formData.name,
-        employeeId: formData.employeeId,
-        role: formData.role === 'Manager' ? 2 : 1,
-        departmentID: formData.department,
+        EmployeeID: formData.employeeId,
+        role: Number(formData.role),
+        departmentID: formData.department || null,
       };
 
-      const response = await fetch(`http://localhost:5000/api/v1/users/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      const res = await axios.patch(
+        `http://localhost:8090/api/v1/employee/updateEmployee/${id}`,
+        payload,
+        { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
+      );
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Success - redirect back to employee list
+      if (res.data?.success) {
         alert('Employee updated successfully!');
         navigate('/admin/users');
       } else {
-        setErrors({ submit: data.message || 'Failed to update employee' });
+        setErrors({ submit: res.data?.message || 'Failed to update employee' });
       }
     } catch (error) {
-      console.error('Error:', error);
-      setErrors({ submit: 'An error occurred. Please try again.' });
+      console.error('Error updating employee:', error);
+      const msg = error?.response?.data?.message || 'An error occurred. Please try again.';
+      setErrors({ submit: msg });
     } finally {
       setLoading(false);
     }
@@ -205,17 +204,18 @@ const EditEmployee = () => {
                   {/* Name Field - Read Only */}
                   <div>
                     <label
-                      className="block text-sm font-semibold mb-3"
+                      className="block text-sm font-semibold mb-2"
                       style={{ color: '#2D3748' }}
                     >
                       Name
                     </label>
                     <div
-                      className="w-full px-4 py-4 rounded-lg border font-medium text-base"
+                      className="w-full px-4 py-4 rounded-lg border font-semibold text-lg"
                       style={{
                         borderColor: '#D9E2EC',
                         backgroundColor: '#F8FAFC',
                         color: '#0E7C86',
+                        boxShadow: '0 6px 18px rgba(14, 124, 134, 0.08)',
                       }}
                     >
                       {formData.name || 'N/A'}
@@ -363,8 +363,8 @@ const EditEmployee = () => {
                     >
                       <option value="">Select Department</option>
                       {departments.map((dept) => (
-                        <option key={dept.value} value={dept.value}>
-                          {dept.label}
+                        <option key={dept._id || dept.id} value={dept._id || dept.id}>
+                          {dept.DepartmentName || dept.name || dept.departmentName || 'Department'}
                         </option>
                       ))}
                     </select>

@@ -29,7 +29,7 @@ const UploadModal = ({ onClose, projectId, onUploadSuccess }) => {
       setUploading(true);
       // handle files here
       
-console.log("Files to upload:", selectedFiles);
+// console.log("Files to upload:", selectedFiles);
 
       const formData = new FormData();
 

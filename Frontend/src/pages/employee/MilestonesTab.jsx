@@ -39,7 +39,7 @@ const MilestonesTab = ({projectId, projectData}) => {
         status: m.Status,
       }));
       setMilestones(fetched);
-      console.log("FetchedMilestones:",res);
+      // console.log("FetchedMilestones:",res);
     } catch (error) {
       console.error("Failed to fetch milestones", error);
       setMilestones([]);

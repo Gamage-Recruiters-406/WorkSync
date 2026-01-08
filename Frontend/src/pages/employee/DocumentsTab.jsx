@@ -27,7 +27,7 @@ const DocumentsTab = ({projectId, projectData}) => {
         {withCredentials:true}
       );
       setDocuments(res.data.data ||[]);
-      console.log("Fetched attachments:", res.data.data);
+      // console.log("Fetched attachments:", res.data.data);
     } catch (error) {
       setToast({ message: "Failed to fetch documents", type: "error" });
       console.error("Failed to fetch documents", error);

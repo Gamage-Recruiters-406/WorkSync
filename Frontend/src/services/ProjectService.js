@@ -104,3 +104,9 @@ export const getAllEmployee = async () => {
     method: 'GET',
   });
 };
+
+export const getAllMilestones = async (projectId) => {
+  return apiRequest(`/api/v1/millestone/getAllMilestones/${projectId}`, {
+    method: "GET",
+  });
+};

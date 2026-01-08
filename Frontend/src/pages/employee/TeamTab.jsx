@@ -21,10 +21,10 @@ const TeamTab = ({projectId, projectData}) => {
 
   const roleStyles = {
     "Team Leader": "bg-blue-100 text-blue-700",
+    "Team Lead": "bg-blue-100 text-blue-700",
     "Member": "bg-gray-100 text-gray-700",
   };
 
-//   const isTeamLeader = currentUser.role === "team-leader";
 
   // Fetch current team members
   const fetchMembers = async ()=>{
@@ -33,7 +33,7 @@ const TeamTab = ({projectId, projectData}) => {
         withCredentials: true,
       });
       setTeam(res.data.data || []);
-      console.log("Members: ", res);
+      // console.log("Members: ", res);
     } catch (error) {
       console.error("Failed to fetch team members:", error);
     }
@@ -43,85 +43,6 @@ const TeamTab = ({projectId, projectData}) => {
     fetchMembers();
   },[projectId]);
 
-   // Check if user is a team leader
-  //  const checkTeamLeaderStatus = async (userId, token, projectId) => {
-  //   try {
-  //     console.log("Response:", projectId);
-  //     setCheckingTeamLeader(true);
-  //     const response = await axios.get(`${URL_API}/api/v1/projects/getProject/${projectId}`,{
-  //       withCredentials: true
-  //     });
-  //     console.log("Response:", response);
-  //     if (response.data.success) {
-  //       console.log("Res: ")
-        
-  //       const data = response.data.data.teamLeader._id;
-  //       console.log(data);
-  //       if (data) {
-  //         console.log(userId);
-  //         // Check if any project has this user as team leader
-  //         return data.toString() === userId.toString();
-  //         // return isLeadingProjects;
-  //       }
-  //       return false;
-  //     }
-      
-  //   } catch (error) {
-  //     console.warn('Could not fetch project data:', error);
-  //     return false;
-  //   } finally {
-  //     setCheckingTeamLeader(false);
-  //   }
-  // };
-
-  // useEffect(()=>{
-  //   fetchCurrentUser();
-  // }, [projectId])
-
-  // const getToken = () =>
-  //   document.cookie
-  //     .split(';')
-  //     .find((c) => c.trim().startsWith('access_token='))
-  //     ?.split('=')[1] || null;
-
-
-
-  // const fetchCurrentUser = async () => {
-  //   try {
-  //     console.log(projectId);
-  //     const token = getToken();
-  //     if (!token) return;
-  //     console.log(token);
-  //     const payload = JSON.parse(atob(token.split('.')[1]));
-  //     const userId = payload.userid;
-
-  //     // Create basic user object
-  //     const user = {
-  //       _id: userId, 
-  //       id: userId, 
-  //       userId: userId,
-  //       name: payload.name || `User ${userId.substring(0, 6)}`,
-  //       email: payload.email || 'user@example.com',
-  //       role: payload.role || 1,
-  //       isAdmin: payload.role === 3, 
-  //       isManager: payload.role === 2, 
-  //       isEmployee: payload.role === 1,
-  //       isTeamLeader: false,
-  //     };
-  //     console.log(projectId);
-  //     // Check team leader status
-  //     if (userId) {
-  //       user.isTeamLeader = await checkTeamLeaderStatus(userId, token, projectId);
-  //     }
-
-  //     setCurrentUser(user);
-  //     localStorage.setItem('currentUser', JSON.stringify(user));
-  //   } catch (error) {
-  //     const stored = localStorage.getItem('currentUser');
-  //     if (stored) setCurrentUser(JSON.parse(stored));
-  //     console.error('Error fetching current user:', error);
-  //   }
-  // };
 
 
   // Fetech all users for AddMemberModel
