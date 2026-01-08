@@ -367,6 +367,123 @@ export const getLeaveBalance = async (req, res) => {
   }
 };
 
+// Get leave status counts for a user (employee + admin/manager)
+export const getLeaveStatusCounts = async (req, res) => {
+  try {
+    validateUserIdFromToken(req.user?.userid);
+
+    let targetUserId;
+    let requestedBy = 'self'; // Default to self
+
+    // Route parameter: /status/:employeeId
+    if (req.params.employeeId) {
+      targetUserId = req.params.employeeId;
+      requestedBy = 'admin';
+      
+      // This route is protected by isManagerOrAdmin middleware,
+      // but double-check for safety
+      if (!isAdminOrManager(req.user.role)) {
+        throw {
+          status: 403,
+          message: "Only Admin/Manager can view other employee's leave statistics."
+        };
+      }
+    } 
+    // No parameter: /status (self-view)
+    else {
+      targetUserId = req.user.userid;
+    }
+
+    // Validate user exists
+    await checkUserExists(targetUserId);
+
+    // Decide which statuses to include
+    let statusFilter = {};
+    let resultTemplate;
+
+    if (targetUserId === req.user.userid) {
+      // Employee viewing self → all statuses
+      resultTemplate = { 
+        pending: 0, 
+        approved: 0, 
+        rejected: 0, 
+        cancelled: 0, 
+        total: 0 
+      };
+    } else if (isAdminOrManager(req.user.role)) {
+      // Admin/Manager viewing someone else → only pending + rejected
+      statusFilter.sts = { $in: ["pending", "rejected"] };
+      resultTemplate = { 
+        pending: 0, 
+        rejected: 0, 
+        total: 0 
+      };
+    } else {
+      // Should not happen due to middleware, but safety check
+      throw { 
+        status: 403, 
+        message: "Unauthorized to view leave statistics." 
+      };
+    }
+
+    // Aggregate leave counts
+    const counts = await LeaveRequest.aggregate([
+      {
+        $match: {
+          requestedBy: new mongoose.Types.ObjectId(targetUserId),
+          ...statusFilter
+        }
+      },
+      {
+        $group: {
+          _id: "$sts",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Fill result
+    const result = { ...resultTemplate };
+    counts.forEach(c => {
+      if (result.hasOwnProperty(c._id)) {
+        result[c._id] = c.count;
+        result.total += c.count;
+      }
+    });
+
+    // Calculate percentages
+    const percentages = {};
+    if (result.total > 0) {
+      Object.keys(result).forEach(key => {
+        if (key !== 'total' && typeof result[key] === 'number') {
+          percentages[key] = ((result[key] / result.total) * 100).toFixed(1) + '%';
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        counts: result,
+        percentages: result.total > 0 ? percentages : null
+      },
+      meta: {
+        employeeId: targetUserId,
+        requestedBy,
+        currentUser: req.user.userid,
+        role: req.user.role,
+        endpoint: req.params.employeeId ? 'admin-view' : 'self-view'
+      },
+      message: requestedBy === 'self' 
+        ? "Your leave status counts retrieved successfully." 
+        : `Leave status counts for employee ${targetUserId} retrieved successfully.`
+    });
+
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+};
+
 // Delete Leave Request - Requester only
 export const deleteLeaveRequest = async (req, res) => {
   try {
