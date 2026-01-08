@@ -1,58 +1,58 @@
 // src/App.js
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Admin imports
 
-import AdminAttendance from './pages/admin/AdminAttendance';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AssignTask from './pages/admin/AssignTask';
-import Users from './pages/admin/Users';
-import ManageLeaves from './pages/admin/ManageLeaves';
-import AdminReports from './pages/admin/AdminReports';
-import AdminAnnouncements from './pages/admin/AdminAnnouncements';
+import AdminAttendance from "./pages/admin/AdminAttendance";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AssignTask from "./pages/admin/AssignTask";
+import Users from "./pages/admin/Users";
+import ManageLeaves from "./pages/admin/ManageLeaves";
+import AdminReports from "./pages/admin/AdminReports";
+import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 
-import ProjectsDashboard from './pages/admin/ProjectsDashboard';
-import Departments from './pages/admin/Department/Departments';
-import Projects from './pages/admin/Projects';
-import AdminReport from './pages/reportAnalytics/AdminReport';
-import EmployeeList from './pages/admin/EmployeeList';
+import ProjectsDashboard from "./pages/admin/ProjectsDashboard";
+import Departments from "./pages/admin/Department/Departments";
+import Projects from "./pages/admin/Projects";
+import AdminReport from "./pages/reportAnalytics/AdminReport";
+import EmployeeList from "./pages/admin/EmployeeList";
 
 // Employee imports
-import UserAttendance from './pages/employee/UserAttendance';
-import UserDashboard from './pages/employee/UserDashboard';
-import ProjectTeam from './pages/employee/ProjectTeam';
-import Task from './pages/employee/Task';
-import UserReports from './pages/employee/UserReports';
-import LeaveRequest from './pages/employee/LeaveRequest';
-import UserAnnouncements from './pages/employee/UserAnnouncements';
-import CreateTaskForm from './pages/TeamLeader/CreateTaskForm';
-import TaskHistory from './pages/TeamLeader/TaskHistory';
-import Login from './pages/Login';
-import TaskDetail from './pages/employee/TaskDetail';
+import UserAttendance from "./pages/employee/UserAttendance";
+import UserDashboard from "./pages/employee/UserDashboard";
+import ProjectTeam from "./pages/employee/ProjectTeam";
+import Task from "./pages/employee/Task";
+import UserReports from "./pages/employee/UserReports";
+import LeaveRequest from "./pages/employee/LeaveRequest";
+import UserAnnouncements from "./pages/employee/UserAnnouncements";
+import CreateTaskForm from "./pages/TeamLeader/CreateTaskForm";
+import TaskHistory from "./pages/TeamLeader/TaskHistory";
+import Login from "./pages/Login";
+import TaskDetail from "./pages/employee/TaskDetail";
 
-import { Navigate } from 'react-router-dom';
+import { Navigate } from "react-router-dom";
 //import AdminReport from "./pages/reportAnalytics/AdminReport";
-import { useState } from 'react';
+import { useState } from "react";
 //import EmployeeList from './pages/admin/EmployeeList';
-import AddEmployee from './pages/admin/AddEmployee';
-import EditEmployee from './pages/admin/EditEmployee';
-import ApproveUser from './pages/admin/ApproveUser';
-import Sidebar from './components/sidebar/Sidebar';
-import DashboardUI from './components/DashboardUI';
-import ProjectDetails from './pages/employee/ProjectDetails';
-import DepartmentDetails from './pages/admin/Department/ViewDepartment';
-import SystemSettings from './pages/systemSetting/SystemSettings';
-import CompanyInfoSettings from './pages/systemSetting/CompanyInfoSettings';
-import ProfileSettings from './pages/systemSetting/ProfileSettings';
-import RolesAttendanceSettings from './pages/systemSetting/RolesAttendanceSettings';
-import WorkingHoursSettings from './pages/systemSetting/WorkingHoursSettings';
+import AddEmployee from "./pages/admin/AddEmployee";
+import EditEmployee from "./pages/admin/EditEmployee";
+import ApproveUser from "./pages/admin/ApproveUser";
+import Sidebar from "./components/sidebar/Sidebar";
+import DashboardUI from "./components/DashboardUI";
+import ProjectDetails from "./pages/employee/ProjectDetails";
+import DepartmentDetails from "./pages/admin/Department/ViewDepartment";
+import SystemSettings from "./pages/systemSetting/SystemSettings";
+import CompanyInfoSettings from "./pages/systemSetting/CompanyInfoSettings";
+import ProfileSettings from "./pages/systemSetting/ProfileSettings";
+import RolesAttendanceSettings from "./pages/systemSetting/RolesAttendanceSettings";
+import WorkingHoursSettings from "./pages/systemSetting/WorkingHoursSettings";
 
-import ProjectDetailsAdmin from './pages/admin/ProjectDetaisAdmin';
-import ManagerDashboard from './pages/manager/managerDashboard';
-import SignUp from './pages/Signup';
-import UserProfile from './pages/employee/UserProfile';
-import UserProfileEdit from './pages/employee/UserProfileEdit';
+import ProjectDetailsAdmin from "./pages/admin/ProjectDetaisAdmin";
+import ManagerDashboard from "./pages/manager/managerDashboard";
+import SignUp from "./pages/Signup";
+import UserProfile from "./pages/employee/UserProfile";
+import UserProfileEdit from "./pages/employee/UserProfileEdit";
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -86,6 +86,7 @@ function App() {
 
         {/* System Settings (Tabs)*/}
         <Route path="/admin/system-settings" element={<SystemSettings />}>
+          <Route index element={<Navigate to="profile" replace />} />
           <Route path="company-info" element={<CompanyInfoSettings />} />
           <Route path="profile" element={<ProfileSettings />} />
           <Route
