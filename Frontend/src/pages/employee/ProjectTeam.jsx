@@ -98,7 +98,7 @@ const ProjectTeam = () => {
                   role: p.assignedRole,
                   description: p.projectId.description,
                   deadline: p.projectId.endDate || "-",
-                  status: p.projectId.status || "Active",
+                  status: p.projectId.status || "active",
                   progress: summary.progress,
                   dueSoon: summary.dueSoon,
                 };
@@ -110,7 +110,7 @@ const ProjectTeam = () => {
                   name: p.projectId.name,
                   role: p.assignedRole,
                   description: p.projectId.description,
-                  status: p.projectId.status || "Active",
+                  status: p.projectId.status || "active",
                   progress: 0,
                   dueSoon: 0,
                 };
@@ -118,7 +118,7 @@ const ProjectTeam = () => {
             })
           );
       
-        console.log("Full response:", res.data);
+        // console.log("Full response:", res.data);
         setProjects(enrichedProjects);
         // console.log("Mapped projects:", enrichedProjects);
 

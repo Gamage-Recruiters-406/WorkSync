@@ -48,7 +48,7 @@ const UploadModal = ({ onClose, projectId, onUploadSuccess }) => {
         setToast({ message: "File Uploaded successfully", type: "success" });
         setTimeout(() => {
           onClose();
-        }, 3000);
+        }, 2000);
         
       } catch (error) {
         console.error("Upload failed", error);
