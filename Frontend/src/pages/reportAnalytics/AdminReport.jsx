@@ -61,7 +61,9 @@ export default function AdminReport() {
 
         setKpis((prev) => ({
           ...prev,
-          totalEmployees: totEmp.data.Employees.length,
+          totalEmployees: totEmp.data.Employees.filter(
+            (user) => user.role === 1
+          ).length,
 
           presentToday: todayAttendance.filter((a) => a.status === "Present")
             .length,
