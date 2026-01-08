@@ -1,37 +1,63 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/sidebar/Sidebar";
 import { Search, Bell, Edit2 } from "lucide-react";
-// import axios from "axios";
+import axios from "axios";
 
 const UserProfileEdit = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   
-  // Initialize with current user data
-  const [originalProfile] = useState({
-    userId: "E001",
-    name: "K Jin",
-    role: "Employee",
-    departmentId: "IT01",
-    email: "Kjin@gmail.com",
-    password: "*******",
-    sts: "nnnnn",
-    avatar: "https://icon-library.com/images/male-avatar-icon/male-avatar-icon-8.jpg"
-  });
-
-  const [profile, setProfile] = useState({
-    userId: "E001",
-    name: "K Jin",
-    role: "Employee",
-    departmentId: "IT01",
-    email: "Kjin@gmail.com",
-    password: "*******",
-    sts: "nnnnn",
-    avatar: "https://icon-library.com/images/male-avatar-icon/male-avatar-icon-8.jpg"
-  });
-
+  const [originalProfile, setOriginalProfile] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [editingField, setEditingField] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:8090/api/v1/employee/getSingleEmployee', { withCredentials: true });
+        
+        if (response.data?.success && response.data?.user) {
+          const user = response.data.user;
+          const roleMap = { 1: 'Employee', 2: 'Manager', 3: 'Admin' };
+          
+          const profileData = {
+            _id: user._id,
+            userId: user.EmployeeID || user._id,
+            firstName: user.FirstName || '',
+            lastName: user.LastName || '',
+            name: `${user.FirstName || ''} ${user.LastName || ''}`.trim(),
+            role: roleMap[user.role] || 'Employee',
+            roleValue: user.role,
+            departmentId: user.departmentID?._id || user.departmentID || '',
+            departmentName: user.departmentID?.name || user.departmentID?.DepartmentName || 'N/A',
+            email: user.email || '',
+            contactNumber: user.ContactNumber || '',
+            nic: user.NIC || '',
+            gender: user.Gender || '',
+            status: user.status || 'Active',
+            avatar: "https://icon-library.com/images/male-avatar-icon/male-avatar-icon-8.jpg"
+          };
+          
+          setProfile(profileData);
+          setOriginalProfile(profileData);
+        } else {
+          setError('Failed to load profile');
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        setError(error?.response?.data?.message || 'Failed to fetch profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -58,19 +84,37 @@ const UserProfileEdit = () => {
   };
 
   const handleSaveChanges = async () => {
+    if (!profile?._id) {
+      alert('Cannot update profile. User ID not found.');
+      return;
+    }
+
     try {
-      // Uncomment to send data to API
-      /*
-      const userId = localStorage.getItem("userId");
-      await axios.put(`http://localhost:8090/api/v1/userAuth/updateUser/${userId}`, profile);
-      alert("Profile updated successfully!");
-      */
+      setSaving(true);
       
-      alert("Profile updated successfully!");
-      navigate("/user/profile");
+      // Prepare update payload - only send fields that can be updated
+      const payload = {
+        ContactNumber: profile.contactNumber || originalProfile.contactNumber,
+        email: profile.email
+      };
+
+      const response = await axios.patch(
+        `http://localhost:8090/api/v1/employee/updateEmployee/${profile._id}`,
+        payload,
+        { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
+      );
+      
+      if (response.data?.success) {
+        alert("Profile updated successfully!");
+        navigate("/user/profile");
+      } else {
+        alert(response.data?.message || 'Failed to update profile');
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("Failed to update profile. Please try again.");
+      alert(error?.response?.data?.message || "Failed to update profile. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -112,11 +156,11 @@ const UserProfileEdit = () => {
               
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-800">{profile.name}</p>
-                  <p className="text-xs text-gray-500">{profile.role}</p>
+                  <p className="text-sm font-semibold text-gray-800">{profile?.name || 'User'}</p>
+                  <p className="text-xs text-gray-500">{profile?.role || 'Employee'}</p>
                 </div>
                 <img
-                  src={profile.avatar}
+                  src={profile?.avatar || "https://icon-library.com/images/male-avatar-icon/male-avatar-icon-8.jpg"}
                   alt="User Avatar"
                   className="w-10 h-10 rounded-full border-2 border-[#087990] object-cover"
                 />
@@ -128,7 +172,21 @@ const UserProfileEdit = () => {
         {/* Profile Edit Content */}
         <main className="flex-1 overflow-y-auto p-8">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">ProfileEdit</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-8">Profile Edit</h1>
+            
+            {loading && (
+              <div className="flex justify-center items-center h-64">
+                <p className="text-gray-600">Loading profile...</p>
+              </div>
+            )}
+            
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-red-700">{error}</p>
+              </div>
+            )}
+            
+            {!loading && !error && profile && (
             
             <div className="flex gap-8">
               {/* Left Profile Card */}
@@ -169,55 +227,59 @@ const UserProfileEdit = () => {
               {/* Right Edit Form Card */}
               <div className="flex-1 rounded-3xl bg-white p-8 shadow-lg">
                 <div className="space-y-5">
-                  {/* User ID */}
+                  {/* Employee ID - Read Only */}
                   <div className="flex flex-col">
                     <label className="text-sm text-gray-500 mb-2 font-medium">
-                      User ID
+                      Employee ID
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={profile.userId}
-                        onChange={(e) => handleInputChange('userId', e.target.value)}
-                        disabled={editingField !== 'userId'}
-                        className={`w-full rounded-xl border border-gray-300 px-5 py-3 pr-12 text-gray-700 font-medium text-lg focus:outline-none focus:ring-2 focus:ring-[#087990] ${
-                          editingField !== 'userId' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
-                        }`}
-                      />
-                      <button
-                        onClick={() => handleEditClick('userId')}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#087990] transition-colors"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      value={profile.userId}
+                      disabled
+                      className="w-full rounded-xl border border-gray-300 px-5 py-3 bg-gray-50 text-gray-700 font-medium text-lg focus:outline-none cursor-not-allowed"
+                    />
                   </div>
 
-                  {/* Department ID */}
+                  {/* Name - Read Only */}
                   <div className="flex flex-col">
                     <label className="text-sm text-gray-500 mb-2 font-medium">
-                      Department ID
+                      Full Name
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={profile.departmentId}
-                        onChange={(e) => handleInputChange('departmentId', e.target.value)}
-                        disabled={editingField !== 'departmentId'}
-                        className={`w-full rounded-xl border border-gray-300 px-5 py-3 pr-12 text-gray-700 font-medium text-lg focus:outline-none focus:ring-2 focus:ring-[#087990] ${
-                          editingField !== 'departmentId' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
-                        }`}
-                      />
-                      <button
-                        onClick={() => handleEditClick('departmentId')}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#087990] transition-colors"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      value={profile.name}
+                      disabled
+                      className="w-full rounded-xl border border-gray-300 px-5 py-3 bg-gray-50 text-gray-700 font-medium text-lg focus:outline-none cursor-not-allowed"
+                    />
                   </div>
 
-                  {/* Email */}
+                  {/* Role - Read Only */}
+                  <div className="flex flex-col">
+                    <label className="text-sm text-gray-500 mb-2 font-medium">
+                      Role
+                    </label>
+                    <input
+                      type="text"
+                      value={profile.role}
+                      disabled
+                      className="w-full rounded-xl border border-gray-300 px-5 py-3 bg-gray-50 text-gray-700 font-medium text-lg focus:outline-none cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* Department - Read Only */}
+                  <div className="flex flex-col">
+                    <label className="text-sm text-gray-500 mb-2 font-medium">
+                      Department
+                    </label>
+                    <input
+                      type="text"
+                      value={profile.departmentName}
+                      disabled
+                      className="w-full rounded-xl border border-gray-300 px-5 py-3 bg-gray-50 text-gray-700 font-medium text-lg focus:outline-none cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* Email - Editable */}
                   <div className="flex flex-col">
                     <label className="text-sm text-gray-500 mb-2 font-medium">
                       Email
@@ -233,6 +295,7 @@ const UserProfileEdit = () => {
                         }`}
                       />
                       <button
+                        type="button"
                         onClick={() => handleEditClick('email')}
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#087990] transition-colors"
                       >
@@ -241,47 +304,24 @@ const UserProfileEdit = () => {
                     </div>
                   </div>
 
-                  {/* Password */}
+                  {/* Contact Number - Editable */}
                   <div className="flex flex-col">
                     <label className="text-sm text-gray-500 mb-2 font-medium">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={editingField === 'password' ? 'text' : 'password'}
-                        value={profile.password}
-                        onChange={(e) => handleInputChange('password', e.target.value)}
-                        disabled={editingField !== 'password'}
-                        className={`w-full rounded-xl border border-gray-300 px-5 py-3 pr-12 text-gray-700 font-medium text-lg focus:outline-none focus:ring-2 focus:ring-[#087990] ${
-                          editingField !== 'password' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
-                        }`}
-                      />
-                      <button
-                        onClick={() => handleEditClick('password')}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#087990] transition-colors"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* STS */}
-                  <div className="flex flex-col">
-                    <label className="text-sm text-gray-500 mb-2 font-medium">
-                      STS
+                      Contact Number
                     </label>
                     <div className="relative">
                       <input
                         type="text"
-                        value={profile.sts}
-                        onChange={(e) => handleInputChange('sts', e.target.value)}
-                        disabled={editingField !== 'sts'}
+                        value={profile.contactNumber}
+                        onChange={(e) => handleInputChange('contactNumber', e.target.value)}
+                        disabled={editingField !== 'contactNumber'}
                         className={`w-full rounded-xl border border-gray-300 px-5 py-3 pr-12 text-gray-700 font-medium text-lg focus:outline-none focus:ring-2 focus:ring-[#087990] ${
-                          editingField !== 'sts' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
+                          editingField !== 'contactNumber' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
                         }`}
                       />
                       <button
-                        onClick={() => handleEditClick('sts')}
+                        type="button"
+                        onClick={() => handleEditClick('contactNumber')}
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#087990] transition-colors"
                       >
                         <Edit2 className="w-5 h-5" />
@@ -293,9 +333,10 @@ const UserProfileEdit = () => {
                   <div className="flex gap-4 pt-4">
                     <button
                       onClick={handleSaveChanges}
-                      className="flex-1 rounded-xl bg-[#0a7d91] px-6 py-3 font-semibold text-white hover:bg-[#096b7d] transition-colors shadow-md hover:shadow-lg"
+                      disabled={saving}
+                      className="flex-1 rounded-xl bg-[#0a7d91] px-6 py-3 font-semibold text-white hover:bg-[#096b7d] transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Save All Changes
+                      {saving ? 'Saving...' : 'Save All Changes'}
                     </button>
                     <button
                       onClick={handleReset}
@@ -307,6 +348,7 @@ const UserProfileEdit = () => {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </main>
       </div>
