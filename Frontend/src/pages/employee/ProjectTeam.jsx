@@ -4,6 +4,7 @@ import React from "react";
 import Sidebar from "../../components/sidebar/Sidebar";
 import jwtDecode from "jwt-decode";
 import ProjectCard from "../../components/reportAnalytics/charts/ProjectCard";
+import DashboardHeader from "../../components/DashboardHeader";
 
 const calculateProjectSummary = (milestones) => {
   const today = new Date();
@@ -141,6 +142,7 @@ const ProjectTeam = () => {
     <div className="flex h-screen">
       <Sidebar />
       <main className="flex-1 p-6 bg-gray-100">
+        <DashboardHeader/>
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Project Team</h1>
         <div className="bg-white rounded-lg shadow p-6">
           <p>Welcome to the project team page!</p>
