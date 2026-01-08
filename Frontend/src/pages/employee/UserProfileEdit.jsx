@@ -279,29 +279,17 @@ const UserProfileEdit = () => {
                     />
                   </div>
 
-                  {/* Email - Editable */}
+                  {/* Email - Always Editable */}
                   <div className="flex flex-col">
                     <label className="text-sm text-gray-500 mb-2 font-medium">
                       Email
                     </label>
-                    <div className="relative">
-                      <input
-                        type="email"
-                        value={profile.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        disabled={editingField !== 'email'}
-                        className={`w-full rounded-xl border border-gray-300 px-5 py-3 pr-12 text-gray-700 font-medium text-lg focus:outline-none focus:ring-2 focus:ring-[#087990] ${
-                          editingField !== 'email' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
-                        }`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleEditClick('email')}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#087990] transition-colors"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                    </div>
+                    <input
+                      type="email"
+                      value={profile.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="w-full rounded-xl border border-gray-300 px-5 py-3 text-gray-700 font-medium text-lg focus:outline-none focus:ring-2 focus:ring-[#087990] bg-white"
+                    />
                   </div>
 
                   {/* Contact Number - Editable */}
