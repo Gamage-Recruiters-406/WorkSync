@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/sidebar/Sidebar';
 import EmployeeTable from '../../components/EmployeeTable';
 import { getAllEmployees } from '../../services/employeeService';
+import { CloudCog } from 'lucide-react';
 
 const EmployeeList = () => {
   const [employees, setEmployees] = useState([]);
@@ -18,14 +19,14 @@ const EmployeeList = () => {
       setLoading(true);
       setError(null);
       const response = await getAllEmployees();
-      
+      console.log('Fetched employees:', response);
       if (response.success) {
         const data = response.data || [];
-        setEmployees(data);
-        
+        setEmployees(response.Employees);
+        console.log('Employee data set:', response.Employees);
         // Calculate stats
-        const total = data.length;
-        const active = data.filter(emp => emp.status === 'Active').length;
+        const total = response.Employees.length;
+        const active = response.Employees.filter(emp => emp.status === 'Active').length;
         const inactive = total - active;
         setStats({ total, active, inactive });
       } else {
