@@ -216,15 +216,13 @@ export default function DashboardUI() {
 
         const [tasksRes, employeesRes, projectsRes, profileRes] =
           await Promise.all([
-            currentUser
-              ? taskApi.getUserTasks(currentUser.email, currentUser.id)
-              : [],
+            apiClient.get("/task/getAllUserTasks").catch(() => ({ data: { data: [] } })),
             employeeApi.getEmployeesByRole().catch(() => null),
             projectApi.getAllProjects().catch(() => null),
             apiClient.get("/employee/getSingleEmployee").catch(() => null),
           ]);
 
-        const tasks = Array.isArray(tasksRes) ? tasksRes : [];
+        const tasks = Array.isArray(tasksRes?.data?.data) ? tasksRes.data.data : [];
 
         const employeesList =
           employeesRes?.data?.data || employeesRes?.data || employeesRes || [];
