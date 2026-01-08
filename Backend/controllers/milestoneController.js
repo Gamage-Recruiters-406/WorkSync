@@ -1,5 +1,6 @@
 import milestone from "../models/milestoneModel.js";
 import Project from '../models/ProjectModel.js';
+import Task from '../models/Task.js';
 
 // Create Milestone
 export const createMilestone = async (req, res) => {
@@ -269,11 +270,16 @@ export const deleteMilestone = async (req, res) => {
             });
         }
 
+        // Delete all tasks associated with this milestone
+        const deleteResult = await Task.deleteMany({ milestone: id });
+
+        // Delete the milestone
         await foundMilestone.deleteOne();
 
         res.status(200).json({
             success: true,
-            message: "Milestone deleted successfully"
+            message: "Milestone deleted successfully",
+            deletedTasksCount: deleteResult.deletedCount
         });
 
     } catch (error) {
