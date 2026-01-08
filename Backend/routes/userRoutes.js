@@ -1,18 +1,14 @@
 import express from "express";
 import path from "path";
-import { registerUser, loginUser, getAllUsers } from "../controllers/userController.js";
+import { registerUser, loginUser, getAllUsers, removeResume } from "../controllers/userController.js";
 import { isAdmin, requiredSignIn } from './../middlewares/AuthMiddleware.js';
 import { createDiskUploader } from "../middlewares/uploadFactory.js";
 
 
 const router = express.Router();
 
-const upload = createDiskUploader({
-  getDestination: () => path.join(process.cwd(), "Resumes"),
-});
-
 // User Registration - POST /api/v1/userAuth/userRegistration
-router.post(  "/userRegistration",upload.single("resume"),registerUser);
+router.post("/userRegistration", registerUser);
 
 // User Login - POST /api/v1/userAuth/userLogin
 router.post("/userLogin", loginUser);
@@ -21,6 +17,9 @@ router.post("/userLogin", loginUser);
 router.get('/getAllUsers', requiredSignIn, isAdmin, getAllUsers );
 
 //remove user 
-router.delete('/removeResume/:id',requiredSignIn, isAdmin, removeResume);
+router.delete('/removeResume/:id',requiredSignIn, isAdmin, removeResume)
+
+
+
 
 export default router;

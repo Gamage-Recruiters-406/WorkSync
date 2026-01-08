@@ -1,7 +1,59 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import { Search, Bell } from "lucide-react";
 
-const DashboardHeader = ({ user, role }) => {
+const DashboardHeader = () => {
+  const [role, setRole] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        const userId = user.userid;
+
+        const getToken = () =>
+          document.cookie
+            .split(";")
+            .find((c) => c.trim().startsWith("access_token="))
+            ?.split("=")[1] || null;
+
+        const token = getToken();
+
+        const fun = async () => {
+          const response = await fetch(
+            `http://localhost:8090/api/v1/employee/getSingleEmployeeByID/${userId}`,
+            {
+              credentials: "include",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const result = await response.json();
+          console.log("Single user data:", result.user);
+          setUserProfile(result.user);
+        };
+
+        fun();
+
+        // Role mapping: 3-admin, 2-manager, 1-employee
+        const roleMap = {
+          3: "admin",
+          2: "manager",
+          1: "employee",
+        };
+
+        setRole(roleMap[user.role] || null);
+      }
+    } catch (error) {
+      console.error("Failed to parse user data:", error);
+      setRole(null);
+    }
+  }, []);
+
   return (
     <header className="bg-white shadow-sm border-b px-6 py-4">
       <div className="flex items-center justify-between">
@@ -21,17 +73,17 @@ const DashboardHeader = ({ user, role }) => {
           </div>
           <div className="flex flex-col items-center">
             <span className="text-sm font-bold text-gray-700">
-              {user?.name}
+              {userProfile?.FirstName || ""} {userProfile?.LastName || ""}
             </span>
             <span className="text-xs text-gray-500">{role || ""}</span>
           </div>
           <div className="w-9 h-9  rounded-full">
             <img
               src={
-                user?.image ||
+                userProfile?.image ||
                 "https://img.freepik.com/premium-vector/vector-flat-illustration-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette-profile-picture-suitable-social-media-profiles-icons-screensavers-as-templatex9xa_719432-2205.jpg"
               }
-              alt={`${user?.name.charAt(0)}`}
+              alt={`${userProfile?.FirstName?.charAt(0) || ""}`}
             />
           </div>
         </div>

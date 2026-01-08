@@ -5,13 +5,21 @@ import JWT from "jsonwebtoken";
 // REGISTER USER
 export const registerUser = async (req, res) => {
     try {
-        const { FirstName, LastName, NIC, ContactNumber, Gender, email } = req.body;
+        const { name, role, email, password, departmentID } = req.body;
 
         // Validation
-        if (!FirstName || !NIC || !ContactNumber || !LastName || !Gender || !email ) {
-            return res.status(404).json({
+        if (!name || !role || !email || !password) {
+            return res.status(400).json({
                 success: false,
-                message: "All fields are required!"
+                message: "All fields (name, role, email, password) are required"
+            });
+        }
+
+        // Validate role
+        if (![1, 2, 3].includes(Number(role))) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid role. Must be 1 (Employee), 2 (Manager), or 3 (Admin)"
             });
         }
 
@@ -20,26 +28,39 @@ export const registerUser = async (req, res) => {
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: "You already send your details"
+                message: "User already exists with this email"
             });
         }
 
-        const attachments =[];
-        if (req.file) {
-            attachments.push(req.file.path.replace(/\\/g, "/"));
+        // Validate password length
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "Password must be at least 6 characters long"
+            });
         }
 
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         // Create user
-        const user = await User.create({ FirstName, LastName, NIC, ContactNumber, Gender, email, attachments});
+        const user = await User.create({
+            name,
+            role: Number(role),
+            email,
+            password: hashedPassword,
+            departmentID: departmentID || undefined
+        });
 
         res.status(201).json({
             success: true,
             message: "User registered successfully",
             data: { 
                 userid: user._id,
-                FirstName: user.FirstName,
-                LastName: user.LastName,
+                name: user.name,
+                role: user.role,
                 email: user.email,
+                departmentID: user.departmentID
             }
         });
     } catch (error) {
@@ -171,3 +192,33 @@ export const getAllUsers = async (req, res) => {
     });
   }
 };
+
+//reject user resume controller
+export const removeResume = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const CheckExist = await User.findById(id);
+        if(!CheckExist){
+            res.status(404).json({
+                success: false,
+                message: 'This user already rejected.'
+            })
+        }
+
+        const user = await User.findByIdAndDelete(id);
+
+        res.status(200).json({
+            success: true,
+            message: 'User rejected!'
+        })
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: 'Server side Error.',
+            error
+        })
+    }
+}
