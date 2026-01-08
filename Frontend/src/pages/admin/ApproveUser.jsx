@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Shield, UserCog, Filter, Download, Check, Trash2, X, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import Sidebar from '../../components/sidebar/Sidebar';
-import TopBar from '../../components/sidebar/Topbar';
 import axios from 'axios';
+import DashboardHeader from '../../components/DashboardHeader';
 
 const UserRolesPage = () => {
   const [users, setUsers] = useState([]);
@@ -121,7 +121,7 @@ const handleApprove = async (Id) => {
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+       <DashboardHeader/>
 
         {/* Notification Popup */}
         {notification && (

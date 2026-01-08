@@ -12,7 +12,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import Sidebar from "../../components/sidebar/Sidebar";
-import TopBar from "../../components/sidebar/Topbar";
+import DashboardHeader from "../../components/DashboardHeader";
 import axios from "axios";
 
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_VERSION}`;
@@ -525,7 +525,7 @@ const AdminAttendance = () => {
         </div>
 
         <div className="flex-1 flex flex-col">
-          <TopBar userName={displayName} role={roleLabel} />
+          <DashboardHeader />
           
           <div className="flex-1 overflow-auto p-6">
             <button
@@ -734,7 +734,7 @@ const AdminAttendance = () => {
         <Sidebar role="admin" activeItem="attendance" />
 
       <div className="flex-1 flex flex-col">
-        <TopBar userName={displayName} role={roleLabel} />
+        <DashboardHeader />
 
         <div className="flex-1 overflow-auto">
           <div className="px-6 py-4">

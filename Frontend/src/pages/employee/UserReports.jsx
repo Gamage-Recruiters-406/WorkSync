@@ -6,6 +6,7 @@ import TaskDonutChart from "../../components/reportAnalytics/charts/TaskDonutCha
 import AttendanceTable from "../../components/reportAnalytics/tables/AttendanceTable";
 import TaskTable from "../../components/reportAnalytics/tables/TaskTable";
 import LeaveTable from "../../components/reportAnalytics/tables/LeaveTable";
+import DashboardHeader from "../../components/DashboardHeader";
 
 // Backend API imports
 import {
@@ -124,30 +125,33 @@ export default function UserReports() {
   return (
     <div className="flex h-screen">
       <Sidebar />
-      <main className="flex-1 p-6 bg-gray-100">
-        <h1 className="text-2xl font-bold mb-6 text-[#087990]">
-          User Report & analytics
-        </h1>
+      <div className="flex-1 flex flex-col min-h-0">
+        <DashboardHeader />
+        <main className="flex-1 p-6 bg-gray-100 overflow-y-auto min-h-0">
+          <h1 className="text-2xl font-bold mb-6 text-[#087990]">
+            User Report & analytics
+          </h1>
 
-        {/* KPI GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <KpiCards title="Total Attendance" value={kpis.totalAttendance} />
-          <KpiCards title="Total Tasks" value={kpis.totalTasks} />
-          <KpiCards title="Total Leaves" value={kpis.totalLeaves} />
-        </div>
+          {/* KPI GRID */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <KpiCards title="Total Attendance" value={kpis.totalAttendance} />
+            <KpiCards title="Total Tasks" value={kpis.totalTasks} />
+            <KpiCards title="Total Leaves" value={kpis.totalLeaves} />
+          </div>
 
-        {/* CHARTS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <AttendanceBarChart data={chartData.attendance} />
+          {/* CHARTS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <AttendanceBarChart data={chartData.attendance} />
 
-          <TaskDonutChart data={chartData.tasks} />
-        </div>
+            <TaskDonutChart data={chartData.tasks} />
+          </div>
 
-        {/* TABLES */}
-        <AttendanceTable data={attendanceData} />
-        <TaskTable data={taskData} />
-        <LeaveTable data={leaveData} />
-      </main>
+          {/* TABLES */}
+          <AttendanceTable data={attendanceData} />
+          <TaskTable data={taskData} />
+          <LeaveTable data={leaveData} />
+        </main>
+      </div>
     </div>
   );
 }
