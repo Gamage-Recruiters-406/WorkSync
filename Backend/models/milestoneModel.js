@@ -36,14 +36,14 @@ const milestoneSchema = new mongoose.Schema({
     Status: {
         type: String,
         enum:{
-            values: ['Pending', 'In Progress', 'Completed'],
+            values: ['Pending', 'In Progress', 'Complete'],
             message: '{VALUE} is not a valid status'
         },
         default: "Pending"
     },
     assignedTo: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
+        ref: "Employees"
     }],
     Completion_Date: {
         type: Date

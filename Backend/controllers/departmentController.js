@@ -1,5 +1,5 @@
 import Department from "../models/DepartmentModel.js";
-import User from "../models/User.js";
+import Employees from "../models/EmployeeModel.js";
 import mongoose from "mongoose";
 
 // Create Department
@@ -61,7 +61,7 @@ export const createDepartment = async (req, res) => {
       if (!departmentHead || departmentHead.trim() === "") {
         employeeId = null;
       } else {
-        const employee = await User.findOne({
+        const employee = await Employees.findOne({
           name: { $regex: new RegExp(`^${departmentHead.trim()}$`, "i") },
         });
 
@@ -271,7 +271,7 @@ export const updateDepartment = async (req, res) => {
       if (!departmentHead || departmentHead.trim() === "") {
         employeeId = null;
       } else {
-        const employee = await User.findOne({
+        const employee = await Employees.findOne({
           name: { $regex: new RegExp(`^${departmentHead.trim()}$`, "i") },
         });
 
@@ -439,7 +439,7 @@ export const deleteDepartment = async (req, res) => {
     }
 
     // Check if any users are assigned to this department
-    const employeeCount = await User.countDocuments({ departmentID: id });
+    const employeeCount = await Employees.countDocuments({ departmentID: id });
 
     if (employeeCount > 0) {
       return res.status(400).json({
@@ -474,7 +474,7 @@ export const getAllDepartments = async (req, res) => {
     // Get employee count for each department
     const departmentsWithCount = await Promise.all(
       departments.map(async (dept) => {
-        const employeeCount = await User.countDocuments({
+        const employeeCount = await Employees.countDocuments({
           departmentID: dept._id,
         });
         return {
@@ -526,10 +526,10 @@ export const getDepartment = async (req, res) => {
     }
 
     // Get employee count for this department
-    const employeeCount = await User.countDocuments({ departmentID: id });
+    const employeeCount = await Employees.countDocuments({ departmentID: id });
 
     // Get list of employees in this department
-    const employees = await User.find({ departmentID: id }).select(
+    const employees = await Employees.find({ departmentID: id }).select(
       "name email role"
     );
 
@@ -671,7 +671,9 @@ export const getDepartmentStatistics = async (req, res) => {
     const allDepartments = await Department.find();
     const departmentsWithCounts = await Promise.all(
       allDepartments.map(async (dept) => {
-        const count = await User.countDocuments({ departmentID: dept._id });
+        const count = await Employees.countDocuments({
+          departmentID: dept._id,
+        });
         return {
           id: dept._id,
           name: dept.name,

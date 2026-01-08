@@ -35,24 +35,23 @@ import { Navigate } from "react-router-dom";
 //import AdminReport from "./pages/reportAnalytics/AdminReport";
 import { useState } from "react";
 //import EmployeeList from './pages/admin/EmployeeList';
-import AddEmployee from "./pages/admin/AddEmployee";
-import EditEmployee from "./pages/admin/EditEmployee";
-import ApproveUser from "./pages/admin/ApproveUser";
-import Sidebar from "./components/sidebar/Sidebar";
-import DashboardUI from "./components/DashboardUI";
-import ProjectDetails from "./pages/employee/ProjectDetails";
-import DepartmentDetails from "./pages/admin/Department/ViewDepartment";
-import SystemSettings from "./pages/systemSetting/SystemSettings";
-import CompanyInfoSettings from "./pages/systemSetting/CompanyInfoSettings";
-import ProfileSettings from "./pages/systemSetting/ProfileSettings";
-import RolesAttendanceSettings from "./pages/systemSetting/RolesAttendanceSettings";
-import WorkingHoursSettings from "./pages/systemSetting/WorkingHoursSettings";
+import EditEmployee from './pages/admin/EditEmployee';
+import ApproveUser from './pages/admin/ApproveUser';
+import Sidebar from './components/sidebar/Sidebar';
+import DashboardUI from './components/DashboardUI';
+import ProjectDetails from './pages/employee/ProjectDetails';
+import DepartmentDetails from './pages/admin/Department/ViewDepartment';
+import SystemSettings from './pages/systemSetting/SystemSettings';
+import CompanyInfoSettings from './pages/systemSetting/CompanyInfoSettings';
+import ProfileSettings from './pages/systemSetting/ProfileSettings';
+import RolesAttendanceSettings from './pages/systemSetting/RolesAttendanceSettings';
+import WorkingHoursSettings from './pages/systemSetting/WorkingHoursSettings';
 
-import ProjectDetailsAdmin from "./pages/admin/ProjectDetaisAdmin";
-import ManagerDashboard from "./pages/manager/managerDashboard";
-import SignUp from "./pages/Signup";
-import UserProfile from "./pages/employee/UserProfile";
-import UserProfileEdit from "./pages/employee/UserProfileEdit";
+import ProjectDetailsAdmin from './pages/admin/ProjectDetaisAdmin';
+import ManagerDashboard from './pages/manager/managerDashboard';
+import SignUp from './pages/Signup';
+import UserProfile from './pages/employee/UserProfile';
+import UserProfileEdit from './pages/employee/UserProfileEdit';
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -67,22 +66,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
 
-        {/* Dashboard routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
         <Route path="*" element={<Navigate to="/login" replace />} />
-
-        {/* Admin Routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/assign-task" element={<AssignTask />} />
-        <Route path="/admin/users" element={<Users />} />
-        <Route path="/admin/manage-leaves" element={<ManageLeaves />} />
-        <Route path="/admin/reports" element={<AdminReport />} />
-        <Route path="/admin/announcements" element={<AdminAnnouncements />} />
-        <Route path="/admin/departments" element={<Departments />} />
-        <Route path="/admin/projects" element={<ProjectsDashboard />} />
-        <Route path="/admin/projects/:id" element={<ProjectDetailsAdmin />} />
-        <Route path="/admin/attendance" element={<AdminAttendance />} />
 
         {/* System Settings (Tabs)*/}
         <Route path="/admin/system-settings" element={<SystemSettings />}>
@@ -99,22 +83,20 @@ function App() {
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<EmployeeList />} />
-        <Route path="/admin/employee-list" element={<EmployeeList />} />
-        <Route path="/admin/add-employee" element={<AddEmployee />} />
         <Route path="/admin/edit-employee/:id" element={<EditEmployee />} />
         <Route path="/admin/assign-task" element={<AssignTask />} />
-        <Route path="/admin/users" element={<Users />} />
         <Route path="/admin/manage-leaves" element={<ManageLeaves />} />
         <Route path="/admin/reports" element={<AdminReport />} />
         <Route path="/admin/announcements" element={<AdminAnnouncements />} />
         <Route path="/admin/departments" element={<Departments />} />
-        <Route path="/admin/projects" element={<Projects />} />
+        <Route path="/admin/projects" element={<ProjectsDashboard />} />
+        <Route path="/admin/projects/:id" element={<ProjectDetailsAdmin />} />
         <Route path="/admin/attendance" element={<AdminAttendance />} />
         <Route path="/admin/Approve" element={<ApproveUser />} />
         <Route path="/admin/D-details/:id" element={<DepartmentDetails />} />
 
         {/* Employee Routes */}
-        <Route path="/user/dashboard" element={<UserDashboard />} />
+        <Route path="/user/dashboard" element={<DashboardUI />} />
         <Route path="/user/project-team" element={<ProjectTeam />} />
         <Route path="/user/task" element={<Task />} />
         <Route path="/user/attendance" element={<UserAttendance />} />
@@ -126,6 +108,7 @@ function App() {
         <Route path="/user/profile" element={<UserProfile />} />
         <Route path="/user/profile/edit" element={<UserProfileEdit />} />
         <Route path="/task-details/:id" element={<TaskDetail />} />
+>>>>
 
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />

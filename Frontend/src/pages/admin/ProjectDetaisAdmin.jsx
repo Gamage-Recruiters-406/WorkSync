@@ -3,114 +3,138 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../../components/sidebar/Sidebar";
 import { getProject } from "../../services/ProjectService";
+import { getAllMilestones } from "../../services/ProjectService";
 
 const ProjectDetailsAdmin = () => {
+    // For description see more/less
+    const [showFullDescription, setShowFullDescription] = useState(false);
+    const DESCRIPTION_LIMIT = 10;
     const { id } = useParams();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("Overview");
     const [projectData, setProjectData] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    // Milestone progress calculation (must be after projectData is defined)
+    let completedMilestones = 0;
+    let totalMilestones = 0;
+    let milestoneProgress = 0;
+    if (projectData && Array.isArray(projectData.milestones)) {
+        totalMilestones = projectData.milestones.length;
+        completedMilestones = projectData.milestones.filter(m => (m.Status || m.status || '').toLowerCase() === 'complete').length;
+        milestoneProgress = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
+    }
     const [statusChanging, setStatusChanging] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploadFile, setUploadFile] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [downloadingReport, setDownloadingReport] = useState(false);
 
     const URL_API = "http://localhost:8090";
 
     useEffect(() => {
-        const fetchProject = async () => {
-            try {
-                console.log(`Fetching project with ID: ${id}`);
-                
-                // Try using ProjectService first
-                try {
-                    const response = await getProject(id);
-                    if (response && response.data) {
-                        console.log('Project fetched via ProjectService:', response);
-                        setProjectData(response.data);
-                        setLoading(false);
-                        return;
-                    } else if (response) {
-                        // If response doesn't have nested data, it might be the data itself
-                        console.log('Project fetched via ProjectService (direct):', response);
-                        setProjectData(response);
-                        setLoading(false);
-                        return;
-                    }
-                } catch (serviceError) {
-                    console.warn('ProjectService failed, trying direct axios calls:', serviceError);
-                }
+    let isMounted = true;
 
-                // Fallback 1: Try /api/v1/project-team/getProject
-                try {
-                    const res = await axios.get(`${URL_API}/api/v1/project-team/getProject/${id}`, {
-                        withCredentials: true,
-                    });
-                    console.log('Project fetched via project-team route:', res.data);
-                    setProjectData(res.data.data);
-                    setLoading(false);
-                    return;
-                } catch (err1) {
-                    console.warn('project-team route failed:', err1);
-                }
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        let project = null;
 
-                // Fallback 2: Try /api/v1/projects/getProject
-                try {
-                    const res = await axios.get(`${URL_API}/api/v1/projects/getProject/${id}`, {
-                        withCredentials: true,
-                    });
-                    console.log('Project fetched via projects route:', res.data);
-                    setProjectData(res.data.data);
-                    setLoading(false);
-                    return;
-                } catch (err2) {
-                    console.warn('projects route failed:', err2);
-                }
+        // Fetch project
+        try {
+          const response = await getProject(id);
+          project = response?.data || response;
+        } catch {
+          const res = await axios.get(
+            `${URL_API}/api/v1/projects/getProject/${id}`,
+            { withCredentials: true }
+          );
+          project = res?.data?.data;
+        }
 
-                // Fallback 3: Try /getProject
-                try {
-                    const res = await axios.get(`${URL_API}/getProject/${id}`, {
-                        withCredentials: true,
-                    });
-                    console.log('Project fetched via direct route:', res.data);
-                    setProjectData(res.data.data || res.data);
-                    setLoading(false);
-                    return;
-                } catch (err3) {
-                    console.warn('direct route failed:', err3);
-                }
+        if (!project) throw new Error("Project not found");
 
-                // All endpoints failed
-                console.error("Failed to fetch project from all endpoints");
-                setProjectData(null);
-                setLoading(false);
-            } finally {
-                // setLoading is already set in each try block
-            }
-        };
+        // Fetch team
+        let team = [];
+        try {
+          const res = await axios.get(
+            `${URL_API}/api/v1/project-team/getMembers/${id}`,
+            { withCredentials: true }
+          );
+          team = res?.data?.data || [];
+        } catch (err) {
+          console.warn("Team fetch failed", err);
+        }
 
-        const fetchTeam = async () => {
-            try {
-                const res = await axios.get(`${URL_API}/api/v1/project-team/getMembers/${id}`, { withCredentials: true });
-                console.log('Team API Response:', res);
-                const members = res?.data?.data || res?.data;
-                console.log('Members data:', members);
-                if (members) setProjectData(prev => ({ ...(prev || {}), team: members }));
-            } catch (err) {
-                // If team API fails, keep whatever team is present
-                console.warn('Could not fetch team members:', err);
-            }
-        };
+        // Fetch milestones
+        let milestones = [];
+        try {
+          const res = await getAllMilestones(id);
+          const allMilestones = res?.data?.data || res?.data || [];
+          milestones = allMilestones.filter(
+            (milestone) =>
+              Array.isArray(milestone.projectID) &&
+              milestone.projectID.some((pid) => String(pid) === String(id))
+          );
+        } catch (err) {
+          console.warn("Milestone fetch failed", err);
+        }
 
-        fetchProject();
-        fetchTeam();
-    }, [id]);
+        // Fetch files
+        let files = [];
+        try {
+          const res = await axios.get(
+            `${URL_API}/api/v1/projects/${id}/attachments`,
+            { withCredentials: true }
+          );
+          files = res?.data?.data || [];
+        } catch (err) {
+          console.warn("File fetch failed", err);
+        }
+
+        if (isMounted) {
+          setProjectData({
+            ...project,
+            team,
+            milestones,
+            files,
+          });
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+        if (isMounted) {
+          setProjectData(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchAllData();
+    return () => (isMounted = false);
+  }, [id]);
+
 
     const goBack = () => navigate("/admin/projects");
 
-    const handleDeleteFile = async (fileName) => {
-        console.log("Delete file:", fileName);
-        // keep as placeholder — implement backend file-delete if available
+    const handleDeleteFile = async (attachmentId) => {
+        if (!attachmentId) return;
+        if (!window.confirm('Are you sure you want to delete this file?')) return;
+        try {
+            await axios.delete(`${URL_API}/api/v1/projects/${id}/attachments/${attachmentId}`, {
+                withCredentials: true
+            });
+            // Refresh files list
+            const res = await axios.get(`${URL_API}/api/v1/projects/${id}/attachments`, {
+                withCredentials: true
+            });
+            const files = res?.data?.data || [];
+            setProjectData(prev => ({ ...(prev || {}), files }));
+            alert('File deleted successfully');
+        } catch (err) {
+            console.error('Failed to delete file:', err);
+            alert('Failed to delete file');
+        }
     };
 
     const handleRemoveMember = async (memberId) => {
@@ -125,7 +149,9 @@ const ProjectDetailsAdmin = () => {
             );
             // refresh team
             const res = await axios.get(`${URL_API}/api/v1/project-team/getMembers/${id}`, { withCredentials: true });
+            
             setProjectData(prev => ({ ...(prev || {}), team: res?.data?.data || [] }));
+            
         } catch (err) {
             console.error('Failed to remove member:', err);
             alert('Failed to remove member');
@@ -171,19 +197,18 @@ const ProjectDetailsAdmin = () => {
             return;
         }
 
-        if (uploadFile.size > 20 * 1024 * 1024) { // 20MB
-            alert('File size must be less than 20MB');
+        if (uploadFile.size > 10 * 1024 * 1024) { // 10MB
+            alert('File size must be less than 10MB');
             return;
         }
 
         setUploading(true);
         try {
             const formData = new FormData();
-            formData.append('file', uploadFile);
-            formData.append('projectId', id);
+            formData.append('attachments', uploadFile);
 
-            // Replace with your actual upload endpoint
-            await axios.post(`${URL_API}/api/v1/project-attachment/upload`, formData, {
+            // Correct backend endpoint: /api/v1/projects/:projectId/attachments
+            await axios.post(`${URL_API}/api/v1/projects/${id}/attachments`, formData, {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'multipart/form-data'
@@ -193,10 +218,17 @@ const ProjectDetailsAdmin = () => {
             alert('File uploaded successfully');
             setShowUploadModal(false);
             setUploadFile(null);
-            // Optionally refresh files list here
+            
+            // Refresh files list
+            const res = await axios.get(`${URL_API}/api/v1/projects/${id}/attachments`, {
+                withCredentials: true
+            });
+            const files = res?.data?.data || [];
+            setProjectData(prev => ({ ...(prev || {}), files }));
         } catch (err) {
             console.error('Upload failed:', err);
-            alert('Failed to upload file');
+            const errorMsg = err.response?.data?.message || 'Failed to upload file';
+            alert(errorMsg);
         } finally {
             setUploading(false);
         }
@@ -211,7 +243,7 @@ const ProjectDetailsAdmin = () => {
         if (!projectData._id) return;
         setStatusChanging(true);
         try {
-            await axios.patch(`${URL_API}/api/v1/project/updateProjectStatus/${projectData._id}`, 
+            await axios.patch(`${URL_API}/api/v1/projects/updateProjectStatus/${projectData._id}`, 
                 { status: newStatus }, 
                 { withCredentials: true }
             );
@@ -221,6 +253,40 @@ const ProjectDetailsAdmin = () => {
             alert('Failed to update project status');
         } finally {
             setStatusChanging(false);
+        }
+    };
+
+    const handleDownloadReport = async () => {
+        if (!projectData?._id) {
+            alert('Project ID not found');
+            return;
+        }
+
+        setDownloadingReport(true);
+        try {
+            const response = await axios.get(
+                `${URL_API}/api/v1/projects/projectReport/${projectData._id}`,
+                {
+                    withCredentials: true,
+                    responseType: 'blob'
+                }
+            );
+
+            // Create a blob URL and trigger download
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `project-report-${projectData.name || projectData._id}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+            console.error('Failed to download report:', err);
+            alert('Failed to download project report');
+        } finally {
+            setDownloadingReport(false);
         }
     };
 
@@ -255,27 +321,38 @@ const ProjectDetailsAdmin = () => {
 
                         <h1 className="text-2xl font-bold text-gray-800">{projectData?.name || 'Project'}</h1>
 
-                        <div className="text-right text-sm">
-                            <p className="text-gray-600">
-                                Deadline: <span className="font-semibold text-gray-800">{projectData?.endDate ? new Date(projectData.endDate).toLocaleDateString() : 'N/A'}</span>
-                            </p>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={handleDownloadReport}
+                                disabled={downloadingReport}
+                                className="flex items-center gap-2 px-4 py-2 bg-[#087990] text-white rounded-md hover:bg-[#066a7a] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                {downloadingReport ? 'Downloading...' : 'Project Report'}
+                            </button>
+                            <div className="text-right text-sm">
+                                <p className="text-gray-600">
+                                    Deadline: <span className="font-semibold text-gray-800">{projectData?.endDate ? new Date(projectData.endDate).toLocaleDateString() : 'N/A'}</span>
+                                </p>
+                            </div>
                         </div>
                     </div>
 
                     {/* Status Row */}
-                    <div className="flex items-center gap-2 mb-6 pb-4 border-b">
-                        <span className="font-medium text-gray-700">Status:</span>
-                        <select
-                            value={projectData?.status || "Active"}
-                            onChange={(e) => handleStatusChange(e.target.value)}
-                            disabled={statusChanging}
-                            className="px-3 py-1 border border-[#087990] rounded-md text-gray-800 font-medium cursor-pointer hover:bg-gray-50 disabled:opacity-50"
-                        >
-                            <option value="Active">Active</option>
-                            <option value="On-Hold">On-Hold</option>
-                            <option value="Completed">Completed</option>
-                        </select>
-                    </div>
+                                        <div className="flex items-center gap-3 mb-6 pb-4 border-b">
+                                                <span className="font-medium text-gray-700 text-[18px]">Status :</span>
+                                                <span className={`w-3 h-3 rounded-full inline-block mr-2 ${
+                                                    projectData?.status?.toLowerCase() === 'active' ? 'bg-green-500' :
+                                                    projectData?.status?.toLowerCase() === 'on-hold' ? 'bg-yellow-500' :
+                                                    projectData?.status?.toLowerCase() === 'completed' ? 'bg-blue-500' :
+                                                    'bg-gray-400'
+                                                }`}></span>
+                                                <span className="font-semibold text-gray-700 text-[18px] capitalize">
+                                                    {projectData?.status ? projectData.status : 'Active'}
+                                                </span>
+                                        </div>
 
                     {/* Tabs */}
                     <div className="flex gap-3 mb-6 border-b pb-2">
@@ -307,12 +384,17 @@ const ProjectDetailsAdmin = () => {
                                 <div className="mb-6 mt-4">
                                     <div className="flex items-center gap-3 mb-2">
                                         <span className="text-sm font-medium text-gray-700">Progress:</span>
-                                        <span className="text-sm font-semibold text-gray-800">{projectData?.progress || 0}%</span>
+                                        <span className="text-sm font-semibold text-gray-800">
+                                            {milestoneProgress}%
+                                            {totalMilestones > 0 && (
+                                                <span className="ml-2 text-xs text-gray-500">({completedMilestones} of {totalMilestones} milestones completed)</span>
+                                            )}
+                                        </span>
                                     </div>
                                     <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-[#087990] transition-all duration-300"
-                                            style={{ width: `${projectData?.progress || 0}%` }}
+                                            style={{ width: `${milestoneProgress}%` }}
                                         />
                                     </div>
                                 </div>
@@ -323,30 +405,85 @@ const ProjectDetailsAdmin = () => {
                                     <div className="border-l-4 border-[#087990] pl-4">
                                         <h3 className="font-semibold text-gray-800 mb-3">Projects Summary</h3>
                                         <div className="space-y-2 text-sm text-gray-700">
-                                            <p><span className="font-medium">Created by:</span> {typeof projectData.createdBy === 'object' ? projectData.createdBy?.name : projectData.createdBy || 'N/A'}</p>
+                                            <p><span className="font-medium">Project Name:</span> {projectData.name || 'N/A'}</p>
+                                            <p>
+                                                <span className="font-medium">Description:</span> {
+                                                    projectData.description
+                                                        ? (
+                                                            projectData.description.length > DESCRIPTION_LIMIT && !showFullDescription
+                                                                ? <>
+                                                                    {projectData.description.slice(0, DESCRIPTION_LIMIT)}...
+                                                                    <button
+                                                                        className="ml-2 text-blue-600 underline cursor-pointer text-xs"
+                                                                        onClick={() => setShowFullDescription(true)}
+                                                                    >See more</button>
+                                                                </>
+                                                                : <>
+                                                                    {projectData.description}
+                                                                    {projectData.description.length > DESCRIPTION_LIMIT && (
+                                                                        <button
+                                                                            className="ml-2 text-blue-600 underline cursor-pointer text-xs"
+                                                                            onClick={() => setShowFullDescription(false)}
+                                                                        >See less</button>
+                                                                    )}
+                                                                </>
+                                                        )
+                                                        : 'N/A'
+                                                }
+                                            </p>
                                             <p><span className="font-medium">Start Date:</span> {projectData.startDate ? new Date(projectData.startDate).toLocaleDateString() : 'N/A'}</p>
                                             <p><span className="font-medium">End Date:</span> {projectData.endDate ? new Date(projectData.endDate).toLocaleDateString() : 'N/A'}</p>
                                         </div>
                                     </div>
 
-                                    {/* Upcoming Milestones */}
+                                    {/* Completed Milestones */}
                                     <div className="border-l-4 border-[#087990] pl-4">
-                                        <h3 className="font-semibold text-gray-800 mb-3">Upcoming Milestones</h3>
+                                        <h3 className="font-semibold text-gray-800 mb-3">Completed Milestones</h3>
                                         <div className="space-y-2 text-sm text-gray-700">
-                                            {projectData.upcomingMilestones?.map((milestone, idx) => (
-                                                <p key={idx}>{milestone}</p>
-                                            ))}
+                                            {Array.isArray(projectData.milestones) && projectData.milestones.length > 0 ? (
+                                                projectData.milestones
+                                                    .filter(milestone => {
+                                                        const status = (milestone.Status || milestone.status || '').toLowerCase();
+                                                        return status === 'complete';
+                                                    })
+                                                    .map((milestone, idx) => (
+                                                        <div key={idx} className="font-semibold text-black">
+                                                            <span>{milestone.milestoneName || milestone.title || milestone.name}</span>
+                                                            {milestone.End_Date || milestone.endDate ? (
+                                                                <span> — <span className="text-green-700">Completed</span>: {new Date(milestone.End_Date || milestone.endDate).toLocaleDateString()}</span>
+                                                            ) : null}
+                                                            {/* Show who completed if available */}
+                                                            {milestone.completedBy ? (
+                                                                <span> — By: {Array.isArray(milestone.completedBy)
+                                                                    ? milestone.completedBy.map((user, i) => `${user.FirstName || user.name || ''} ${user.LastName || ''}`).join(', ')
+                                                                    : (milestone.completedBy.FirstName || milestone.completedBy.name || '') + ' ' + (milestone.completedBy.LastName || '')}
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                    ))
+                                            ) : (
+                                                <p className="text-gray-500 italic">No completed milestones found.</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Recent Activity */}
+                                {/* Recent Activity (Active Members) */}
                                 <div className="border-l-4 border-[#087990] pl-4 mt-6">
-                                    <h3 className="font-semibold text-gray-800 mb-3">Recent Activity</h3>
+                                    <h3 className="font-semibold text-gray-800 mb-3">Active Members</h3>
                                     <div className="space-y-2 text-sm text-gray-700">
-                                        {projectData.recentActivity?.map((activity, idx) => (
-                                            <p key={idx}>{activity}</p>
-                                        ))}
+                                        {Array.isArray(projectData.team) && projectData.team.length > 0 ? (
+                                            projectData.team.map((member, idx) => (
+                                                <p key={member._id || idx}>
+                                                    {member.userId
+                                                        ? `${member.userId.FirstName || ""} ${member.userId.LastName || ""}`.trim()
+                                                        : "N/A"}
+                                                    {member.assignedRole ? ` (${member.assignedRole})` : ""}
+                                                </p>
+                                            ))
+                                        ) : (
+                                            <p className="text-gray-500 italic">No active members found.</p>
+                                        )}
                                     </div>
                                 </div>
                             </section>
@@ -381,7 +518,11 @@ const ProjectDetailsAdmin = () => {
                                             <tbody>
                                                 {projectData.team?.map((member, idx) => (
                                                     <tr key={member._id || idx} className="border-b border-gray-100 hover:bg-gray-50">
-                                                        <td className="py-3 px-4 text-gray-800">{member.userId?.name || 'N/A'}</td>
+                                                        <td className="py-3 px-4 text-gray-800">{member.userId
+                                ? `${member.userId.FirstName || ""} ${
+                                    member.userId.LastName || ""
+                                  }`.trim()
+                                : "N/A"}</td>
                                                         <td className="py-3 px-4 text-gray-700">{member.assignedRole || 'N/A'}</td>
                                                         <td className="py-3 px-4 text-right">
                                                             <button
@@ -400,46 +541,98 @@ const ProjectDetailsAdmin = () => {
                             </section>
                         )}
 
-                        {/* Milestones Tab */}
-                        {activeTab === "Milestones" && (
-                            <section className="bg-white rounded-lg shadow-sm p-6">
-                                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b-2 border-[#087990] inline-block">
-                                    Milestones
-                                </h2>
+                         {/* Milestones Tab */}
+            {activeTab === "Milestones" && (
+              <section className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b-2 border-[#087990] inline-block">
+                  Milestones
+                </h2>
 
-                                <div className="mt-6 space-y-4">
-                                    {projectData.milestones?.map((milestone, idx) => (
-                                        <div
-                                            key={idx}
-                                            className="border-2 border-[#087990] rounded-lg p-5 hover:shadow-md transition-shadow"
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1">
-                                                    <h3 className="font-semibold text-gray-800 mb-3 text-lg">
-                                                        {milestone.title}
-                                                    </h3>
-                                                    <div className="space-y-1.5 text-sm text-gray-700">
-                                                        <p>
-                                                            <span className="font-medium">Start Date:</span> {milestone.startDate}
-                                                        </p>
-                                                        <p>
-                                                            <span className="font-medium">End Date:</span> {milestone.endDate}
-                                                        </p>
-                                                        <p>
-                                                            <span className="font-medium">Assigned To You:</span>{" "}
-                                                            {milestone.assignedToYou ? "Yes" : "No"}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <button className="px-5 py-2 bg-[#087990] text-white rounded-md hover:bg-[#076a7a] transition-colors text-sm font-medium">
-                                                    Details
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
+                <div className="mt-6 space-y-4">
+                  {Array.isArray(projectData.milestones) &&
+                  projectData.milestones.length > 0 ? (
+                    projectData.milestones.map((milestone) => {
+                      // If you want to check assigned user, implement logic here
+                      // const currentUserId = "actualUserIdHere";
+                      // const assignedToYou = milestone.assignedTo?.some(u => u._id === currentUserId);
+
+                      return (
+                        <div
+                          key={milestone._id}
+                          className="border-2 border-[#087990] rounded-lg p-5 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-800 mb-3 text-lg">
+                                {milestone.milestoneName || "Unnamed Milestone"}
+                              </h3>
+
+                                {/* Description */}
+                                <p className="text-sm text-gray-600 mb-3">
+                                  <span className="font-medium">
+                                    Description:
+                                  </span>{" "}
+                                  {milestone.Description ||
+                                    "No description provided"}
+                                </p>
+
+                              <div className="space-y-1.5 text-sm text-gray-700">
+                                <p>
+                                  <span className="font-medium">
+                                    Start Date:
+                                  </span>{" "}
+                                  {milestone.Start_Date
+                                    ? new Date(
+                                        milestone.Start_Date
+                                      ).toLocaleDateString()
+                                    : "N/A"}
+                                </p>
+                                <p>
+                                  <span className="font-medium">End Date:</span>{" "}
+                                  {milestone.End_Date
+                                    ? new Date(
+                                        milestone.End_Date
+                                      ).toLocaleDateString()
+                                    : "N/A"}
+                                </p>
+                                <p>
+                                  <span className="font-medium">
+                                    Assigned To You:
+                                  </span>{" "}
+                                  {/* assignedToYou ? "Yes" : "No" */ "—"}
+                                </p>
+
+                                {/* Status */}
+                                <p>
+                                  <span className="font-medium">Status:</span>{" "}
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-xs font-semibold
+                ${
+                  milestone.Status === "Complete"
+                    ? "bg-green-100 text-green-700"
+                    : milestone.Status === "In Progress"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-gray-100 text-gray-700"
+                }`}
+                                  >
+                                    {milestone.Status || "Unknown"}
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                            
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-500 italic">
+                      No milestones found for this project.
+                    </p>
+                  )}
+                </div>
+              </section>
+            )}
 
                         {/* Files Tab */}
                         {activeTab === "Files" && (
@@ -457,33 +650,47 @@ const ProjectDetailsAdmin = () => {
                                 </div>
 
                                 <div className="mt-6 overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b-2 border-gray-200">
-                                                <th className="text-left py-3 px-4 font-semibold text-gray-700">File Name</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-gray-700">Uploaded By</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
-                                                <th className="text-right py-3 px-4 font-semibold text-gray-700">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {projectData.files?.map((file, idx) => (
-                                                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                                                    <td className="py-3 px-4 text-gray-800 font-medium">{file.name}</td>
-                                                    <td className="py-3 px-4 text-gray-700">{file.uploadedBy}</td>
-                                                    <td className="py-3 px-4 text-gray-700">{file.date}</td>
-                                                    <td className="py-3 px-4 text-right">
-                                                        <button
-                                                            onClick={() => handleDeleteFile(file.name)}
-                                                            className="px-4 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm font-medium"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </td>
+                                    {!projectData.files || projectData.files.length === 0 ? (
+                                        <p className="text-center text-gray-500 py-8">No files uploaded yet</p>
+                                    ) : (
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="border-b-2 border-gray-200">
+                                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">File Name</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Size</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
+                                                    <th className="text-right py-3 px-4 font-semibold text-gray-700">Actions</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {projectData.files.map((file) => (
+                                                    <tr key={file._id} className="border-b border-gray-100 hover:bg-gray-50">
+                                                        <td className="py-3 px-4 text-gray-800 font-medium">{file.originalName || file.filename}</td>
+                                                        <td className="py-3 px-4 text-gray-700">{(file.fileSize / 1024 / 1024).toFixed(2)} MB</td>
+                                                        <td className="py-3 px-4 text-gray-700">{new Date(file.createdAt).toLocaleDateString()}</td>
+                                                        <td className="py-3 px-4 text-right">
+                                                            <div className="flex gap-2 justify-end">
+                                                                <a
+                                                                    href={`${URL_API}/api/v1/projects/${id}/attachments/file/${file._id}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="px-3 py-1.5 bg-[#087990] text-white rounded-md hover:bg-[#076a7a] transition-colors text-sm font-medium"
+                                                                >
+                                                                    View
+                                                                </a>
+                                                                <button
+                                                                    onClick={() => handleDeleteFile(file._id)}
+                                                                    className="px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm font-medium"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
                                 </div>
                             </section>
                         )}
@@ -536,7 +743,7 @@ const ProjectDetailsAdmin = () => {
 
                         {/* File Requirements */}
                         <p className="text-xs text-gray-600 text-center mb-6">
-                            Max size: 20MB | Allowed: PDF, DOCX, PPT, JPG, PNG, ZIP
+                            Max size: 10MB | Allowed: PDF, DOCX, PPT, JPG, PNG, ZIP
                         </p>
 
                         {/* Action Buttons */}

@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/sidebar/Sidebar";
-import { 
-  Users, 
-  ClipboardList, 
-  Briefcase, 
-  FileText, 
-  Building2, 
-  Megaphone, 
+import {
+  Users,
+  ClipboardList,
+  Briefcase,
+  FileText,
+  Building2,
+  Megaphone,
   CalendarClock,
   Bell,
   UserPlus,
@@ -17,24 +17,33 @@ import {
   UserCog,
   Settings,
   Building,
-} from 'lucide-react';
+} from "lucide-react";
 import TopBar from "../../components/sidebar/Topbar";
 import axios from "axios";
+import DashboardHeader from "../../components/DashboardHeader";
 
-const StatCard = ({ icon: Icon, label, value, action, bgColor, iconColor, link }) => {
+const StatCard = ({
+  icon: Icon,
+  label,
+  value,
+  action,
+  bgColor,
+  iconColor,
+  link,
+}) => {
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
-  
+
   return (
-    <div 
+    <div
       className="bg-white rounded-lg p-4 transition-all duration-300 cursor-pointer border border-gray-100"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: isHovered 
-          ? '0 2px 8px rgba(8, 121, 144, 0.3), 0 4px 16px rgba(8, 121, 144, 0.2)' 
-          : '0 2px 8px rgba(8, 121, 144, 0.15)',
+        transform: isHovered ? "translateY(-4px)" : "translateY(0)",
+        boxShadow: isHovered
+          ? "0 2px 8px rgba(8, 121, 144, 0.3), 0 4px 16px rgba(8, 121, 144, 0.2)"
+          : "0 2px 8px rgba(8, 121, 144, 0.15)",
       }}
     >
       <div className="flex items-start justify-between mb-2">
@@ -45,7 +54,7 @@ const StatCard = ({ icon: Icon, label, value, action, bgColor, iconColor, link }
       <div className="text-gray-600 text-xs mb-1">{label}</div>
       <div className="text-2xl font-bold text-gray-800 mb-1">{value}</div>
       <button
-        onClick={() => link ? navigate(link) : null}
+        onClick={() => (link ? navigate(link) : null)}
         className="text-[#087990] text-xs font-medium hover:underline flex items-center gap-1"
         role="link"
         tabIndex={0}
@@ -59,16 +68,18 @@ const StatCard = ({ icon: Icon, label, value, action, bgColor, iconColor, link }
 const ActivityItem = ({ title, description, time }) => (
   <div className="py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 px-2 rounded transition-colors">
     <div className="font-medium text-gray-800 text-sm mb-1">{title}</div>
-    <div className="text-xs text-gray-500">{description} • {time}</div>
+    <div className="text-xs text-gray-500">
+      {description} • {time}
+    </div>
   </div>
 );
 
 const QuickActionButton = ({ icon: Icon, label, onClick }) => (
-  <button 
+  <button
     onClick={onClick}
     className="text-white rounded-lg p-4 flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:shadow-md hover:opacity-90"
     style={{
-      background: 'linear-gradient(135deg, #087990 0%, #D9D9D9 100%)'
+      background: "linear-gradient(135deg, #087990 0%, #D9D9D9 100%)",
     }}
   >
     <Icon size={20} />
@@ -80,7 +91,13 @@ const AdminDashboard = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
-  const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, title: '', content: '' });
+  const [tooltip, setTooltip] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    title: "",
+    content: "",
+  });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -98,18 +115,23 @@ const AdminDashboard = () => {
   });
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(true);
-  const [totalEmployees, setTotalEmployees] = useState('...');
-  const [presentToday, setPresentToday] = useState('...');
-  const [activeTasks, setActiveTasks] = useState('...');
-  const [activeProjects, setActiveProjects] = useState('...');
-  const [pendingLeaves, setPendingLeaves] = useState('...');
-  const [announcementsCount, setAnnouncementsCount] = useState('...');
-  const [overdueTasks, setOverdueTasks] = useState('...');
+  const [totalEmployees, setTotalEmployees] = useState("...");
+  const [presentToday, setPresentToday] = useState("...");
+  const [activeTasks, setActiveTasks] = useState("...");
+  const [activeProjects, setActiveProjects] = useState("...");
+  const [pendingLeaves, setPendingLeaves] = useState("...");
+  const [announcementsCount, setAnnouncementsCount] = useState("...");
+  const [overdueTasks, setOverdueTasks] = useState("...");
   const [attendanceTrends, setAttendanceTrends] = useState([]);
   const [attendanceTrendsLoading, setAttendanceTrendsLoading] = useState(true);
-  const [taskDistribution, setTaskDistribution] = useState({completed: 0, inProgress: 0, pending: 0, overdue: 0});
+  const [taskDistribution, setTaskDistribution] = useState({
+    completed: 0,
+    inProgress: 0,
+    pending: 0,
+    overdue: 0,
+  });
   const [taskDistributionLoading, setTaskDistributionLoading] = useState(true);
-  const [userName, setUserName] = useState('User');
+  const [userName, setUserName] = useState("User");
   const [userLoading, setUserLoading] = useState(true);
 
   // API Base URL
@@ -125,33 +147,62 @@ const AdminDashboard = () => {
   const hideTooltip = () => setTooltip({ ...tooltip, visible: false });
 
   useEffect(() => {
-     // Fetch logged-in user data
+    // Get userId from localStorage
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      navigate("/login");
+      return;
+    }
+    const user = JSON.parse(storedUser);
+    const userId = user.userid;
+
+    // Fetch logged-in user data
     const fetchUserData = async () => {
       setUserLoading(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}employee/getSingleEmployee`, {
-          withCredentials: true,
-        });
+        // Extract token from cookies
+        const getToken = () =>
+          document.cookie
+            .split(";")
+            .find((c) => c.trim().startsWith("access_token="))
+            ?.split("=")[1] || null;
+
+        const token = getToken();
+
+        const response = await axios.get(
+          `${API_BASE_URL}employee/getSingleEmployeeByID/${userId}`,
+          {
+            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
         if (response.data.success && response.data.data) {
           const { firstName, lastName } = response.data.data;
-          setUserName(`${firstName ? `${firstName[0]}.` : ''} ${lastName || ''}`.trim() || 'User');
+          setUserName(`${firstName || ""} ${lastName || ""}`.trim() || "User");
         }
       } catch (err) {
         console.error("Fetch user data error:", err);
         if (err.response?.status === 401) {
           // Unauthorized - redirect to login
-          navigate('/login');
+          navigate("/login");
         }
       } finally {
         setUserLoading(false);
       }
     };
+
     const fetchDepartments = async () => {
       setDepartmentsLoading(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}department/getAllDepartments`, {
-          withCredentials: true,
-        });
+        const response = await axios.get(
+          `${API_BASE_URL}department/getAllDepartments`,
+          {
+            withCredentials: true,
+          }
+        );
         if (response.data.success) {
           setDepartments(response.data.data);
         }
@@ -164,57 +215,75 @@ const AdminDashboard = () => {
 
     const fetchDashboardStats = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}attendance/dashboard-stats`, {
-          withCredentials: true,
-        });
+        const response = await axios.get(
+          `${API_BASE_URL}attendance/dashboard-stats`,
+          {
+            withCredentials: true,
+          }
+        );
         if (response.data.success) {
           setTotalEmployees(response.data.stats.totalEmployees.toString());
-          setPresentToday((response.data.stats.present + response.data.stats.late).toString());
+          setPresentToday(
+            (response.data.stats.present + response.data.stats.late).toString()
+          );
         }
       } catch (err) {
         console.error("Fetch dashboard stats error:", err);
-        setTotalEmployees('0');
-        setPresentToday('0');
+        setTotalEmployees("0");
+        setPresentToday("0");
       }
     };
 
     const fetchActiveProjects = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}projects/getAllProjects`, {
-          withCredentials: true,
-        });
+        const response = await axios.get(
+          `${API_BASE_URL}projects/getAllProjects`,
+          {
+            withCredentials: true,
+          }
+        );
         const projects = response.data.data || [];
-        const active = projects.filter(p => p.status?.toLowerCase() === 'active').length;
+        const active = projects.filter(
+          (p) => p.status?.toLowerCase() === "active"
+        ).length;
         setActiveProjects(active.toString());
       } catch (err) {
         console.error("Fetch projects error:", err);
-        setActiveProjects('0');
+        setActiveProjects("0");
       }
     };
 
     const fetchPendingLeaves = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}leave-request/getAllLeaves`, {
-          withCredentials: true,
-        });
+        const response = await axios.get(
+          `${API_BASE_URL}leave-request/getAllLeaves`,
+          {
+            withCredentials: true,
+          }
+        );
         const leaves = response.data.data || [];
-        const pending = leaves.filter(l => l.status?.toLowerCase() === 'pending').length;
+        const pending = leaves.filter(
+          (l) => l.status?.toLowerCase() === "pending"
+        ).length;
         setPendingLeaves(pending.toString());
       } catch (err) {
         console.error("Fetch leaves error:", err);
-        setPendingLeaves('0');
+        setPendingLeaves("0");
       }
     };
 
     const fetchAnnouncements = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}announcement/getActiveAnnouncements`, {
-          withCredentials: true,
-        });
+        const response = await axios.get(
+          `${API_BASE_URL}announcement/getActiveAnnouncements`,
+          {
+            withCredentials: true,
+          }
+        );
         setAnnouncementsCount((response.data.data || []).length.toString());
       } catch (err) {
         console.error("Fetch announcements error:", err);
-        setAnnouncementsCount('0');
+        setAnnouncementsCount("0");
       }
     };
 
@@ -225,28 +294,31 @@ const AdminDashboard = () => {
           withCredentials: true,
         });
         const tasks = response.data.data || [];
-        let completed = 0, inProgress = 0, pending = 0, overdue = 0;
+        let completed = 0,
+          inProgress = 0,
+          pending = 0,
+          overdue = 0;
         const now = new Date();
-        tasks.forEach(t => {
-          const status = t.status ? t.status.toLowerCase() : '';
-          const isOverdue = new Date(t.dueDate) < now && status !== 'completed';
-          if (status === 'completed') {
+        tasks.forEach((t) => {
+          const status = t.status ? t.status.toLowerCase() : "";
+          const isOverdue = new Date(t.dueDate) < now && status !== "completed";
+          if (status === "completed") {
             completed++;
           } else if (isOverdue) {
             overdue++;
-          } else if (status === 'in progress') {
+          } else if (status === "in progress") {
             inProgress++;
           } else {
             pending++;
           }
         });
-        setTaskDistribution({completed, inProgress, pending, overdue});
+        setTaskDistribution({ completed, inProgress, pending, overdue });
         setActiveTasks((inProgress + pending + overdue).toString());
         setOverdueTasks(overdue.toString());
       } catch (err) {
         console.error("Fetch tasks error:", err);
-        setActiveTasks('0');
-        setOverdueTasks('0');
+        setActiveTasks("0");
+        setOverdueTasks("0");
       } finally {
         setTaskDistributionLoading(false);
       }
@@ -255,9 +327,12 @@ const AdminDashboard = () => {
     const fetchAttendanceTrends = async () => {
       setAttendanceTrendsLoading(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}attendance/getAttendent?viewType=week`, {
-          withCredentials: true,
-        });
+        const response = await axios.get(
+          `${API_BASE_URL}attendance/getAttendent?viewType=week`,
+          {
+            withCredentials: true,
+          }
+        );
         if (response.data.success) {
           const attendance = response.data.attendance || [];
           const now = new Date();
@@ -270,19 +345,24 @@ const AdminDashboard = () => {
           for (let i = 0; i < 7; i++) {
             const dayDate = new Date(monday);
             dayDate.setDate(monday.getDate() + i);
-            const dayName = dayDate.toLocaleString('en-US', { weekday: 'short' });
+            const dayName = dayDate.toLocaleString("en-US", {
+              weekday: "short",
+            });
             const dayStr = dayDate.toISOString().slice(0, 10);
             days.push({ day: dayName, present: 0, absent: 0, date: dayStr });
           }
-          attendance.forEach(rec => {
-            const status = rec.status?.toLowerCase() || '';
-            const dayIndex = days.findIndex(d => d.date === rec.date);
-            if (dayIndex !== -1 && (status === 'present' || status === 'late')) {
+          attendance.forEach((rec) => {
+            const status = rec.status?.toLowerCase() || "";
+            const dayIndex = days.findIndex((d) => d.date === rec.date);
+            if (
+              dayIndex !== -1 &&
+              (status === "present" || status === "late")
+            ) {
               days[dayIndex].present++;
             }
           });
           const total = parseInt(totalEmployees) || 0;
-          days.forEach(day => {
+          days.forEach((day) => {
             day.absent = total - day.present;
           });
           setAttendanceTrends(days);
@@ -305,21 +385,101 @@ const AdminDashboard = () => {
   }, []);
 
   const stats = [
-    { icon: Users, label: 'Total Employees', value: totalEmployees, action: 'Manage Employees', link: '/admin/Approve', bgColor: 'bg-blue-100', iconColor: 'text-blue-600' },
-    { icon: UserCog, label: 'Present Today', value: presentToday, action: 'View Attendance', link: '/admin/attendance', bgColor: 'bg-green-100', iconColor: 'text-green-600' },
-    { icon: ClipboardList, label: 'Active Tasks', value: activeTasks, action: 'Manage Tasks', link: '/admin/assign-task', bgColor: 'bg-orange-100', iconColor: 'text-orange-600' },
-    { icon: Briefcase, label: 'Active Projects', value: activeProjects, action: 'View Projects', link: '/admin/projects', bgColor: 'bg-purple-100', iconColor: 'text-purple-600' },
-    { icon: FileText, label: 'Pending Leaves', value: pendingLeaves, action: 'Review Requests', link: '/admin/manage-leaves', bgColor: 'bg-red-100', iconColor: 'text-red-600' },
-    { icon: Building2, label: 'Departments', value: departmentsLoading ? '...' : departments.length.toString(), action: 'Manage Departments', link: '/admin/departments', bgColor: 'bg-teal-100', iconColor: 'text-teal-600' },
-    { icon: Megaphone, label: 'Announcements', value: announcementsCount, action: 'View All', link: '/admin/announcements', bgColor: 'bg-pink-100', iconColor: 'text-pink-600' },
-    { icon: CalendarClock, label: 'Overdue Tasks', value: overdueTasks, action: 'View Details', link: '/admin/assign-task', bgColor: 'bg-blue-100', iconColor: 'text-blue-600' },
+    {
+      icon: Users,
+      label: "Total Employees",
+      value: totalEmployees,
+      action: "Manage Employees",
+      link: "/admin/Approve",
+      bgColor: "bg-blue-100",
+      iconColor: "text-blue-600",
+    },
+    {
+      icon: UserCog,
+      label: "Present Today",
+      value: presentToday,
+      action: "View Attendance",
+      link: "/admin/attendance",
+      bgColor: "bg-green-100",
+      iconColor: "text-green-600",
+    },
+    {
+      icon: ClipboardList,
+      label: "Active Tasks",
+      value: activeTasks,
+      action: "Manage Tasks",
+      link: "/admin/assign-task",
+      bgColor: "bg-orange-100",
+      iconColor: "text-orange-600",
+    },
+    {
+      icon: Briefcase,
+      label: "Active Projects",
+      value: activeProjects,
+      action: "View Projects",
+      link: "/admin/projects",
+      bgColor: "bg-purple-100",
+      iconColor: "text-purple-600",
+    },
+    {
+      icon: FileText,
+      label: "Pending Leaves",
+      value: pendingLeaves,
+      action: "Review Requests",
+      link: "/admin/manage-leaves",
+      bgColor: "bg-red-100",
+      iconColor: "text-red-600",
+    },
+    {
+      icon: Building2,
+      label: "Departments",
+      value: departmentsLoading ? "..." : departments.length.toString(),
+      action: "Manage Departments",
+      link: "/admin/departments",
+      bgColor: "bg-teal-100",
+      iconColor: "text-teal-600",
+    },
+    {
+      icon: Megaphone,
+      label: "Announcements",
+      value: announcementsCount,
+      action: "View All",
+      link: "/admin/announcements",
+      bgColor: "bg-pink-100",
+      iconColor: "text-pink-600",
+    },
+    {
+      icon: CalendarClock,
+      label: "Overdue Tasks",
+      value: overdueTasks,
+      action: "View Details",
+      link: "/admin/assign-task",
+      bgColor: "bg-blue-100",
+      iconColor: "text-blue-600",
+    },
   ];
 
   const activities = [
-    { title: 'New Employee Added', description: 'Sarah Johnson joined the Development Team', time: '2 hours ago' },
-    { title: 'Project Milestone Completed', description: 'Website Redesign Phase 1 completed by Design team', time: '4 hours ago' },
-    { title: 'Leave Request Approved', description: "Mike Chen's vacation leave approved for Dec 15-20", time: '5 hours ago' },
-    { title: 'Task Assignment', description: '15 new tasks assigned to Marketing team', time: 'Yesterday' },
+    {
+      title: "New Employee Added",
+      description: "Sarah Johnson joined the Development Team",
+      time: "2 hours ago",
+    },
+    {
+      title: "Project Milestone Completed",
+      description: "Website Redesign Phase 1 completed by Design team",
+      time: "4 hours ago",
+    },
+    {
+      title: "Leave Request Approved",
+      description: "Mike Chen's vacation leave approved for Dec 15-20",
+      time: "5 hours ago",
+    },
+    {
+      title: "Task Assignment",
+      description: "15 new tasks assigned to Marketing team",
+      time: "Yesterday",
+    },
   ];
 
   const handleInputChange = (e) => {
@@ -416,24 +576,47 @@ const AdminDashboard = () => {
     resetForm();
   };
 
-  const departmentWiseData = departmentsLoading ? [] : departments.map(dept => ({
-    dept: dept.name,
-    count: dept.capacity || 0,
-    color: `bg-${['blue', 'purple', 'orange', 'teal', 'red', 'pink', 'indigo', 'green'][departments.indexOf(dept) % 8]}-500`
-  })).sort((a, b) => b.count - a.count);
+  const departmentWiseData = departmentsLoading
+    ? []
+    : departments
+        .map((dept) => ({
+          dept: dept.name,
+          count: dept.capacity || 0,
+          color: `bg-${
+            [
+              "blue",
+              "purple",
+              "orange",
+              "teal",
+              "red",
+              "pink",
+              "indigo",
+              "green",
+            ][departments.indexOf(dept) % 8]
+          }-500`,
+        }))
+        .sort((a, b) => b.count - a.count);
 
   const circumference = 2 * Math.PI * 40;
-  const totalTasks = taskDistribution.completed + taskDistribution.inProgress + taskDistribution.pending + taskDistribution.overdue;
-  const percentCompleted = totalTasks > 0 ? (taskDistribution.completed / totalTasks) * 100 : 0;
-  const percentInProgress = totalTasks > 0 ? (taskDistribution.inProgress / totalTasks) * 100 : 0;
-  const percentPending = totalTasks > 0 ? (taskDistribution.pending / totalTasks) * 100 : 0;
-  const percentOverdue = totalTasks > 0 ? (taskDistribution.overdue / totalTasks) * 100 : 0;
+  const totalTasks =
+    taskDistribution.completed +
+    taskDistribution.inProgress +
+    taskDistribution.pending +
+    taskDistribution.overdue;
+  const percentCompleted =
+    totalTasks > 0 ? (taskDistribution.completed / totalTasks) * 100 : 0;
+  const percentInProgress =
+    totalTasks > 0 ? (taskDistribution.inProgress / totalTasks) * 100 : 0;
+  const percentPending =
+    totalTasks > 0 ? (taskDistribution.pending / totalTasks) * 100 : 0;
+  const percentOverdue =
+    totalTasks > 0 ? (taskDistribution.overdue / totalTasks) * 100 : 0;
 
   const segments = [
-    { color: '#22c55e', percent: percentCompleted, label: 'Completed' },
-    { color: '#f59e0b', percent: percentInProgress, label: 'In Progress' },
-    { color: '#3b82f6', percent: percentPending, label: 'Pending' },
-    { color: '#ef4444', percent: percentOverdue, label: 'Overdue' },
+    { color: "#22c55e", percent: percentCompleted, label: "Completed" },
+    { color: "#f59e0b", percent: percentInProgress, label: "In Progress" },
+    { color: "#3b82f6", percent: percentPending, label: "Pending" },
+    { color: "#ef4444", percent: percentOverdue, label: "Overdue" },
   ];
 
   const maxAttendance = parseInt(totalEmployees) || 200;
@@ -441,19 +624,22 @@ const AdminDashboard = () => {
   return (
     <div className="flex bg-[#F8FAFC] min-h-screen">
       <Sidebar />
-      
+
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* TOP BAR */}
-        <TopBar/>
-        
+        <DashboardHeader />
 
         {/* SCROLLABLE CONTENT */}
         <div className="flex-1 overflow-auto p-5">
           {/* WELCOME */}
           <div className="mb-5">
-            <h1 className="text-2xl font-bold text-gray-800 mb-1">Welcome back, {userName}!</h1>
-            <p className="text-sm text-gray-600">Here's what's happening with your organization today</p>
+            <h1 className="text-2xl font-bold text-gray-800 mb-1">
+              Welcome back, {userName}!
+            </h1>
+            <p className="text-sm text-gray-600">
+              Here's what's happening with your organization today
+            </p>
           </div>
 
           {/* STAT CARDS */}
@@ -468,37 +654,82 @@ const AdminDashboard = () => {
             {/* ATTENDANCE TRENDS */}
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-800">Attendance Trends<br /><span className="text-xs font-normal text-gray-500">(Last 7 Days)</span></h3>
-                <button className="text-[#087990] text-xs font-medium hover:underline">View Report</button>
+                <h3 className="text-sm font-semibold text-gray-800">
+                  Attendance Trends
+                  <br />
+                  <span className="text-xs font-normal text-gray-500">
+                    (Last 7 Days)
+                  </span>
+                </h3>
+                <button className="text-[#087990] text-xs font-medium hover:underline">
+                  View Report
+                </button>
               </div>
               {attendanceTrendsLoading ? (
                 <div className="text-center py-12">
                   <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#087990]"></div>
-                  <p className="mt-4 text-gray-600">Loading attendance trends...</p>
+                  <p className="mt-4 text-gray-600">
+                    Loading attendance trends...
+                  </p>
                 </div>
               ) : attendanceTrends.length === 0 ? (
-                <div className="text-center py-12 text-gray-600">No attendance data</div>
+                <div className="text-center py-12 text-gray-600">
+                  No attendance data
+                </div>
               ) : (
                 <div className="h-40 flex items-end justify-between gap-2">
                   {attendanceTrends.map((data, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      key={i}
+                      className="flex-1 flex flex-col items-center gap-1"
+                    >
                       <div className="w-full flex flex-col gap-1">
                         <div
                           className="bg-green-500 rounded-t hover:bg-green-600 transition-colors cursor-pointer"
-                          style={{ height: `${(data.present / maxAttendance) * 120}px` }}
-                          onMouseEnter={(e) => showTooltip(e, `${data.day} — Present`, `${data.present} employees present`)}
-                          onMouseMove={(e) => showTooltip(e, `${data.day} — Present`, `${data.present} employees present`)}
+                          style={{
+                            height: `${(data.present / maxAttendance) * 120}px`,
+                          }}
+                          onMouseEnter={(e) =>
+                            showTooltip(
+                              e,
+                              `${data.day} — Present`,
+                              `${data.present} employees present`
+                            )
+                          }
+                          onMouseMove={(e) =>
+                            showTooltip(
+                              e,
+                              `${data.day} — Present`,
+                              `${data.present} employees present`
+                            )
+                          }
                           onMouseLeave={hideTooltip}
                         ></div>
                         <div
                           className="bg-red-500 rounded-b hover:bg-red-600 transition-colors cursor-pointer"
-                          style={{ height: `${(data.absent / maxAttendance) * 120}px` }}
-                          onMouseEnter={(e) => showTooltip(e, `${data.day} — Absent`, `${data.absent} employees absent`)}
-                          onMouseMove={(e) => showTooltip(e, `${data.day} — Absent`, `${data.absent} employees absent`)}
+                          style={{
+                            height: `${(data.absent / maxAttendance) * 120}px`,
+                          }}
+                          onMouseEnter={(e) =>
+                            showTooltip(
+                              e,
+                              `${data.day} — Absent`,
+                              `${data.absent} employees absent`
+                            )
+                          }
+                          onMouseMove={(e) =>
+                            showTooltip(
+                              e,
+                              `${data.day} — Absent`,
+                              `${data.absent} employees absent`
+                            )
+                          }
                           onMouseLeave={hideTooltip}
                         ></div>
                       </div>
-                      <span className="text-[10px] text-gray-600 mt-1">{data.day}</span>
+                      <span className="text-[10px] text-gray-600 mt-1">
+                        {data.day}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -518,16 +749,24 @@ const AdminDashboard = () => {
             {/* TASK STATUS DISTRIBUTION */}
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-800">Task Status Distribution</h3>
-                <button className="text-[#087990] text-xs font-medium hover:underline">View All Tasks</button>
+                <h3 className="text-sm font-semibold text-gray-800">
+                  Task Status Distribution
+                </h3>
+                <button className="text-[#087990] text-xs font-medium hover:underline">
+                  View All Tasks
+                </button>
               </div>
               {taskDistributionLoading ? (
                 <div className="text-center py-12">
                   <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#087990]"></div>
-                  <p className="mt-4 text-gray-600">Loading task distribution...</p>
+                  <p className="mt-4 text-gray-600">
+                    Loading task distribution...
+                  </p>
                 </div>
               ) : totalTasks === 0 ? (
-                <div className="text-center py-12 text-gray-600">No tasks data</div>
+                <div className="text-center py-12 text-gray-600">
+                  No tasks data
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-40">
                   <div className="relative w-32 h-32">
@@ -550,8 +789,20 @@ const AdminDashboard = () => {
                             strokeDasharray={`${dash} ${circumference}`}
                             strokeDashoffset={-offset}
                             className="hover:opacity-80 transition-opacity cursor-pointer"
-                            onMouseEnter={(e) => showTooltip(e, seg.label, `${seg.label}: ${seg.percent.toFixed(1)}%`)}
-                            onMouseMove={(e) => showTooltip(e, seg.label, `${seg.label}: ${seg.percent.toFixed(1)}%`)}
+                            onMouseEnter={(e) =>
+                              showTooltip(
+                                e,
+                                seg.label,
+                                `${seg.label}: ${seg.percent.toFixed(1)}%`
+                              )
+                            }
+                            onMouseMove={(e) =>
+                              showTooltip(
+                                e,
+                                seg.label,
+                                `${seg.label}: ${seg.percent.toFixed(1)}%`
+                              )
+                            }
                             onMouseLeave={hideTooltip}
                           />
                         );
@@ -562,9 +813,32 @@ const AdminDashboard = () => {
               )}
               <div className="grid grid-cols-2 gap-2 mt-3">
                 {segments.map((seg, i) => (
-                  <div key={i} className="flex items-center gap-2" onMouseEnter={(e)=>showTooltip(e, seg.label, `${seg.label}: ${seg.percent.toFixed(1)}%`)} onMouseMove={(e)=>showTooltip(e, seg.label, `${seg.label}: ${seg.percent.toFixed(1)}%`)} onMouseLeave={hideTooltip}>
-                    <div className="w-2 h-2 rounded-full" style={{backgroundColor: seg.color}}></div>
-                    <span className="text-[10px] text-gray-600">{seg.label}</span>
+                  <div
+                    key={i}
+                    className="flex items-center gap-2"
+                    onMouseEnter={(e) =>
+                      showTooltip(
+                        e,
+                        seg.label,
+                        `${seg.label}: ${seg.percent.toFixed(1)}%`
+                      )
+                    }
+                    onMouseMove={(e) =>
+                      showTooltip(
+                        e,
+                        seg.label,
+                        `${seg.label}: ${seg.percent.toFixed(1)}%`
+                      )
+                    }
+                    onMouseLeave={hideTooltip}
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: seg.color }}
+                    ></div>
+                    <span className="text-[10px] text-gray-600">
+                      {seg.label}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -573,21 +847,48 @@ const AdminDashboard = () => {
             {/* DEPARTMENT-WISE EMPLOYEES */}
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-800">Department-wise<br />Capacity</h3>
-                <button className="text-[#087990] text-xs font-medium hover:underline">Manage Departments</button>
+                <h3 className="text-sm font-semibold text-gray-800">
+                  Department-wise
+                  <br />
+                  Capacity
+                </h3>
+                <button className="text-[#087990] text-xs font-medium hover:underline">
+                  Manage Departments
+                </button>
               </div>
               <div className="h-40 flex items-end justify-between gap-2">
                 {departmentsLoading ? (
                   <div className="flex items-center justify-center w-full h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#087990]"></div>
                   </div>
-                ) : departmentWiseData.map((data, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
-                    <span className="text-[10px] font-medium text-gray-700">{data.count}</span>
-                    <div className={`w-full ${data.color} rounded-t group-hover:opacity-80 transition-opacity`} style={{ height: `${(data.count / Math.max(...departmentWiseData.map(d => d.count), 1)) * 120}px` }}></div>
-                    <span className="text-[10px] text-gray-600 mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">{data.dept}</span>
-                  </div>
-                ))}
+                ) : (
+                  departmentWiseData.map((data, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 flex flex-col items-center gap-1 group"
+                    >
+                      <span className="text-[10px] font-medium text-gray-700">
+                        {data.count}
+                      </span>
+                      <div
+                        className={`w-full ${data.color} rounded-t group-hover:opacity-80 transition-opacity`}
+                        style={{
+                          height: `${
+                            (data.count /
+                              Math.max(
+                                ...departmentWiseData.map((d) => d.count),
+                                1
+                              )) *
+                            120
+                          }px`,
+                        }}
+                      ></div>
+                      <span className="text-[10px] text-gray-600 mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">
+                        {data.dept}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -597,8 +898,12 @@ const AdminDashboard = () => {
             {/* RECENT ACTIVITIES */}
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-800">Recent Activities</h3>
-                <button className="text-[#087990] text-xs font-medium hover:underline">View All</button>
+                <h3 className="text-sm font-semibold text-gray-800">
+                  Recent Activities
+                </h3>
+                <button className="text-[#087990] text-xs font-medium hover:underline">
+                  View All
+                </button>
               </div>
               <div className="space-y-1">
                 {activities.map((activity, index) => (
@@ -609,16 +914,22 @@ const AdminDashboard = () => {
 
             {/* QUICK ACTIONS */}
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-800 mb-3">Quick Actions</h3>
+              <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                Quick Actions
+              </h3>
               <div className="grid grid-cols-2 gap-3">
-                <QuickActionButton icon={UserPlus} label="Add Employee" />
-                <QuickActionButton icon={ListChecks} label="Create Task" />
-                <QuickActionButton icon={FolderPlus} label="New Project" />
-                <QuickActionButton icon={Megaphone} label="Announcement" />
-                <QuickActionButton icon={Building2} label="Add New Department" onClick={() => setShowCreateModal(true)} />
-                <QuickActionButton icon={FileText} label="Export Report" />
-                <QuickActionButton icon={UserCog} label="Edit Profiles" />
-                <QuickActionButton icon={Settings} label="Settings" />
+                <QuickActionButton icon={UserPlus} label="Add Employee" onClick={() => navigate("/admin/users")} />
+                <QuickActionButton icon={ListChecks} label="Create Task" onClick={() => navigate("/admin/assign-task")} />
+                <QuickActionButton icon={FolderPlus} label="New Project" onClick={() => navigate("/admin/projects")} />
+                <QuickActionButton icon={Megaphone} label="Announcement"onClick={() => navigate("/admin/announcements")} />
+                <QuickActionButton
+                  icon={Building2}
+                  label="Add New Department"
+                  onClick={() => setShowCreateModal(true)}
+                />
+                <QuickActionButton icon={FileText} label="Export Report" onClick={() => navigate("/admin/reports")} />
+                <QuickActionButton icon={UserCog} label="Edit Profiles" onClick={() => navigate("/admin/edit-employee/:id")} />
+                <QuickActionButton icon={Settings} label="Settings" onClick={() => navigate("/admin/system-settings")} />
               </div>
             </div>
           </div>

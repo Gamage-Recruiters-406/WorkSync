@@ -1,24 +1,23 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import Sidebar from "../../components/sidebar/Sidebar";
 import { Edit2, Trash2, X } from "lucide-react";
 import { AiOutlineCheckCircle, AiOutlineCloseCircle } from "react-icons/ai";
+import api from "../../api/axios";
 
 // -------------------- Custom Alert Modal --------------------
 const CustomAlert = ({ message, type, onClose }) => {
-  // type: "success" or "error"
   const colors = {
-    success: { 
-      border: "border-[#087990]", 
-      bg: "bg-[#E6F4F6]", 
+    success: {
+      border: "border-[#087990]",
+      bg: "bg-[#E6F4F6]",
       icon: <AiOutlineCheckCircle className="w-12 h-12 text-[#087990]" />,
-      text: "text-[#087990]"
+      text: "text-[#087990]",
     },
-    error: { 
-      border: "border-red-500", 
-      bg: "bg-red-50", 
+    error: {
+      border: "border-red-500",
+      bg: "bg-red-50",
       icon: <AiOutlineCloseCircle className="w-12 h-12 text-red-500" />,
-      text: "text-red-800"
+      text: "text-red-800",
     },
   };
   const color = colors[type] || colors.error;
@@ -35,12 +34,8 @@ const CustomAlert = ({ message, type, onClose }) => {
         >
           <X size={20} />
         </button>
-        <div className="mb-4 flex items-center justify-center gap-3">
-          {color.icon}
-        </div>
-        <p className={`mb-6 text-lg font-medium ${color.text}`}>
-          {message}
-        </p>
+        <div className="mb-4 flex items-center justify-center gap-3">{color.icon}</div>
+        <p className={`mb-6 text-lg font-medium ${color.text}`}>{message}</p>
         <button
           onClick={onClose}
           className="bg-[#087990] hover:bg-[#06657a] text-white px-6 py-2 rounded-xl transition-colors duration-200 font-medium"
@@ -53,39 +48,37 @@ const CustomAlert = ({ message, type, onClose }) => {
 };
 
 // -------------------- Delete Confirm Modal --------------------
-const ConfirmModal = ({ message, onConfirm, onCancel }) => {
-  return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onCancel}></div>
-      <div className="relative bg-red-50 p-6 rounded-2xl w-full max-w-md text-center shadow-2xl border-l-4 border-red-500 transform transition-all duration-300 scale-100">
+const ConfirmModal = ({ message, onConfirm, onCancel }) => (
+  <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+    <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onCancel}></div>
+    <div className="relative bg-red-50 p-6 rounded-2xl w-full max-w-md text-center shadow-2xl border-l-4 border-red-500 transform transition-all duration-300 scale-100">
+      <button
+        onClick={onCancel}
+        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        <X size={20} />
+      </button>
+      <div className="mb-4 flex items-center justify-center gap-3">
+        <AiOutlineCloseCircle className="w-12 h-12 text-red-500" />
+      </div>
+      <p className="mb-6 text-lg font-medium text-red-800">{message}</p>
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={onConfirm}
+          className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-xl transition-colors duration-200 font-medium"
+        >
+          Confirm
+        </button>
         <button
           onClick={onCancel}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-xl transition-colors duration-200 font-medium"
         >
-          <X size={20} />
+          Cancel
         </button>
-        <div className="mb-4 flex items-center justify-center gap-3">
-          <AiOutlineCloseCircle className="w-12 h-12 text-red-500" />
-        </div>
-        <p className="mb-6 text-lg font-medium text-red-800">{message}</p>
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={onConfirm}
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-xl transition-colors duration-200 font-medium"
-          >
-            Confirm
-          </button>
-          <button
-            onClick={onCancel}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-xl transition-colors duration-200 font-medium"
-          >
-            Cancel
-          </button>
-        </div>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 // -------------------- Main Component --------------------
 const LeaveRequest = () => {
@@ -98,7 +91,12 @@ const LeaveRequest = () => {
 
   const [leaveHistory, setLeaveHistory] = useState([]);
   const [editingLeaveId, setEditingLeaveId] = useState(null);
+
+  // leaveBalance will store: { used: {annual, casual, sick}, policy: {..}, usageStrings: {...} }
   const [leaveBalance, setLeaveBalance] = useState(null);
+
+  // counts derived from leaveHistory
+  const [statusCounts, setStatusCounts] = useState({ approved: 0, pending: 0, rejected: 0 });
 
   // Modal State
   const [alert, setAlert] = useState({ open: false, message: "", type: "success" });
@@ -115,41 +113,96 @@ const LeaveRequest = () => {
   // -------------------- Fetch leave history --------------------
   const fetchLeaveHistory = async () => {
     try {
-      const userId = "6943b5b7c357c931da00fef2"; // TEMP
-      const res = await axios.get(
-        `http://localhost:8090/api/v1/leave-request/getLeave/${userId}`,
-        { withCredentials: true }
+      const user = JSON.parse(localStorage.getItem("user"));
+      const userId = user?.userid;
+      if (!userId) {
+        console.warn("User ID not found in localStorage");
+        setLeaveHistory([]);
+        setStatusCounts({ approved: 0, pending: 0, rejected: 0 });
+        return;
+      }
+
+      const res = await api.get(`/getLeave/${userId}`);
+      const leaves = res.data?.data || [];
+      setLeaveHistory(leaves);
+      // compute counts
+      const counts = leaves.reduce(
+        (acc, l) => {
+          const s = l.sts || "pending";
+          if (s === "approved") acc.approved += 1;
+          else if (s === "rejected") acc.rejected += 1;
+          else acc.pending += 1;
+          return acc;
+        },
+        { approved: 0, pending: 0, rejected: 0 }
       );
-      setLeaveHistory(res.data.data || []);
+      setStatusCounts(counts);
     } catch (error) {
-      console.error(error);
-      setAlert({ open: true, message: "Failed to fetch leave history", type: "error" });
+      console.error("fetchLeaveHistory error:", error);
+      setAlert({
+        open: true,
+        message: error.response?.data?.message || "Leave history load karanna bari una",
+        type: "error",
+      });
+    }
+  };
+
+  // -------------------- Fetch leave balance --------------------
+  const fetchLeaveBalance = async () => {
+    try {
+      const res = await api.get("/leave-balance");
+      const payload = res.data || {};
+
+      // payload.used expected: { sick: 0, annual: 1, casual: 1 }
+      // payload.policy expected: { sick:10, annual:10, casual:5 }
+      const usedObj = payload.used || { sick: 0, annual: 0, casual: 0 };
+      const policy = payload.policy || { sick: 10, annual: 10, casual: 5 };
+
+      // build usage strings reliably
+      const usageStrings = {
+        annual: `${Number(usedObj.annual || 0)}/${Number(policy.annual || 1)}`,
+        casual: `${Number(usedObj.casual || 0)}/${Number(policy.casual || 1)}`,
+        sick: `${Number(usedObj.sick || 0)}/${Number(policy.sick || 1)}`,
+      };
+
+      setLeaveBalance({
+        used: {
+          annual: Number(usedObj.annual || 0),
+          casual: Number(usedObj.casual || 0),
+          sick: Number(usedObj.sick || 0),
+        },
+        policy,
+        usageStrings,
+      });
+    } catch (err) {
+      console.error("fetchLeaveBalance error:", err);
+      setAlert({ open: true, message: "Leave balance load karanna bari una", type: "error" });
     }
   };
 
   useEffect(() => {
     fetchLeaveHistory();
+    fetchLeaveBalance();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // -------------------- Submit / Update --------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.leaveType || !formData.startDate || !formData.endDate || !formData.reason) {
+      setAlert({ open: true, message: "All fields are required", type: "error" });
+      return;
+    }
+
     try {
       if (editingLeaveId) {
-        await axios.put(
-          `http://localhost:8090/api/v1/leave-request/updateLeave/${editingLeaveId}`,
-          formData,
-          { withCredentials: true }
-        );
-        setAlert({ open: true, message: "Leave updated successfully", type: "success" });
+        const res = await api.put(`/updateLeave/${editingLeaveId}`, formData);
+        setAlert({ open: true, message: res.data?.message || "Leave updated successfully", type: "success" });
         setEditingLeaveId(null);
       } else {
-        await axios.post(
-          "http://localhost:8090/api/v1/leave-request/addLeave",
-          formData,
-          { withCredentials: true }
-        );
-        setAlert({ open: true, message: "Leave request submitted successfully", type: "success" });
+        const res = await api.post("/addLeave", formData);
+        setAlert({ open: true, message: res.data?.message || "Leave request submitted successfully", type: "success" });
       }
 
       setFormData({
@@ -159,10 +212,11 @@ const LeaveRequest = () => {
         reason: "",
       });
 
-      fetchLeaveHistory();
-      fetchLeaveBalance(); // Add this to update balance after submit/update
+      // refresh data (overwrite states)
+      await fetchLeaveHistory();
+      await fetchLeaveBalance();
     } catch (error) {
-      console.error(error);
+      console.error("handleSubmit error:", error);
       setAlert({
         open: true,
         message: error.response?.data?.message || "Something went wrong",
@@ -175,11 +229,13 @@ const LeaveRequest = () => {
   const handleEdit = (leave) => {
     setEditingLeaveId(leave._id);
     setFormData({
-      leaveType: leave.leaveType,
-      startDate: leave.startDate?.split("T")[0],
-      endDate: leave.endDate?.split("T")[0],
-      reason: leave.reason,
+      leaveType: leave.leaveType || "",
+      startDate: leave.startDate ? leave.startDate.split("T")[0] : "",
+      endDate: leave.endDate ? leave.endDate.split("T")[0] : "",
+      reason: leave.reason || "",
     });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // -------------------- Delete --------------------
@@ -189,40 +245,19 @@ const LeaveRequest = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(
-        `http://localhost:8090/api/v1/leave-request/deleteLeave/${confirmDelete.leaveId}`,
-        { withCredentials: true }
-      );
-
-      setLeaveHistory(prev => prev.filter(l => l._id !== confirmDelete.leaveId));
+      await api.delete(`/deleteLeave/${confirmDelete.leaveId}`);
+      // optimistic UI update
+      setLeaveHistory((prev) => prev.filter((l) => l._id !== confirmDelete.leaveId));
       setAlert({ open: true, message: "Leave deleted successfully", type: "success" });
-      fetchLeaveHistory();
-      fetchLeaveBalance(); // Add this to update balance after delete
+      await fetchLeaveHistory();
+      await fetchLeaveBalance();
     } catch (error) {
-      console.error(error);
+      console.error("handleDeleteConfirm error:", error);
       setAlert({ open: true, message: "Failed to delete leave", type: "error" });
     } finally {
       setConfirmDelete({ open: false, leaveId: null });
     }
   };
-
-  // -------------------- Leave Balance --------------------
-  const fetchLeaveBalance = async () => {
-    try {
-      const res = await axios.get(
-        "http://localhost:8090/api/v1/leave-request/leave-balance",
-        { withCredentials: true }
-      );
-      setLeaveBalance(res.data);
-    } catch (err) {
-      console.error(err);
-      setAlert({ open: true, message: "Failed to fetch leave balance", type: "error" });
-    }
-  };
-
-  useEffect(() => {
-    fetchLeaveBalance();
-  }, []);
 
   // -------------------- UI --------------------
   return (
@@ -238,10 +273,7 @@ const LeaveRequest = () => {
               {editingLeaveId ? "Update Leave" : "Leave Request Form"}
             </h2>
 
-            <form
-              onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div>
                   <label className="text-gray-600 text text-sm">Leave Type</label>
@@ -249,13 +281,13 @@ const LeaveRequest = () => {
                     name="leaveType"
                     value={formData.leaveType}
                     onChange={handleChange}
-                    className="w-full border rounded-lg p-2 mt-2  text-sm"
+                    className="w-full border rounded-lg p-2 mt-2 text-sm"
                     required
                   >
                     <option value="">Select Type</option>
-                    <option value="Annual">Annual Leave</option>
-                    <option value="Casual">Casual Leave</option>
-                    <option value="Sick">Sick Leave</option>
+                    <option value="annual">Annual Leave</option>
+                    <option value="casual">Casual Leave</option>
+                    <option value="sick">Sick Leave</option>
                   </select>
                 </div>
 
@@ -298,7 +330,7 @@ const LeaveRequest = () => {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
-                  <button 
+                  <button
                     type="submit"
                     className="bg-[#087990] hover:bg-[#06657a] text-white px-4 py-2 w-40 rounded-lg transition-colors duration-200"
                   >
@@ -322,58 +354,63 @@ const LeaveRequest = () => {
                 </div>
               </div>
             </form>
-          </div>  
+          </div>
 
           {/* Leave Balance UI */}
           {leaveBalance && (
             <div className="bg-white rounded-2xl shadow p-4 border border-gray-200 max-w-md">
               <h2 className="text-lg font-medium mb-4">Leave Balance</h2>
 
-              {[ // Leave Types with Bars
-                { label: "Annual", value: leaveBalance.balance.annual, color: "bg-blue-500" },
-                { label: "Casual", value: leaveBalance.balance.casual, color: "bg-green-500" },
-                { label: "Sick", value: leaveBalance.balance.sick, color: "bg-purple-500" },
-              ].map((leave, idx) => {
-                let used = 0;
-                let total = 1;
-                if (leave.value.includes("/")) {
-                  const parts = leave.value.split("/");
-                  used = Number(parts[0]);
-                  total = Number(parts[1]);
-                }
-                const percent = `${(used / total) * 100}%`;
+              {["annual", "casual", "sick"].map((type, idx) => {
+              const used = leaveBalance.used?.[type] ?? 0;
+              const total = Number(leaveBalance.policy?.[type] ?? 0); // Default 0 set karanna
+              
+              // 100% walata wada yanna nodi thaba ganeema
+              const ratio = total > 0 ? used / total : 0;
+              const percentNum = Math.min(100, Math.round(ratio * 100)); 
+              const percent = `${percentNum}%`;
+              
+              const display = `${used}/${total}`;
 
-                return (
-                  <div key={idx} className="mb-6">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>{leave.label} Leave</span>
-                      <span className="font-semibold">{leave.value}</span>
-                    </div>
-                    <div className="w-full h-4 bg-gray-200 rounded-full">
-                      <div className={`${leave.color} h-4 rounded-full transition-all duration-300`} style={{ width: percent }}></div>
-                    </div>
+              const color =
+                type === "annual" ? "bg-blue-600" : type === "casual" ? "bg-green-600" : "bg-purple-600";
+
+              return (
+                <div key={idx} className="mb-6">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium text-gray-700">
+                      {type.charAt(0).toUpperCase() + type.slice(1)} Leave
+                    </span>
+                    <span className="font-semibold">{display}</span>
                   </div>
-                );
-              })}
+                  <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                    <div
+                      className={`${color} h-4 rounded-full transition-all duration-500 ease-out`}
+                      style={{ width: percent }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })}
 
               <hr className="border-gray-200 mb-6" />
 
               <div className="flex justify-around text-center">
                 <div className="flex flex-col items-center">
                   <span className="px-3 py-1 bg-[#E6F4F6] text-[#087990] rounded-full font-semibold">
-                    {leaveBalance.counts.approved}
+                    {statusCounts.approved ?? 0}
                   </span>
                   <span className="text-gray-500 text-sm mt-1">Approved</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full font-semibold">
-                    {leaveBalance.counts.pending}
+                    {statusCounts.pending ?? 0}
                   </span>
                   <span className="text-gray-500 text-sm mt-1">Pending</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full font-semibold">
-                    {leaveBalance.counts.rejected}
+                    {statusCounts.rejected ?? 0}
                   </span>
                   <span className="text-gray-500 text-sm mt-1">Rejected</span>
                 </div>
@@ -427,14 +464,14 @@ const LeaveRequest = () => {
                       </td>
                       <td className="text-center border-r border-white whitespace-nowrap">{leave.approvedBy?.fullName || "-"}</td>
                       <td className="text-center border-r border-white flex justify-center gap-2 items-center py-3 whitespace-nowrap">
-                        <button 
-                          onClick={() => handleEdit(leave)} 
+                        <button
+                          onClick={() => handleEdit(leave)}
                           className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors duration-150"
                         >
                           <Edit2 size={18} />
                         </button>
-                        <button 
-                          onClick={() => handleDeleteClick(leave._id)} 
+                        <button
+                          onClick={() => handleDeleteClick(leave._id)}
                           className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors duration-150"
                         >
                           <Trash2 size={18} />
@@ -473,4 +510,4 @@ const LeaveRequest = () => {
   );
 };
 
-export default LeaveRequest; 
+export default LeaveRequest;

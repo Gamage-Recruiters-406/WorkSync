@@ -2,38 +2,49 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/sidebar/Sidebar";
 import { User, Search, Bell } from "lucide-react";
-// import axios from "axios";
+import axios from "axios";
 
 const UserProfile = () => {
   const navigate = useNavigate();
 
-  const [profile, setProfile] = useState({
-    userId: "E001",
-    name: "K Jin",
-    role: "Employee",
-    departmentId: "IT01",
-    email: "Kjin@gmail.com",
-    password: "*******",
-    sts: "nnnnn",
-    avatar: "https://icon-library.com/images/male-avatar-icon/male-avatar-icon-8.jpg"
-  });
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Uncomment to fetch data from API
-  /*
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const userId = localStorage.getItem("userId"); // or from auth context
-        const response = await axios.get(`http://localhost:8090/api/v1/userAuth/getUser/${userId}`);
-        setProfile(response.data);
+        setLoading(true);
+        const response = await axios.get('http://localhost:8090/api/v1/employee/getSingleEmployee', { withCredentials: true });
+        
+        if (response.data?.success && response.data?.user) {
+          const user = response.data.user;
+          const roleMap = { 1: 'Employee', 2: 'Manager', 3: 'Admin' };
+          
+          setProfile({
+            userId: user.EmployeeID || user._id,
+            name: `${user.FirstName || ''} ${user.LastName || ''}`.trim(),
+            role: roleMap[user.role] || 'Employee',
+            departmentId: user.departmentID?._id || user.departmentID || 'N/A',
+            departmentName: user.departmentID?.name || user.departmentID?.DepartmentName || 'N/A',
+            email: user.email || '',
+            password: '********',
+            status: user.status || 'Active',
+            avatar: "https://icon-library.com/images/male-avatar-icon/male-avatar-icon-8.jpg"
+          });
+        } else {
+          setError('Failed to load profile');
+        }
       } catch (error) {
         console.error("Error fetching user profile:", error);
+        setError(error?.response?.data?.message || 'Failed to fetch profile');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUserProfile();
   }, []);
-  */
 
   const handleEditClick = () => {
     navigate("/user/profile/edit");
@@ -42,16 +53,26 @@ const UserProfile = () => {
   const handleDeleteClick = async () => {
     if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
       try {
-        // Uncomment to delete via API
-        /*
-        const userId = localStorage.getItem("userId");
-        await axios.delete(`http://localhost:8090/api/v1/userAuth/deleteUser/${userId}`);
-        */
-        alert("Account deleted successfully");
-        navigate("/login");
+        if (!profile?.userId) {
+          alert('Cannot delete account. User ID not found.');
+          return;
+        }
+        
+        const response = await axios.delete(
+          `http://localhost:8090/api/v1/employee/RemoveEmployee/${profile.userId}`,
+          { withCredentials: true }
+        );
+        
+        if (response.data?.success) {
+          alert("Account deleted successfully");
+          localStorage.clear();
+          navigate("/login");
+        } else {
+          alert(response.data?.message || 'Failed to delete account');
+        }
       } catch (error) {
         console.error("Error deleting account:", error);
-        alert("Failed to delete account. Please try again.");
+        alert(error?.response?.data?.message || "Failed to delete account. Please try again.");
       }
     }
   };
@@ -86,11 +107,11 @@ const UserProfile = () => {
               
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-800">{profile.name}</p>
-                  <p className="text-xs text-gray-500">{profile.role}</p>
+                  <p className="text-sm font-semibold text-gray-800">{profile?.name || 'User'}</p>
+                  <p className="text-xs text-gray-500">{profile?.role || 'Employee'}</p>
                 </div>
                 <img
-                  src={profile.avatar}
+                  src={profile?.avatar || "https://icon-library.com/images/male-avatar-icon/male-avatar-icon-8.jpg"}
                   alt="User Avatar"
                   className="w-10 h-10 rounded-full border-2 border-[#087990] object-cover"
                 />
@@ -103,6 +124,20 @@ const UserProfile = () => {
         <main className="flex-1 overflow-y-auto p-8">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-3xl font-bold text-gray-800 mb-8">Profile</h1>
+            
+            {loading && (
+              <div className="flex justify-center items-center h-64">
+                <p className="text-gray-600">Loading profile...</p>
+              </div>
+            )}
+            
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-red-700">{error}</p>
+              </div>
+            )}
+            
+            {!loading && !error && profile && (
             
             <div className="flex gap-8">
               {/* Left Profile Card */}
@@ -183,14 +218,14 @@ const UserProfile = () => {
                     />
                   </div>
 
-                  {/* STS */}
+                  {/* Status */}
                   <div className="flex flex-col">
                     <label className="text-sm text-gray-500 mb-2 font-medium">
-                      STS
+                      Status
                     </label>
                     <input
                       type="text"
-                      value={profile.sts}
+                      value={profile.status}
                       disabled
                       className="rounded-xl border border-gray-300 bg-gray-50 px-5 py-3 text-gray-700 font-medium text-lg focus:outline-none cursor-not-allowed"
                     />
@@ -214,6 +249,7 @@ const UserProfile = () => {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </main>
       </div>

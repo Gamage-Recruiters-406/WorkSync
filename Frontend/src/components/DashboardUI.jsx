@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import officeImg from '../assets/office.jpg';
-import Sidebar from './sidebar/Sidebar';
-import { CheckSquare, Users, FolderKanban, Search, Bell } from 'lucide-react';
+import React, { useState } from "react";
+import officeImg from "../assets/office.jpg";
+import Sidebar from "./sidebar/Sidebar";
+import { CheckSquare, Users, FolderKanban, Search, Bell } from "lucide-react";
+import DashboardHeader from "./DashboardHeader";
 
 /*
   Consolidated dashboard UI components:
@@ -16,7 +17,7 @@ import { CheckSquare, Users, FolderKanban, Search, Bell } from 'lucide-react';
 */
 
 const TopBar = () => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
   return (
     <header className="flex h-20 items-center justify-between rounded-2xl bg-white px-6 shadow-lg border border-gray-100">
@@ -40,10 +41,16 @@ const TopBar = () => {
 
         <div className="flex items-center gap-3 bg-gray-50 rounded-full pl-4 pr-2 py-2 hover:bg-gray-100 transition-all duration-200 cursor-pointer">
           <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold text-gray-800">John Doe</span>
+            <span className="text-sm font-semibold text-gray-800">
+              John Doe
+            </span>
             <span className="text-xs text-gray-500">Employee</span>
           </div>
-          <img src="https://i.pravatar.cc/40?img=12" alt="John Doe" className="h-10 w-10 rounded-full ring-2 ring-white shadow-md" />
+          <img
+            src="https://i.pravatar.cc/40?img=12"
+            alt="John Doe"
+            className="h-10 w-10 rounded-full ring-2 ring-white shadow-md"
+          />
         </div>
       </div>
     </header>
@@ -61,7 +68,7 @@ const StatCard = ({ icon, number, label }) => (
 const WelcomeCard = () => (
   <div
     className="relative col-span-2 overflow-hidden rounded-[12px] shadow-md"
-    style={{ minHeight: '160px' }}
+    style={{ minHeight: "160px" }}
   >
     <img
       src={officeImg}
@@ -74,7 +81,9 @@ const WelcomeCard = () => (
       <div className="flex-1">
         <h2 className="text-2xl font-semibold drop-shadow">Dashboard</h2>
         <p className="mt-1 text-sm text-white/90">Welcome, John Doe</p>
-        <p className="mt-4 text-sm text-white/80">Upcoming: Team sync at 3:00 PM</p>
+        <p className="mt-4 text-sm text-white/80">
+          Upcoming: Team sync at 3:00 PM
+        </p>
       </div>
       <div className="hidden h-28 w-36 shrink-0 rounded-lg border border-white/15 bg-white/5 backdrop-blur-sm lg:block" />
     </div>
@@ -88,7 +97,14 @@ const ProfileCard = () => {
     const offset = c - (percent / 100) * c;
     return (
       <svg width="44" height="44" viewBox="0 0 44 44" className="rounded-full">
-        <circle cx="22" cy="22" r={r} stroke="#F3F4F6" strokeWidth="6" fill="none" />
+        <circle
+          cx="22"
+          cy="22"
+          r={r}
+          stroke="#F3F4F6"
+          strokeWidth="6"
+          fill="none"
+        />
         <circle
           cx="22"
           cy="22"
@@ -108,12 +124,20 @@ const ProfileCard = () => {
   return (
     <div className="rounded-[12px] bg-card p-4 shadow-md">
       <div className="flex items-center gap-4">
-        <img src="https://i.pravatar.cc/88?img=12" alt="John Doe" className="h-20 w-20 rounded-full" />
+        <img
+          src="https://i.pravatar.cc/88?img=12"
+          alt="John Doe"
+          className="h-20 w-20 rounded-full"
+        />
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-lg font-semibold text-text-primary">John Doe</div>
-              <div className="text-[13px] text-text-secondary">UI/UX Designer</div>
+              <div className="text-lg font-semibold text-text-primary">
+                John Doe
+              </div>
+              <div className="text-[13px] text-text-secondary">
+                UI/UX Designer
+              </div>
             </div>
             <div className="flex gap-2">
               <Progress color="#8B5CF6" percent={50} />
@@ -123,7 +147,9 @@ const ProfileCard = () => {
           </div>
 
           <div className="mt-4">
-            <div className="text-sm font-semibold text-text-primary">Last Activities</div>
+            <div className="text-sm font-semibold text-text-primary">
+              Last Activities
+            </div>
             <ul className="mt-2 space-y-2 text-sm text-text-secondary">
               <li className="flex items-start gap-2">
                 <span className="text-[#3B82F6]">●</span>
@@ -134,7 +160,9 @@ const ProfileCard = () => {
                 <span>Your project status was updated by the team lead</span>
               </li>
               <li className="text-sm mt-2">
-                <a className="text-info hover:underline" href="#">See All</a>
+                <a className="text-info hover:underline" href="#">
+                  See All
+                </a>
               </li>
             </ul>
           </div>
@@ -146,15 +174,17 @@ const ProfileCard = () => {
 
 const RecentActivities = () => {
   const items = [
-    { text: 'Katherine has updated her profile' },
-    { text: 'Emily requested leave' },
-    { text: 'James assigned a new task' },
-    { text: 'Michael updated project status' },
+    { text: "Katherine has updated her profile" },
+    { text: "Emily requested leave" },
+    { text: "James assigned a new task" },
+    { text: "Michael updated project status" },
   ];
 
   return (
     <div className="rounded-[12px] bg-card p-4 shadow-md">
-      <h3 className="text-lg font-semibold text-text-primary">Recent Activities</h3>
+      <h3 className="text-lg font-semibold text-text-primary">
+        Recent Activities
+      </h3>
       <ul className="mt-3 space-y-3 text-text-secondary">
         {items.map((it, idx) => (
           <li key={idx} className="flex items-start gap-3">
@@ -169,10 +199,14 @@ const RecentActivities = () => {
 
 const CompleteProfileCard = () => (
   <div className="rounded-[12px] bg-card p-3 shadow-md">
-    <div className="text-sm font-semibold text-text-primary">Complete Profile</div>
-    <div className="mt-3 text-sm text-text-secondary">Your profile was done with 20%</div>
+    <div className="text-sm font-semibold text-text-primary">
+      Complete Profile
+    </div>
+    <div className="mt-3 text-sm text-text-secondary">
+      Your profile was done with 20%
+    </div>
     <div className="mt-3 h-3 w-full rounded-full bg-[#E5E7EB]">
-      <div className="h-3 rounded-full bg-primary" style={{ width: '20%' }} />
+      <div className="h-3 rounded-full bg-primary" style={{ width: "20%" }} />
     </div>
   </div>
 );
@@ -182,7 +216,7 @@ export default function DashboardUI() {
     <div className="flex h-screen">
       <Sidebar />
       <main className="flex-1 flex flex-col gap-6 p-6 bg-gray-50 overflow-y-auto">
-        <TopBar />
+        <DashboardHeader />
 
         <section className="grid grid-cols-3 gap-6">
           <WelcomeCard />
@@ -193,9 +227,21 @@ export default function DashboardUI() {
         </section>
 
         <section className="grid grid-cols-3 gap-4">
-          <StatCard icon={<CheckSquare className="w-6 h-6 text-[#087990]" />} number={34} label="Assigned Tasks" />
-          <StatCard icon={<Users className="w-6 h-6 text-[#6366F1]" />} number={12} label="Employees" />
-          <StatCard icon={<FolderKanban className="w-6 h-6 text-[#F59E0B]" />} number={5} label="Active Projects" />
+          <StatCard
+            icon={<CheckSquare className="w-6 h-6 text-[#087990]" />}
+            number={34}
+            label="Assigned Tasks"
+          />
+          <StatCard
+            icon={<Users className="w-6 h-6 text-[#6366F1]" />}
+            number={12}
+            label="Employees"
+          />
+          <StatCard
+            icon={<FolderKanban className="w-6 h-6 text-[#F59E0B]" />}
+            number={5}
+            label="Active Projects"
+          />
         </section>
 
         <section className="grid grid-cols-3 gap-6">
