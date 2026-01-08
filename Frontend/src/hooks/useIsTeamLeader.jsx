@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import jwtDecode from "jwt-decode";
 
 const URL_API = "http://localhost:8090";
 
-const getToken = () =>
-  document.cookie
-    .split(";")
-    .find(c => c.trim().startsWith("access_token="))
-    ?.split("=")[1] || null;
+// const getToken = () =>
+//   document.cookie
+//     .split(";")
+//     .find(c => c.trim().startsWith("access_token="))
+//     ?.split("=")[1] || null;
 
 const useIsTeamLeader = (projectId) => {
   const [isTeamLeader, setIsTeamLeader] = useState(false);
@@ -15,35 +16,31 @@ const useIsTeamLeader = (projectId) => {
   const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
-    console.log("useIsTeamLeader triggered. projectId:", projectId);
     const checkTeamLeader = async () => {
       try {
-        console.log("checkTeamLeader started");
         if (!projectId) {
-          console.log("❌ No projectId");
-          return;
-        }
-
-        const token = getToken();
-        console.log("Token:", token);
-        if (!token) {
-          console.log("❌ No token found");
+          setLoading(false);
           return;
         } 
-        
 
-        const payload = JSON.parse(atob(token.split(".")[1]));
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setLoading(false);
+          return;
+        } 
+
+        const payload = jwtDecode(token);
         const userId = payload.userid;
         setCurrentUserId(userId);
-        console.log("Current user ID:", userId);
+        
 
         const res = await axios.get(
           `${URL_API}/api/v1/projects/getProject/${projectId}`,
           { withCredentials: true }
         );
-        console.log("Project API response:", res.data);
+        
         const teamLeaderId = res.data?.data?.teamLeader?._id;
-        console.log("Team Leader ID:", teamLeaderId);
+
         setIsTeamLeader(
           teamLeaderId && teamLeaderId.toString() === userId.toString()
         );

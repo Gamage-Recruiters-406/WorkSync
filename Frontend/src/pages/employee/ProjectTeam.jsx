@@ -37,7 +37,7 @@ const ProjectTeam = () => {
     useEffect(()=>{
 
       const token = localStorage.getItem("token");
-
+      console.log(token);
       if (!token){
         console.warn("No token found, cannot fetch projects.");
         setLoading(false);
@@ -48,7 +48,7 @@ const ProjectTeam = () => {
       try{
         const decoded = jwtDecode(token);
         userId = decoded.userid;
-
+        console.log(decoded);
       } catch(err){
         console.warn("Failed to decode JWT:", err);
         setLoading(false);
