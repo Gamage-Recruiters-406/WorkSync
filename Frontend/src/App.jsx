@@ -233,14 +233,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* <Route
           path="/user/announcements"
           element={
             <ProtectedRoute allowedRoles={[1]}>
               <UserAnnouncements />
             </ProtectedRoute>
           }
-        />
+        /> */}
         <Route
           path="/user/leave-request"
           element={
@@ -335,8 +335,8 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/announcements-management" element={<AnnouncementsManagement />} />
-         <Route path="/announcement-detail" element={<AnnouncementDetail />} />
+        <Route path="/user/announcements" element={<AnnouncementsManagement />} />
+         <Route path="/announcement-detail/:id" element={<AnnouncementDetail />} />
       </Routes>
     </Router>
   );
