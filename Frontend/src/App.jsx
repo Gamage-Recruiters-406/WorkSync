@@ -121,8 +121,8 @@ function App() {
 
         {/* New Route for AnnouncementsPage */}
         <Route path="/announcements" element={<AnnouncementsPage />} />
-//         <Route path="/announcements-management" element={<AnnouncementsManagement />} />
-//         <Route path="/announcement-detail" element={<AnnouncementDetail />} />
+        {/* <Route path="/announcements-management" element={<AnnouncementsManagement />} /> */}
+        {/* <Route path="/announcement-detail" element={<AnnouncementDetail />} /> */}
       </Routes>
     </Router>
   );
