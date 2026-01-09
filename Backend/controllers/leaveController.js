@@ -24,6 +24,9 @@ const LEAVE_POLICY = {
   casual: 5,
 };
 
+//total leaves must be 10
+const TOTAL_LEAVES_PER_YEAR = 25;
+
 // Helper to calculate days between dates (including both start and end)
 const calculateDays = (start, end) => {
   const startDate = new Date(start);
@@ -46,6 +49,43 @@ export const createLeaveRequest = async (req, res) => {
       req.body.startDate,
       req.body.endDate
     );
+
+    // ===== CHECK TOTAL LEAVES LIMIT (10 PER YEAR) =====
+    const currentYear = new Date().getFullYear();
+    const yearStart = new Date(currentYear, 0, 1);
+    const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+    // Get approved leaves for this year
+    const approvedLeaves = await LeaveRequest.find({
+      requestedBy: req.user.userid,
+      sts: "approved",
+      startDate: { $lte: yearEnd },
+      endDate: { $gte: yearStart }
+    });
+
+    // Calculate total used leave days
+    let totalUsed = 0;
+
+    approvedLeaves.forEach(leave => {
+      const overlapStart = leave.startDate < yearStart ? yearStart : leave.startDate;
+      const overlapEnd = leave.endDate > yearEnd ? yearEnd : leave.endDate;
+
+      if (overlapStart <= overlapEnd) {
+        totalUsed += calculateDays(overlapStart, overlapEnd);
+      }
+    });
+
+    // Calculate new request days
+    const newLeaveDays = calculateDays(req.body.startDate, req.body.endDate);
+
+    // Block if exceeds yearly limit
+    if (totalUsed + newLeaveDays > TOTAL_LEAVES_PER_YEAR) {
+      throw {
+    status: 400,
+    message: `Leave limit exceeded. You can only take ${TOTAL_LEAVES_PER_YEAR} leaves per year.`,
+    };
+  }
+
 
     const leaveRequest = new LeaveRequest({
       ...req.body,
@@ -73,7 +113,6 @@ export const updateLeaveRequest = async (req, res) => {
 
     const leaveRequest = await checkLeaveRequestExists(id);
 
-    // Use unified permission checker
     if (!hasLeavePermission(leaveRequest, req.user, 'update')) {
       throw {
         status: 403,
@@ -81,7 +120,6 @@ export const updateLeaveRequest = async (req, res) => {
       };
     }
 
-    // Only allow specific fields to be updated
     const allowedUpdates = ["leaveType", "reason", "startDate", "endDate"];
     const updates = {};
     
@@ -101,6 +139,39 @@ export const updateLeaveRequest = async (req, res) => {
     // Create temporary object for validation
     const tempData = { ...leaveRequest.toObject(), ...updates };
     validateLeaveRequest(tempData);
+
+    // ===== CHECK TOTAL LEAVES LIMIT (10 PER YEAR) =====
+    const currentYear = new Date().getFullYear();
+    const yearStart = new Date(currentYear, 0, 1);
+    const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+    // Get all approved leaves for this year except current leave
+    const approvedLeaves = await LeaveRequest.find({
+      requestedBy: req.user.userid,
+      sts: "approved",
+      _id: { $ne: id },
+      startDate: { $lte: yearEnd },
+      endDate: { $gte: yearStart }
+    });
+
+    let totalUsed = 0;
+    approvedLeaves.forEach(leave => {
+      const overlapStart = leave.startDate < yearStart ? yearStart : leave.startDate;
+      const overlapEnd = leave.endDate > yearEnd ? yearEnd : leave.endDate;
+      if (overlapStart <= overlapEnd) {
+        totalUsed += calculateDays(overlapStart, overlapEnd);
+      }
+    });
+
+    // Calculate new leave days (updated request)
+    const newLeaveDays = calculateDays(updates.startDate || leaveRequest.startDate, updates.endDate || leaveRequest.endDate);
+
+    if (totalUsed + newLeaveDays > TOTAL_LEAVES_PER_YEAR) {
+      throw {
+        status: 400,
+        message: `Leave limit exceeded. Total leaves per year cannot exceed ${TOTAL_LEAVES_PER_YEAR} days.`,
+      };
+    }
 
     // Check for overlapping leaves (excluding current leave)
     if (updates.startDate || updates.endDate) {
