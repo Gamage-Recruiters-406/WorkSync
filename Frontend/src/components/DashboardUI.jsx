@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
-import officeImg from '../assets/office.jpg';
-import Sidebar from './sidebar/Sidebar';
-import { CheckSquare, Users, FolderKanban, Search, Bell } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import officeImg from "../assets/office.jpg";
+import Sidebar from "./sidebar/Sidebar";
+import { CheckSquare, Users, FolderKanban } from "lucide-react";
+import DashboardHeader from "./DashboardHeader";
+import {
+  employeeApi,
+  getCurrentUserInfo,
+  projectApi,
+  taskApi,
+} from "../services/taskApi";
 
 /*
   Consolidated dashboard UI components:
@@ -15,40 +23,33 @@ import { CheckSquare, Users, FolderKanban, Search, Bell } from 'lucide-react';
   Export: default DashboardUI
 */
 
-const TopBar = () => {
-  const [query, setQuery] = useState('');
+const API_URL = `${
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8090"
+}${import.meta.env.VITE_API_VERSION || "/api/v1"}`;
 
-  return (
-    <header className="flex h-20 items-center justify-between rounded-2xl bg-white px-6 shadow-lg border border-gray-100">
-      <div className="flex items-center gap-4">
-        <div className="relative w-[400px] max-w-[60vw]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            className="w-full rounded-full border-2 border-gray-200 bg-gray-50 py-3 pl-12 pr-6 text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#087990] focus:border-transparent focus:bg-white transition-all duration-200"
-            placeholder="Search..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-6">
-        <button className="relative rounded-full p-3 text-gray-500 hover:bg-gray-100 hover:text-[#087990] transition-all duration-200 group">
-          <Bell className="w-6 h-6" />
-          <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
-        </button>
-
-        <div className="flex items-center gap-3 bg-gray-50 rounded-full pl-4 pr-2 py-2 hover:bg-gray-100 transition-all duration-200 cursor-pointer">
-          <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold text-gray-800">John Doe</span>
-            <span className="text-xs text-gray-500">Employee</span>
-          </div>
-          <img src="https://i.pravatar.cc/40?img=12" alt="John Doe" className="h-10 w-10 rounded-full ring-2 ring-white shadow-md" />
-        </div>
-      </div>
-    </header>
-  );
+const getToken = () => {
+  const cookie = document.cookie
+    .split(";")
+    .find((c) => c.trim().startsWith("access_token="));
+  return cookie ? cookie.split("=")[1] : null;
 };
+
+const apiClient = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers = {
+      ...config.headers,
+      Authorization: `Bearer ${token}`,
+    };
+  }
+  return config;
+});
 
 const StatCard = ({ icon, number, label }) => (
   <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-[12px] bg-card p-6 text-center shadow-md">
@@ -58,10 +59,10 @@ const StatCard = ({ icon, number, label }) => (
   </div>
 );
 
-const WelcomeCard = () => (
+const WelcomeCard = ({ userName, upcomingTask }) => (
   <div
     className="relative col-span-2 overflow-hidden rounded-[12px] shadow-md"
-    style={{ minHeight: '160px' }}
+    style={{ minHeight: "160px" }}
   >
     <img
       src={officeImg}
@@ -73,22 +74,35 @@ const WelcomeCard = () => (
     <div className="relative flex items-center gap-6 px-6 py-6 text-white">
       <div className="flex-1">
         <h2 className="text-2xl font-semibold drop-shadow">Dashboard</h2>
-        <p className="mt-1 text-sm text-white/90">Welcome, John Doe</p>
-        <p className="mt-4 text-sm text-white/80">Upcoming: Team sync at 3:00 PM</p>
+        <p className="mt-1 text-sm text-white/90">
+          Welcome, {userName || "User"}
+        </p>
+        <p className="mt-4 text-sm text-white/80">
+          {upcomingTask
+            ? `Next due: ${upcomingTask.title} on ${upcomingTask.date}`
+            : "No upcoming tasks"}
+        </p>
       </div>
       <div className="hidden h-28 w-36 shrink-0 rounded-lg border border-white/15 bg-white/5 backdrop-blur-sm lg:block" />
     </div>
   </div>
 );
 
-const ProfileCard = () => {
+const ProfileCard = ({ profile, recentActivities }) => {
   const Progress = ({ color, percent }) => {
     const r = 18;
     const c = 2 * Math.PI * r;
     const offset = c - (percent / 100) * c;
     return (
       <svg width="44" height="44" viewBox="0 0 44 44" className="rounded-full">
-        <circle cx="22" cy="22" r={r} stroke="#F3F4F6" strokeWidth="6" fill="none" />
+        <circle
+          cx="22"
+          cy="22"
+          r={r}
+          stroke="#F3F4F6"
+          strokeWidth="6"
+          fill="none"
+        />
         <circle
           cx="22"
           cy="22"
@@ -108,33 +122,46 @@ const ProfileCard = () => {
   return (
     <div className="rounded-[12px] bg-card p-4 shadow-md">
       <div className="flex items-center gap-4">
-        <img src="https://i.pravatar.cc/88?img=12" alt="John Doe" className="h-20 w-20 rounded-full" />
+        <img
+          src={
+            profile?.avatar ||
+            "https://img.freepik.com/premium-vector/vector-flat-illustration-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette-profile-picture-suitable-social-media-profiles-icons-screensavers-as-templatex9xa_719432-2205.jpg"
+          }
+          alt={profile?.name || "User"}
+          className="h-20 w-20 rounded-full"
+        />
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-lg font-semibold text-text-primary">John Doe</div>
-              <div className="text-[13px] text-text-secondary">UI/UX Designer</div>
+              <div className="text-lg font-semibold text-text-primary">
+                {profile?.name || "User"}
+              </div>
+              <div className="text-[13px] text-text-secondary">
+                {profile?.role || "Employee"}
+              </div>
             </div>
             <div className="flex gap-2">
-              <Progress color="#8B5CF6" percent={50} />
-              <Progress color="#FB7185" percent={50} />
-              <Progress color="#0E8A8A" percent={50} />
+              <Progress color="#8B5CF6" percent={profile?.completion || 0} />
+              <Progress color="#FB7185" percent={profile?.completion || 0} />
+              <Progress color="#0E8A8A" percent={profile?.completion || 0} />
             </div>
           </div>
 
           <div className="mt-4">
-            <div className="text-sm font-semibold text-text-primary">Last Activities</div>
+            <div className="text-sm font-semibold text-text-primary">
+              Last Activities
+            </div>
             <ul className="mt-2 space-y-2 text-sm text-text-secondary">
-              <li className="flex items-start gap-2">
-                <span className="text-[#3B82F6]">●</span>
-                <span>Your attendance correction was reviewed by admin</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-[#F59E0B]">●</span>
-                <span>Your project status was updated by the team lead</span>
-              </li>
+              {(recentActivities || []).slice(0, 3).map((item) => (
+                <li key={item.id} className="flex items-start gap-2">
+                  <span className="text-[#3B82F6]">●</span>
+                  <span>{item.text}</span>
+                </li>
+              ))}
               <li className="text-sm mt-2">
-                <a className="text-info hover:underline" href="#">See All</a>
+                <a className="text-info hover:underline" href="#">
+                  See All
+                </a>
               </li>
             </ul>
           </div>
@@ -144,67 +171,219 @@ const ProfileCard = () => {
   );
 };
 
-const RecentActivities = () => {
-  const items = [
-    { text: 'Katherine has updated her profile' },
-    { text: 'Emily requested leave' },
-    { text: 'James assigned a new task' },
-    { text: 'Michael updated project status' },
-  ];
-
-  return (
-    <div className="rounded-[12px] bg-card p-4 shadow-md">
-      <h3 className="text-lg font-semibold text-text-primary">Recent Activities</h3>
-      <ul className="mt-3 space-y-3 text-text-secondary">
-        {items.map((it, idx) => (
-          <li key={idx} className="flex items-start gap-3">
-            <div className="mt-1 h-2 w-2 rounded-full bg-[#0E8A8A]/80" />
-            <div className="text-sm">{it.text}</div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-
-const CompleteProfileCard = () => (
-  <div className="rounded-[12px] bg-card p-3 shadow-md">
-    <div className="text-sm font-semibold text-text-primary">Complete Profile</div>
-    <div className="mt-3 text-sm text-text-secondary">Your profile was done with 20%</div>
-    <div className="mt-3 h-3 w-full rounded-full bg-[#E5E7EB]">
-      <div className="h-3 rounded-full bg-primary" style={{ width: '20%' }} />
-    </div>
-  </div>
-);
-
 export default function DashboardUI() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [stats, setStats] = useState({
+    assignedTasks: 0,
+    employees: 0,
+    activeProjects: 0,
+  });
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [profile, setProfile] = useState({
+    name: "",
+    role: "",
+    avatar: "",
+    completion: 0,
+  });
+  const [upcomingTask, setUpcomingTask] = useState(null);
+
+  const roleMap = useMemo(
+    () => ({ 1: "Employee", 2: "Manager", 3: "Admin" }),
+    []
+  );
+
+  const computeProfileCompletion = (userData) => {
+    if (!userData) return 0;
+    const fields = [
+      userData.FirstName || userData.firstName,
+      userData.LastName || userData.lastName,
+      userData.email,
+      userData.ContactNumber,
+      userData.departmentID,
+    ];
+    const filled = fields.filter(Boolean).length;
+    return Math.round((filled / fields.length) * 100);
+  };
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const currentUser = await getCurrentUserInfo();
+
+        const [tasksRes, employeesRes, projectsRes, profileRes] =
+          await Promise.all([
+            currentUser
+              ? taskApi.getUserTasks(currentUser.email, currentUser.id)
+              : [],
+            employeeApi.getEmployeesByRole().catch(() => null),
+            projectApi.getAllProjects().catch(() => null),
+            apiClient.get("/employee/getSingleEmployee").catch(() => null),
+          ]);
+
+        const tasks = Array.isArray(tasksRes) ? tasksRes : [];
+
+        const employeesList =
+          employeesRes?.data?.data || employeesRes?.data || employeesRes || [];
+        const projectsList =
+          projectsRes?.data?.data || projectsRes?.data || projectsRes || [];
+        const userData = profileRes?.data?.user || null;
+
+        const activeProjects = Array.isArray(projectsList)
+          ? projectsList.filter(
+              (p) => (p.status || "").toLowerCase() === "active"
+            ).length
+          : 0;
+
+        const sortedTasks = [...tasks].sort(
+          (a, b) =>
+            new Date(b.updatedAt || b.createdAt || 0) -
+            new Date(a.updatedAt || a.createdAt || 0)
+        );
+
+        setRecentActivities(
+          sortedTasks.slice(0, 6).map((task) => ({
+            id: task._id || task.id,
+            text: `${task.title || "Task"} is ${
+              (task.status || "pending").toLowerCase()
+            }`,
+            updatedAt: task.updatedAt || task.createdAt || task.dueDate,
+          }))
+        );
+
+        const upcoming = tasks
+          .filter((t) => t.dueDate && new Date(t.dueDate) > new Date())
+          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+        setUpcomingTask(
+          upcoming[0]
+            ? {
+                title: upcoming[0].title || "Task",
+                date: new Date(upcoming[0].dueDate).toLocaleDateString(),
+              }
+            : null
+        );
+
+        const completion = computeProfileCompletion(userData);
+
+        setProfile({
+          name:
+            `${userData?.FirstName || ""} ${userData?.LastName || ""}`.trim() ||
+            currentUser?.name ||
+            "User",
+          role: roleMap[userData?.role] || roleMap[currentUser?.role] || "Employee",
+          avatar: userData?.image || "",
+          completion,
+        });
+
+        setStats({
+          assignedTasks: tasks.length,
+          employees: Array.isArray(employeesList) ? employeesList.length : 0,
+          activeProjects,
+        });
+      } catch (err) {
+        setError("Failed to load dashboard data");
+        console.error("Dashboard load error", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, [roleMap]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#087990] mx-auto" />
+          <p className="mt-4 text-gray-600">Preparing your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="bg-white shadow rounded-lg p-6 text-center">
+          <p className="text-red-600 font-semibold mb-2">{error}</p>
+          <p className="text-gray-600">Please refresh to retry.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen">
       <Sidebar />
       <main className="flex-1 flex flex-col gap-6 p-6 bg-gray-50 overflow-y-auto">
-        <TopBar />
+        <DashboardHeader />
 
         <section className="grid grid-cols-3 gap-6">
-          <WelcomeCard />
+          <WelcomeCard userName={profile.name} upcomingTask={upcomingTask} />
 
           <div className="col-span-1 flex flex-col gap-4">
-            <ProfileCard />
+            <ProfileCard profile={profile} recentActivities={recentActivities} />
           </div>
         </section>
 
         <section className="grid grid-cols-3 gap-4">
-          <StatCard icon={<CheckSquare className="w-6 h-6 text-[#087990]" />} number={34} label="Assigned Tasks" />
-          <StatCard icon={<Users className="w-6 h-6 text-[#6366F1]" />} number={12} label="Employees" />
-          <StatCard icon={<FolderKanban className="w-6 h-6 text-[#F59E0B]" />} number={5} label="Active Projects" />
+          <StatCard
+            icon={<CheckSquare className="w-6 h-6 text-[#087990]" />}
+            number={stats.assignedTasks}
+            label="Assigned Tasks"
+          />
+          <StatCard
+            icon={<Users className="w-6 h-6 text-[#6366F1]" />}
+            number={stats.employees}
+            label="Employees"
+          />
+          <StatCard
+            icon={<FolderKanban className="w-6 h-6 text-[#F59E0B]" />}
+            number={stats.activeProjects}
+            label="Active Projects"
+          />
         </section>
 
         <section className="grid grid-cols-3 gap-6">
           <div className="col-span-2">
-            <RecentActivities />
+            <div className="rounded-[12px] bg-card p-4 shadow-md">
+              <h3 className="text-lg font-semibold text-text-primary">
+                Recent Activities
+              </h3>
+              <ul className="mt-3 space-y-3 text-text-secondary">
+                {recentActivities.map((it) => (
+                  <li key={it.id} className="flex items-start gap-3">
+                    <div className="mt-1 h-2 w-2 rounded-full bg-[#0E8A8A]/80" />
+                    <div className="text-sm">{it.text}</div>
+                  </li>
+                ))}
+                {recentActivities.length === 0 && (
+                  <li className="text-sm text-gray-500">No recent updates</li>
+                )}
+              </ul>
+            </div>
           </div>
           <div className="col-span-1">
             <div className="space-y-4">
-              <CompleteProfileCard />
+              <div className="rounded-[12px] bg-card p-3 shadow-md">
+                <div className="text-sm font-semibold text-text-primary">
+                  Complete Profile
+                </div>
+                <div className="mt-3 text-sm text-text-secondary">
+                  Your profile was done with {profile.completion}%
+                </div>
+                <div className="mt-3 h-3 w-full rounded-full bg-[#E5E7EB]">
+                  <div
+                    className="h-3 rounded-full bg-primary"
+                    style={{ width: `${profile.completion}%` }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>

@@ -28,31 +28,6 @@ const ManagerDashboard = () => {
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [showTeamDropdown, setShowTeamDropdown] = useState(false);
 
-  const [role, setRole] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
-
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setUserProfile(user);
-
-        // Role mapping: 3-admin, 2-manager, 1-employee
-        const roleMap = {
-          3: "admin",
-          2: "manager",
-          1: "employee",
-        };
-
-        setRole(roleMap[user.role] || null);
-      }
-    } catch (error) {
-      console.error("Failed to parse user data:", error);
-      setRole(null);
-    }
-  }, []);
-
   const timeRanges = [
     "Last 7 days",
     "Last 14 days",
@@ -205,7 +180,7 @@ const ManagerDashboard = () => {
       <Sidebar />
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <DashboardHeader user={userProfile} role={role} />
+        <DashboardHeader />
 
         {/* Main Content */}
         <div className="p-6">

@@ -7,8 +7,12 @@ import { createDiskUploader } from "../middlewares/uploadFactory.js";
 
 const router = express.Router();
 
+const upload = createDiskUploader({
+  getDestination: () => path.join(process.cwd(), "Resumes"),
+});
+
 // User Registration - POST /api/v1/userAuth/userRegistration
-router.post("/userRegistration", registerUser);
+router.post(  "/userRegistration",upload.single("resume"),registerUser);
 
 // User Login - POST /api/v1/userAuth/userLogin
 router.post("/userLogin", loginUser);

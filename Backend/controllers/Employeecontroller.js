@@ -21,9 +21,9 @@ export const rejisterEmployee = async (req, res) => {
     }
 
     // prevent duplicates (choose one depending on your Employee schema)
-    const exists = await EmployeeModel.findOne({ userId: user._id });
+    // const exists = await EmployeeModel.findOne({ userId: user._id });
     // OR if you don't have userId in Employee schema:
-    // const exists = await EmployeeModel.findOne({ email: user.email });
+    const exists = await EmployeeModel.findOne({ email: user.email });
 
     if (exists) {
       return res.status(400).json({

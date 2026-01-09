@@ -4,7 +4,7 @@ import Toast from "../../components/Toast";
 
 const statusColors = {
   "In Progress": "text-blue-600",
-  "Completed": "text-green-600",
+  "Complete": "text-green-600",
   "Pending": "text-yellow-600"
 }
 
