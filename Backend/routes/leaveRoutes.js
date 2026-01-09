@@ -8,7 +8,8 @@ import {
   getLeavesByUser,
   getSingleLeave,
   getAllLeaves,
-  getLeaveBalance
+  getLeaveBalance,
+  getLeaveStatusCounts
 } from "../controllers/leaveController.js";
 
 const router = express.Router();
@@ -40,6 +41,12 @@ router.get("/getAllLeaves", isManagerOrAdmin, getAllLeaves);
 
 //Get leave balance for logged-in user**
 router.get("/leave-balance", getLeaveBalance);
+
+// Get logged-in user's leave status counts
+router.get("/status", getLeaveStatusCounts);
+
+// Get specific employee's leave status counts (Manager/Admin only)
+router.get("/status/:employeeId", isManagerOrAdmin, getLeaveStatusCounts);
 
 // DELETE /api/v1/leave-request/deleteLeave/:id - Delete leave request
 router.delete("/deleteLeave/:id", deleteLeaveRequest);

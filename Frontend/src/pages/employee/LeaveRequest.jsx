@@ -3,6 +3,7 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import { Edit2, Trash2, X } from "lucide-react";
 import { AiOutlineCheckCircle, AiOutlineCloseCircle } from "react-icons/ai";
 import api from "../../api/axios";
+import DashboardHeader from "../../components/DashboardHeader";
 
 // -------------------- Custom Alert Modal --------------------
 const CustomAlert = ({ message, type, onClose }) => {
@@ -264,7 +265,11 @@ const LeaveRequest = () => {
     <div className="flex h-screen">
       <Sidebar />
 
-      <div className="flex-1 p-6 space-y-6 border rounded-3xl bg-white overflow-y-auto">
+      <div className="flex-1 border bg-white overflow-y-auto">
+        <DashboardHeader/>
+
+        <div className="flex-1 p-6 space-y-6 bg-white overflow-y-auto">
+        
         {/* Top Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Leave Request Form */}
@@ -487,6 +492,7 @@ const LeaveRequest = () => {
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       </div>
 

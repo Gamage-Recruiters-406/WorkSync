@@ -189,7 +189,7 @@ export const validateLeaveRequest = (leaveData) => {
       }
 
       // Check if end date is after start date
-      if (start >= end) {
+      if (start > end) {
         errors.push("End date must be after start date");
       }
 

@@ -3,23 +3,16 @@ import bcrypt from "bcryptjs";
 import JWT from "jsonwebtoken";
 
 // REGISTER USER
+// REGISTER USER
 export const registerUser = async (req, res) => {
     try {
-        const { name, role, email, password, departmentID } = req.body;
+        const { FirstName, LastName, NIC, ContactNumber, Gender, email } = req.body;
 
         // Validation
-        if (!name || !role || !email || !password) {
-            return res.status(400).json({
+        if (!FirstName || !NIC || !ContactNumber || !LastName || !Gender || !email ) {
+            return res.status(404).json({
                 success: false,
-                message: "All fields (name, role, email, password) are required"
-            });
-        }
-
-        // Validate role
-        if (![1, 2, 3].includes(Number(role))) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid role. Must be 1 (Employee), 2 (Manager), or 3 (Admin)"
+                message: "All fields are required!"
             });
         }
 
@@ -28,39 +21,26 @@ export const registerUser = async (req, res) => {
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: "User already exists with this email"
+                message: "You already send your details"
             });
         }
 
-        // Validate password length
-        if (password.length < 6) {
-            return res.status(400).json({
-                success: false,
-                message: "Password must be at least 6 characters long"
-            });
+        const attachments =[];
+        if (req.file) {
+            attachments.push(req.file.path.replace(/\\/g, "/"));
         }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create user
-        const user = await User.create({
-            name,
-            role: Number(role),
-            email,
-            password: hashedPassword,
-            departmentID: departmentID || undefined
-        });
+        const user = await User.create({ FirstName, LastName, NIC, ContactNumber, Gender, email, attachments});
 
         res.status(201).json({
             success: true,
             message: "User registered successfully",
             data: { 
                 userid: user._id,
-                name: user.name,
-                role: user.role,
+                FirstName: user.FirstName,
+                LastName: user.LastName,
                 email: user.email,
-                departmentID: user.departmentID
             }
         });
     } catch (error) {
