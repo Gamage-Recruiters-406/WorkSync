@@ -4,6 +4,7 @@ import ProjectCard from './ProjectCardAdmin';
 import CreateProjectModal from './CreateProjectForm';
 import { getAllProjects, deleteProject } from '../../services/ProjectService';
 import Sidebar from '../../components/sidebar/Sidebar';
+import DashboardHeader from '../../components/DashboardHeader';
 
 const ProjectsDashboard = () => {
   const navigate = useNavigate();
@@ -72,6 +73,10 @@ const ProjectsDashboard = () => {
   return (
     <div className="flex min-h-screen bg-[#E5E7EB]">
       <Sidebar />
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <DashboardHeader/>
+
       <div className="flex-1 p-6">
         {/* Main Content */}
         <div className="mb-6">
@@ -120,6 +125,7 @@ const ProjectsDashboard = () => {
           onSuccess={handleProjectCreated}
         />
       </div>
+    </div>
     </div>
   );
 };

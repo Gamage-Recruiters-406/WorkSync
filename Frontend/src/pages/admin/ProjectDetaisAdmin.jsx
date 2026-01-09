@@ -4,6 +4,7 @@ import axios from "axios";
 import Sidebar from "../../components/sidebar/Sidebar";
 import { getProject } from "../../services/ProjectService";
 import { getAllMilestones } from "../../services/ProjectService";
+import DashboardHeader from "../../components/DashboardHeader";
 
 const ProjectDetailsAdmin = () => {
     // For description see more/less
@@ -308,6 +309,10 @@ const ProjectDetailsAdmin = () => {
     return (
         <div className="flex h-screen bg-gray-50">
             <Sidebar />
+
+            <div className="flex-1 flex flex-col overflow-hidden">
+        <DashboardHeader/>
+
             <main className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto p-6">
                     {/* Header Section */}
@@ -766,6 +771,7 @@ const ProjectDetailsAdmin = () => {
                     </div>
                 </div>
             )}
+        </div>
         </div>
     );
 };
