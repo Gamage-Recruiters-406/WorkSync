@@ -206,7 +206,7 @@ function Sidebar() {
     localStorage.removeItem("token");
     localStorage.removeItem("currentUser");
     localStorage.removeItem("user");
-    Cookies.remove("access_token");
+    Cookies.remove("access_token", { path: "/" });
 
     navigate("/login");
   };

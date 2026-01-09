@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LogoImg from "../assets/Logo.jpg";
 import axios from "axios";
-import Cookies from 'js-cookie';
-
+import Cookies from "js-cookie";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -27,40 +26,44 @@ export default function Login() {
     setLoading(true);
 
     try {
-    //   const response = await fetch("http://localhost:8090/api/v1/userAuth/userLogin", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     credentials: "include",
-    //     body: JSON.stringify({ email, password }),
-    //   });
-    const res = await axios.post("http://localhost:8090/api/v1/employee/userLogin", { email, password }, { withCredentials: true });
-    console.log(res);
+      //   const response = await fetch("http://localhost:8090/api/v1/userAuth/userLogin", {
+      //     method: "POST",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //     credentials: "include",
+      //     body: JSON.stringify({ email, password }),
+      //   });
+      const res = await axios.post(
+        "http://localhost:8090/api/v1/employee/userLogin",
+        { email, password },
+        { withCredentials: true }
+      );
+      console.log(res);
 
-    //   const data = await response.json();
+      //   const data = await response.json();
 
       if (res.data.success) {
         setSuccess("Login successful!");
 
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.data));
-        Cookies.set('access_token', res.data.token  );
+        Cookies.set("access_token", res.data.token, { path: "/" });
         console.log(res.data.token);
 
-    const role = res.data.data.role;
+        const role = res.data.data.role;
 
         setTimeout(() => {
-  if (role === 3) {
-    navigate("/admin/dashboard");
-  } else if (role === 2) {
-    navigate("/manager/dashboard"); // manager uses user dashboard
-  } else if (role === 1) {
-    navigate("/user/dashboard"); // employee
-  } else {
-    navigate("/login");
-  }
-}, 1000);
+          if (role === 3) {
+            navigate("/admin/dashboard");
+          } else if (role === 2) {
+            navigate("/manager/dashboard"); // manager uses user dashboard
+          } else if (role === 1) {
+            navigate("/user/dashboard"); // employee
+          } else {
+            navigate("/login");
+          }
+        }, 1000);
       } else {
         setError(res.data.message || "Login failed");
       }
@@ -79,16 +82,19 @@ export default function Login() {
   };
 
   return (
-<div className="min-h-screen w-full bg-white flex items-center justify-center px-4 relative overflow-hidden">
-  {/* Background Decorative Shapes */}
-  <div className="absolute inset-0 z-0">
-    {/* Top Right Corner */}
-    <div className="absolute top-0 right-0 w-72 h-72 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem]  bg-[#E5E7EB] rounded-bl-[160px]"></div>
-    <div className="absolute top-0 right-0 w-56 h-56  md:w-72 md:h-72 lg:w-[22rem] lg:h-[22rem] bg-[#087990] rounded-bl-[120px]"></div>
+    <div className="min-h-screen w-full bg-white flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background Decorative Shapes */}
+      <div className="absolute inset-0 z-0">
+        {/* Top Right Corner */}
+        <div className="absolute top-0 right-0 w-72 h-72 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem]  bg-[#E5E7EB] rounded-bl-[160px]"></div>
+        <div className="absolute top-0 right-0 w-56 h-56  md:w-72 md:h-72 lg:w-[22rem] lg:h-[22rem] bg-[#087990] rounded-bl-[120px]"></div>
 
-    {/* Bottom Left Corner */}
-    <div className="absolute bottom-0 left-0 w-72 h-72 md:w-96 md:h-96  lg:w-[28rem] lg:h-[28rem] bg-[#E5E7EB] rounded-tr-[160px]"></div>
-    <div className="absolute bottom-0 left-0 w-56 h-56 md:w-72 md:h-72 lg:w-[22rem] lg:h-[22rem] bg-[#087990] rounded-tr-[120px]"> </div></div>
+        {/* Bottom Left Corner */}
+        <div className="absolute bottom-0 left-0 w-72 h-72 md:w-96 md:h-96  lg:w-[28rem] lg:h-[28rem] bg-[#E5E7EB] rounded-tr-[160px]"></div>
+        <div className="absolute bottom-0 left-0 w-56 h-56 md:w-72 md:h-72 lg:w-[22rem] lg:h-[22rem] bg-[#087990] rounded-tr-[120px]">
+          {" "}
+        </div>
+      </div>
 
       {/* Card wrapper */}
       <div className="relative z-10 flex w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden">
@@ -113,7 +119,7 @@ export default function Login() {
               Work Sync
             </h1>
             <p className="text-white text-sm opacity-90">
-              Workforce  Management System
+              Workforce Management System
             </p>
           </div>
         </div>

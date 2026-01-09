@@ -33,26 +33,26 @@ import TaskDetail from "./pages/employee/TaskDetail";
 
 import { Navigate } from "react-router-dom";
 //import AdminReport from "./pages/reportAnalytics/AdminReport";
-import { useState } from "react";
-//import EmployeeList from './pages/admin/EmployeeList';
-import EditEmployee from './pages/admin/EditEmployee';
-import ApproveUser from './pages/admin/ApproveUser';
-import Sidebar from './components/sidebar/Sidebar';
-import DashboardUI from './components/DashboardUI';
-import ProjectDetails from './pages/employee/ProjectDetails';
-import DepartmentDetails from './pages/admin/Department/ViewDepartment';
-import SystemSettings from './pages/systemSetting/SystemSettings';
-import CompanyInfoSettings from './pages/systemSetting/CompanyInfoSettings';
-import ProfileSettings from './pages/systemSetting/ProfileSettings';
-import RolesAttendanceSettings from './pages/systemSetting/RolesAttendanceSettings';
-import WorkingHoursSettings from './pages/systemSetting/WorkingHoursSettings';
 
-import ProjectDetailsAdmin from './pages/admin/ProjectDetaisAdmin';
-import ManagerDashboard from './pages/manager/managerDashboard';
-import SignUp from './pages/Signup';
-import UserProfile from './pages/employee/UserProfile';
-import UserProfileEdit from './pages/employee/UserProfileEdit';
-import AnnouncementsPage from './pages/AnnouncementsPage';
+//import EmployeeList from './pages/admin/EmployeeList';
+import EditEmployee from "./pages/admin/EditEmployee";
+import ApproveUser from "./pages/admin/ApproveUser";
+import Sidebar from "./components/sidebar/Sidebar";
+import DashboardUI from "./components/DashboardUI";
+import ProjectDetails from "./pages/employee/ProjectDetails";
+import DepartmentDetails from "./pages/admin/Department/ViewDepartment";
+import SystemSettings from "./pages/systemSetting/SystemSettings";
+import CompanyInfoSettings from "./pages/systemSetting/CompanyInfoSettings";
+import ProfileSettings from "./pages/systemSetting/ProfileSettings";
+import RolesAttendanceSettings from "./pages/systemSetting/RolesAttendanceSettings";
+import WorkingHoursSettings from "./pages/systemSetting/WorkingHoursSettings";
+
+import ProjectDetailsAdmin from "./pages/admin/ProjectDetaisAdmin";
+import ManagerDashboard from "./pages/manager/managerDashboard";
+import SignUp from "./pages/Signup";
+import UserProfile from "./pages/employee/UserProfile";
+import UserProfileEdit from "./pages/employee/UserProfileEdit";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
 // import AnnouncementsManagement from './pages/AnnouncementsManagement';
 // import AnnouncementDetail from './pages/admin/AnnouncementDetail';
 
@@ -110,7 +110,6 @@ function App() {
         <Route path="/user/profile/edit" element={<UserProfileEdit />} />
         <Route path="/task-details/:id" element={<TaskDetail />} />
 
-
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />
         <Route path="/edit-task/:taskId" element={<CreateTaskForm />} />
@@ -121,8 +120,8 @@ function App() {
 
         {/* New Route for AnnouncementsPage */}
         <Route path="/announcements" element={<AnnouncementsPage />} />
-//         <Route path="/announcements-management" element={<AnnouncementsManagement />} />
-//         <Route path="/announcement-detail" element={<AnnouncementDetail />} />
+        {/* <Route path="/announcements-management" element={<AnnouncementsManagement />} />
+         <Route path="/announcement-detail" element={<AnnouncementDetail />} /> */}
       </Routes>
     </Router>
   );
