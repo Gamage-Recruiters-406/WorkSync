@@ -50,7 +50,7 @@ export default function AdminReport() {
           getAllLeaves(),
           getAllEmployee(),
         ]);
-
+        console.log(leaveRes);
         const attendance = attendanceRes?.data?.attendance || [];
 
         const leaves = leaveRes.data.data || [];
@@ -71,7 +71,8 @@ export default function AdminReport() {
           absentToday: todayAttendance.filter((a) => a.status === "Absent")
             .length,
 
-          pendingLeaves: leaves.length, // unchanged
+          pendingLeaves: leaves.filter((leave) => leave.sts === "pending")
+            .length,
         }));
       } catch (error) {
         console.error(" Error loading KPI data:", error);
@@ -158,7 +159,7 @@ export default function AdminReport() {
               <KpiCards title="Total Employees" value={kpis.totalEmployees} />
               <KpiCards title="Present Today" value={kpis.presentToday} />
               <KpiCards title="Absent Today" value={kpis.absentToday} />
-              <KpiCards title="Leaves" value={kpis.pendingLeaves} />
+              <KpiCards title="Pending Leaves" value={kpis.pendingLeaves} />
             </div>
 
             {/* CHARTS */}
