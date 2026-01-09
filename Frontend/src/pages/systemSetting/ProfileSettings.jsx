@@ -96,12 +96,13 @@ const ProfileSettings = () => {
             </div>
 
             <div className="mt-6">
+              {/*edit
               <button
                 onClick={() => navigate("/settings/profile/edit")}
                 className="rounded-lg bg-[#0b7c8f] px-6 py-2 font-semibold text-white hover:opacity-90"
               >
                 Edit Details
-              </button>
+              </button>*/}
             </div>
           </div>
         </div>

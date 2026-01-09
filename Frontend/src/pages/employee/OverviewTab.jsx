@@ -12,10 +12,6 @@ const OverviewTab = ({ projectId, milestones = [], teamMembers = [], projectData
     const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
   
     const getDeadline = (m) => (m.endDate ? new Date(m.endDate) : null);
-    // {
-    //   const date = m.endDate || m.End_Date;
-    //   return date ? new Date(date) : null;
-    // };
   
     const daysLeft = (deadline) => Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
   

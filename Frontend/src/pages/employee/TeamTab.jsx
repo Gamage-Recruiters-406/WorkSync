@@ -2,13 +2,10 @@ import { useEffect, useState } from "react";
 import AddMemberModal from "./AddMemberModal";
 import axios from "axios";
 import Toast from "../../components/Toast";
+import useIsTeamLeader from "../../hooks/useIsTeamLeader";
+import { Trash2 } from "lucide-react";
 
-// example – replace with auth/context user
-// const currentUser = {
-//   id: 1,
-//   name: "Team Lead",
-//   role: "team-leader", // or "member"
-// };
+
 
 
 const URL_API = "http://localhost:8090";
@@ -20,14 +17,14 @@ const TeamTab = ({projectId, projectData}) => {
   const [users, setUsers] = useState([]);  // All user for Dropdown
   const [confirmRemove, setConfirmRemove] = useState(null);
   const [toast, setToast] = useState(null);
+  const { isTeamLeader, loading, currentUserId } = useIsTeamLeader(projectId);
 
   const roleStyles = {
     "Team Leader": "bg-blue-100 text-blue-700",
+    "Team Lead": "bg-blue-100 text-blue-700",
     "Member": "bg-gray-100 text-gray-700",
   };
 
-  const isTeamLeader = projectRole === "Team Leader";
-//   const isTeamLeader = currentUser.role === "team-leader";
 
   // Fetch current team members
   const fetchMembers = async ()=>{
@@ -36,7 +33,7 @@ const TeamTab = ({projectId, projectData}) => {
         withCredentials: true,
       });
       setTeam(res.data.data || []);
-      console.log("Members: ", res);
+      // console.log("Members: ", res);
     } catch (error) {
       console.error("Failed to fetch team members:", error);
     }
@@ -45,6 +42,8 @@ const TeamTab = ({projectId, projectData}) => {
   useEffect(()=>{
     fetchMembers();
   },[projectId]);
+
+
 
   // Fetech all users for AddMemberModel
   useEffect(()=>{
@@ -95,6 +94,11 @@ const TeamTab = ({projectId, projectData}) => {
     }
     
   };
+  
+  if (loading) {
+    return <p className="p-6 text-center">Checking permissions...</p>;
+  }
+  
 
   return (
     <>
@@ -154,9 +158,10 @@ const TeamTab = ({projectId, projectData}) => {
                     id: member.userId._id,
                     name: `${member.userId.FirstName} ${member.userId.LastName}`,
                   })}
-                  className="ml-4 px-4 py-1 rounded-md bg-red-500 text-white text-xs hover:bg-red-600"
+                  className="p-2 rounded hover:bg-gray-100 hover:text-red-500 text-[#087990]"
+                  title="Remove"
                 >
-                  Remove
+                  <Trash2 size={18} />
                 </button>
               )}
             </div>

@@ -12,7 +12,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import Sidebar from "../../components/sidebar/Sidebar";
-import TopBar from "../../components/sidebar/Topbar";
+import DashboardHeader from "../../components/DashboardHeader";
 import axios from "axios";
 
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_VERSION}`;
@@ -62,6 +62,20 @@ const AdminAttendance = () => {
     if (user.userid) return user.userid;
     if (user._id) return `EMP-${String(user._id).slice(-4).toUpperCase()}`;
     return "EMP000";
+  };
+
+  // Get employee name from backend-populated user data
+  const getEmployeeName = (user) => {
+    if (!user) return "Unknown";
+    // If FirstName and LastName exist, use them
+    if (user.FirstName && user.LastName) {
+      return `${user.FirstName} ${user.LastName}`;
+    }
+    // Fallback to name field
+    if (user.name) return user.name;
+    // Fallback to email prefix
+    if (user.email) return user.email.split("@")[0];
+    return "Unknown";
   };
 
   const fetchDashboardStats = async () => {
@@ -511,7 +525,7 @@ const AdminAttendance = () => {
         </div>
 
         <div className="flex-1 flex flex-col">
-          <TopBar userName={displayName} role={roleLabel} />
+          <DashboardHeader />
           
           <div className="flex-1 overflow-auto p-6">
             <button
@@ -720,7 +734,7 @@ const AdminAttendance = () => {
         <Sidebar role="admin" activeItem="attendance" />
 
       <div className="flex-1 flex flex-col">
-        <TopBar userName={displayName} role={roleLabel} />
+        <DashboardHeader />
 
         <div className="flex-1 overflow-auto">
           <div className="px-6 py-4">
@@ -1062,7 +1076,7 @@ const AdminAttendance = () => {
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
                                 <h4 className="font-semibold text-gray-800">
-                                  {correction.userId?.name || "Unknown"}
+                                  {getEmployeeName(correction.userId)}
                                 </h4>
                                 <span className="text-sm text-gray-600">
                                   ({getEmployeeId(correction.userId || correction.userID || correction.userid)})
