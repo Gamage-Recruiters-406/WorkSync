@@ -13,14 +13,14 @@ const SystemSettings = () => {
               <h1 className="text-2xl font-semibold mb-6">System Settings</h1>
 
               {/* Tabs */}
-              <div className="flex gap-10 border-b mb-6">
+              <div className="flex justify-center gap-10 mb-10">
                 <NavLink
                   to="profile"
                   className={({ isActive }) =>
-                    `pb-2 font-medium ${
+                    `px-6 py-2 rounded-md font-medium border transition-all duration-200 ${
                       isActive
-                        ? "border-b-2 border-[#087990] text-[#087990]"
-                        : ""
+                        ? "bg-[#087990] text-white border-[#087990]"
+                        : "bg-white text-[#087990] border-[#087990] hover:bg-[#087990]/10"
                     }`
                   }
                 >
@@ -30,10 +30,10 @@ const SystemSettings = () => {
                 <NavLink
                   to="company-info"
                   className={({ isActive }) =>
-                    `pb-2 font-medium ${
+                    `px-6 py-2 rounded-md font-medium border transition-all duration-200 ${
                       isActive
-                        ? "border-b-2 border-[#087990] text-[#087990]"
-                        : ""
+                        ? "bg-[#087990] text-white border-[#087990]"
+                        : "bg-white text-[#087990] border-[#087990] hover:bg-[#087990]/10"
                     }`
                   }
                 >
@@ -43,10 +43,10 @@ const SystemSettings = () => {
                 <NavLink
                   to="roles-attendance"
                   className={({ isActive }) =>
-                    `pb-2 font-medium ${
+                    `px-6 py-2 rounded-md font-medium border transition-all duration-200 ${
                       isActive
-                        ? "border-b-2 border-[#087990] text-[#087990]"
-                        : ""
+                        ? "bg-[#087990] text-white border-[#087990]"
+                        : "bg-white text-[#087990] border-[#087990] hover:bg-[#087990]/10"
                     }`
                   }
                 >
@@ -56,10 +56,10 @@ const SystemSettings = () => {
                 <NavLink
                   to="working-hours"
                   className={({ isActive }) =>
-                    `pb-2 font-medium ${
+                    `px-6 py-2 rounded-md font-medium border transition-all duration-200 ${
                       isActive
-                        ? "border-b-2 border-[#087990] text-[#087990]"
-                        : ""
+                        ? "bg-[#087990] text-white border-[#087990]"
+                        : "bg-white text-[#087990] border-[#087990] hover:bg-[#087990]/10"
                     }`
                   }
                 >
