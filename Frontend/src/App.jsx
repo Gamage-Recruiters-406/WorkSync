@@ -54,8 +54,8 @@ import SignUp from "./pages/Signup";
 import UserProfile from "./pages/employee/UserProfile";
 import UserProfileEdit from "./pages/employee/UserProfileEdit";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
-// import AnnouncementsManagement from './pages/AnnouncementsManagement';
-// import AnnouncementDetail from './pages/admin/AnnouncementDetail';
+import AnnouncementsManagement from './pages/AnnouncementsManagement';
+import AnnouncementDetail from './pages/admin/AnnouncementDetail';
 
 function App() {
   return (
@@ -335,8 +335,8 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* <Route path="/announcements-management" element={<AnnouncementsManagement />} />
-         <Route path="/announcement-detail" element={<AnnouncementDetail />} /> */}
+        <Route path="/announcements-management" element={<AnnouncementsManagement />} />
+         <Route path="/announcement-detail" element={<AnnouncementDetail />} />
       </Routes>
     </Router>
   );
