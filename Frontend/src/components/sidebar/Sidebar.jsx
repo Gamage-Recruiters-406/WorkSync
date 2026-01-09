@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 
 const sidebarContent = {
   admin: {
@@ -201,6 +202,14 @@ function Sidebar() {
     setIsCollapsed(!isCollapsed);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    Cookies.remove("access_token");
+
+    navigate("/login");
+  };
+
   return (
     <aside
       className={`flex flex-col min-h-full bg-gray-200 shadow-lg transition-all duration-300 ${
@@ -290,7 +299,7 @@ function Sidebar() {
 
         {/* Logout Button */}
         <button
-          onClick={() => navigate("/login")}
+          onClick={handleLogout}
           className={`flex items-center gap-4 ${
             isCollapsed ? "justify-center" : ""
           } px-4 py-3 w-full rounded-lg text-sm font-medium text-[#087990] hover:bg-gray-300 hover:text-teal-800 transition-colors`}
