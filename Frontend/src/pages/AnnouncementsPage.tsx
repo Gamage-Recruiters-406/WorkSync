@@ -4,26 +4,44 @@ import api from "../api/axios";
 
 const MESSAGE_LIMIT = 80;
 
+interface Announcement {
+  announcementId?: string;
+  _id?: string;
+  title?: string;
+  message?: string;
+  isPinned?: boolean;
+  isRead?: boolean;
+}
+
+interface Notification {
+  _id?: string;
+  title?: string;
+  message?: string;
+  isRead?: boolean;
+}
+
 const AnnouncementsPage = () => {
   const [activeTab, setActiveTab] = useState("all");
-  const [announcements, setAnnouncements] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [openMessage, setOpenMessage] = useState(null);
+  const [openNotification, setOpenNotification] = useState<Notification | null>(
+    null
+  );
 
   // ================= SAFE HELPERS =================
-  const normalizeText = (text) =>
+  const normalizeText = (text: string | undefined): string =>
     typeof text === "string" ? text.trim() : "";
 
-  const shouldShowReadMore = (text) =>
+  const shouldShowReadMore = (text: string | undefined): boolean =>
     normalizeText(text).length > MESSAGE_LIMIT;
 
-  const getShortMessage = (text) => {
-    const cleanText = normalizeText(text);
-    return cleanText.length > MESSAGE_LIMIT
-      ? cleanText.slice(0, MESSAGE_LIMIT) + "..."
-      : cleanText;
+  const getShortMessage = (text: string | undefined): string => {
+    const clean = normalizeText(text);
+    return clean.length > MESSAGE_LIMIT
+      ? clean.slice(0, MESSAGE_LIMIT) + "..."
+      : clean;
   };
 
   // ================= FETCH ANNOUNCEMENTS =================
@@ -33,9 +51,10 @@ const AnnouncementsPage = () => {
       const res = await api.get(
         "http://localhost:8090/api/v1/announcement/getEmployeeAnnouncements"
       );
-      setAnnouncements(res.data.data || []);
+      setAnnouncements(res?.data?.data || []);
     } catch (err) {
       console.error("Fetch announcements failed", err);
+      setAnnouncements([]);
     } finally {
       setLoading(false);
     }
@@ -47,9 +66,10 @@ const AnnouncementsPage = () => {
       const res = await api.get(
         "http://localhost:8090/api/v1/announcement/my-notifications"
       );
-      setNotifications(res.data.data || []);
+      setNotifications(res?.data?.data || []);
     } catch (err) {
       console.error("Fetch notifications failed", err);
+      setNotifications([]);
     }
   };
 
@@ -60,20 +80,23 @@ const AnnouncementsPage = () => {
 
   // ================= FILTER ANNOUNCEMENTS =================
   const filteredAnnouncements = announcements.filter((a) => {
-    if (activeTab === "pinned") return a.isPinned;
-    if (activeTab === "unread") return !a.isRead;
+    const isPinned = Boolean(a?.isPinned);
+    const isRead = Boolean(a?.isRead);
+
+    if (activeTab === "pinned") return isPinned;
+    if (activeTab === "unread") return !isRead;
     return true;
   });
 
   // ================= MARK NOTIFICATION READ =================
-  const handleMarkNotificationRead = async (id) => {
+  const handleMarkNotificationRead = async (id: string) => {
     try {
       await api.put(
         `http://localhost:8090/api/v1/announcement/markAsRead/${id}`
       );
       fetchNotifications();
     } catch (err) {
-      console.error(err);
+      console.error("Mark as read failed", err);
     }
   };
 
@@ -113,13 +136,21 @@ const AnnouncementsPage = () => {
 
               {loading && <p>Loading announcements...</p>}
 
+              {!loading && filteredAnnouncements.length === 0 && (
+                <p className="text-gray-500">No announcements available.</p>
+              )}
+
               {filteredAnnouncements.map((a) => (
                 <div
-                  key={a.announcementId}
+                  key={a?.announcementId || a?._id}
                   className="mb-6 rounded-lg border bg-white p-6"
                 >
-                  <h3 className="text-lg font-bold">{a.title}</h3>
-                  <p className="mt-4 text-gray-600">{a.message}</p>
+                  <h3 className="text-lg font-bold">
+                    {normalizeText(a?.title)}
+                  </h3>
+                  <p className="mt-4 text-gray-600">
+                    {normalizeText(a?.message)}
+                  </p>
                 </div>
               ))}
             </main>
@@ -128,28 +159,34 @@ const AnnouncementsPage = () => {
             <aside className="w-96 border-l bg-white p-6">
               <h2 className="mb-6 text-xl font-bold">Notifications</h2>
 
+              {notifications.length === 0 && (
+                <p className="text-gray-500 text-sm">
+                  No notifications available.
+                </p>
+              )}
+
               {notifications.map((n) => (
-                <div key={n._id} className="border-b pb-4 mb-4">
-                  <p className="font-semibold">{n.title}</p>
+                <div key={n?._id} className="border-b pb-4 mb-4">
+                  <p className="font-semibold">{normalizeText(n?.title)}</p>
 
                   <p className="mt-2 text-sm text-gray-600">
-                    {getShortMessage(n.message)}
+                    {getShortMessage(n?.message)}
                   </p>
 
                   <div className="flex gap-3 mt-2">
-                    {shouldShowReadMore(n.message) && (
+                    {shouldShowReadMore(n?.message) && (
                       <button
-                        onClick={() => setOpenMessage(n.message)}
+                        onClick={() => setOpenNotification(n)}
                         className="text-sm text-[#0A7C86] font-medium"
                       >
                         Read more →
                       </button>
                     )}
 
-                    {!n.isRead && (
+                    {!n?.isRead && (
                       <button
                         onClick={() =>
-                          handleMarkNotificationRead(n._id)
+                          handleMarkNotificationRead(n?._id || "")
                         }
                         className="text-sm text-gray-500"
                       >
@@ -165,14 +202,17 @@ const AnnouncementsPage = () => {
       </div>
 
       {/* READ MORE MODAL */}
-      {openMessage && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+      {openNotification && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 max-w-lg w-full">
+            <h3 className="font-semibold mb-3">
+              {normalizeText(openNotification.title)}
+            </h3>
             <p className="text-gray-700 whitespace-pre-wrap">
-              {openMessage}
+              {normalizeText(openNotification.message)}
             </p>
             <button
-              onClick={() => setOpenMessage(null)}
+              onClick={() => setOpenNotification(null)}
               className="mt-4 px-4 py-2 bg-[#0A7C86] text-white rounded"
             >
               Close
