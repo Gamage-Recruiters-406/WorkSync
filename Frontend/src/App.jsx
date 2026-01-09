@@ -52,10 +52,11 @@ import ManagerDashboard from './pages/manager/managerDashboard';
 import SignUp from './pages/Signup';
 import UserProfile from './pages/employee/UserProfile';
 import UserProfileEdit from './pages/employee/UserProfileEdit';
+import AnnouncementsPage from './pages/AnnouncementsPage';
+import AnnouncementsManagement from './pages/AnnouncementsManagement';
+import AnnouncementDetail from './pages/admin/AnnouncementDetail';
 
 function App() {
-  const [collapsed, setCollapsed] = useState(false);
-
   return (
     <Router>
       <Routes>
@@ -116,6 +117,11 @@ function App() {
 
         {/* Manager Routes */}
         <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+
+        {/* New Route for AnnouncementsPage */}
+        <Route path="/announcements" element={<AnnouncementsPage />} />
+        <Route path="/announcements-management" element={<AnnouncementsManagement />} />
+        <Route path="/announcement-detail" element={<AnnouncementDetail />} />
       </Routes>
     </Router>
   );
