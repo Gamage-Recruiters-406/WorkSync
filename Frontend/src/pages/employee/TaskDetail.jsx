@@ -7,6 +7,8 @@ import {
   taskTransformers,
   checkTeamLeaderStatus
 } from '../../services/taskApi';
+import DashboardHeader from "../../components/DashboardHeader";
+
 
 const TaskDetail = () => {
   const { id } = useParams();
@@ -490,6 +492,9 @@ const TaskDetail = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar role={userRole} activeItem="task" />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* TOP BAR  */}
+        <DashboardHeader />
       <main className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="mb-6">
@@ -919,6 +924,7 @@ const TaskDetail = () => {
           </div>
         </div>
       </main>
+    </div>
     </div>
   );
 };

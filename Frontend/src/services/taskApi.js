@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_VERSION}` || 'http://localhost:8090/api/v1';
+const API_URL =
+  `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_VERSION}` ||
+  'http://localhost:8090/api/v1';
 // Create axios instance with default config
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -39,10 +41,17 @@ axiosInstance.interceptors.response.use(
 
 // Helper function to get token from cookies
 const getToken = () => {
-  const cookie = document.cookie
-    .split(';')
-    .find((c) => c.trim().startsWith('access_token='));
-  return cookie ? cookie.split('=')[1] : null;
+  const cookies = document.cookie.split(';');
+
+  for (let cookie of cookies) {
+    cookie = cookie.trim();
+    if (cookie.startsWith('access_token=')) {
+      return cookie.substring('access_token='.length);
+    }
+  }
+
+  // Also check localStorage as fallback
+  return localStorage.getItem('token') || null;
 };
 
 // Helper function to get FormData headers for multipart requests
@@ -170,28 +179,32 @@ export const taskApi = {
   // Get user tasks (tasks assigned to current user)
   getUserTasks: async (userEmail, userId) => {
     try {
-      const response = await axiosInstance.get('/task/getAllTasks');
+      console.log("Fetching tasks for user:");
+      const response = await axiosInstance.get('http://localhost:8090/api/v1/task/getAllUserTasks');
+console.log("Response in getUserTasks:", response);
+       const tasks = response.data.data.filter((task) => {
+      if (!Array.isArray(task.assignedTo)) return false;
 
-      if (response.data.success && response.data.data) {
-        const tasks = response.data.data.filter(
-          (task) =>
-            task.assignedTo &&
-            Array.isArray(task.assignedTo) &&
-            task.assignedTo.some((assigned) => {
-              if (typeof assigned === 'object' && assigned.email === userEmail)
-                return true;
-              if (typeof assigned === 'string' && assigned === userEmail)
-                return true;
-              if (typeof assigned === 'object' && assigned._id === userId)
-                return true;
-              if (typeof assigned === 'string' && assigned === userId)
-                return true;
-              return false;
-            })
-        );
-        return tasks;
-      }
-      return [];
+        return task.assignedTo.some((assigned) => {
+          // case 1: assignedTo = ["USER_ID"]
+          if (typeof assigned === 'string') {
+            return (
+              assigned.toString() === userId?.toString() ||
+              assigned.toString() === userEmail
+            );
+          }
+
+          // case 2: assignedTo = [{ _id, email }]
+          if (assigned && typeof assigned === 'object') {
+            if (assigned._id?.toString() === userId?.toString()) return true;
+            if (assigned.email && assigned.email === userEmail) return true;
+          }
+
+          return false;
+        });
+      });
+console.log("Filtered tasks in getUserTasks:", tasks);
+      return tasks;
     } catch (error) {
       console.error('Error fetching user tasks:', error);
       throw error;
@@ -231,10 +244,14 @@ export const taskApi = {
       });
 
       // Use axios directly for multipart form data
-      const response = await axios.post(`${API_URL}/task/createTask`, formData, {
-        headers: getFormDataHeaders(),
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        `${API_URL}/task/createTask`,
+        formData,
+        {
+          headers: getFormDataHeaders(),
+          withCredentials: true,
+        }
+      );
       return response.data;
     } catch (error) {
       console.error('Error creating task:', error);
@@ -245,7 +262,10 @@ export const taskApi = {
   // Update task
   updateTask: async (taskId, taskData) => {
     try {
-      const response = await axiosInstance.put(`/task/updateTask/${taskId}`, taskData);
+      const response = await axiosInstance.put(
+        `/task/updateTask/${taskId}`,
+        taskData
+      );
       return response.data;
     } catch (error) {
       console.error('Error updating task:', error);
@@ -256,7 +276,10 @@ export const taskApi = {
   // Update task status
   updateTaskStatus: async (taskId, status) => {
     try {
-      const response = await axiosInstance.patch(`/task/updateTaskStatus/${taskId}`, { status });
+      const response = await axiosInstance.patch(
+        `/task/updateTaskStatus/${taskId}`,
+        { status }
+      );
       return response.data;
     } catch (error) {
       console.error('Error updating task status:', error);
@@ -347,7 +370,9 @@ export const milestoneApi = {
   // Get milestones for a project
   getMilestonesForProject: async (projectId) => {
     try {
-      const response = await axiosInstance.get(`/millestone/getAllMilestones/${projectId}`);
+      const response = await axiosInstance.get(
+        `/millestone/getAllMilestones/${projectId}`
+      );
       return response.data;
     } catch (error) {
       console.error('Error fetching milestones:', error);
@@ -438,8 +463,8 @@ export const taskTransformers = {
     });
 
     // Get assignee names as strings for display
-    const assigneeNames = assigneeObjects.map(assignee => assignee.name);
-    const assigneeEmails = assigneeObjects.map(assignee => assignee.email);
+    const assigneeNames = assigneeObjects.map((assignee) => assignee.name);
+    const assigneeEmails = assigneeObjects.map((assignee) => assignee.email);
 
     // Get PDF attachments
     const pdfAttachments = (task.attachments || []).filter(
@@ -464,7 +489,9 @@ export const taskTransformers = {
       assigneeEmails: assigneeEmails,
       attachments: task.attachments || [],
       pdfAttachments: pdfAttachments,
-      createdAt: task.createdAt ? new Date(task.createdAt).toLocaleDateString() : 'Unknown',
+      createdAt: task.createdAt
+        ? new Date(task.createdAt).toLocaleDateString()
+        : 'Unknown',
       createdBy: getDisplayName(task.createdBy) || 'Unknown',
       originalData: task,
     };
@@ -674,5 +701,5 @@ export default {
   projectApi,
   milestoneApi,
   taskTransformers,
-  axiosInstance, 
+  axiosInstance,
 };

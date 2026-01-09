@@ -14,8 +14,11 @@ import {
   Folder,
 } from 'lucide-react';
 import Sidebar from '../../components/sidebar/Sidebar';
+import DashboardHeader from '../../components/DashboardHeader';
 
-const API_URL = `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_VERSION}` || 'http://localhost:8090/api/v1';
+const API_URL =
+  `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_VERSION}` ||
+  'http://localhost:8090/api/v1';
 
 const CreateTaskForm = () => {
   const { taskId } = useParams();
@@ -44,12 +47,24 @@ const CreateTaskForm = () => {
   const [error, setError] = useState('');
   const [fileInput, setFileInput] = useState(null);
 
-  const getToken = () =>
-    document.cookie
-      .split(';')
-      .find((c) => c.trim().startsWith('access_token='))
-      ?.split('=')[1] || null;
+  // Helper function to get token from cookies
+  const getToken = () => {
+    // Try multiple ways to get the token
+    const cookies = document.cookie.split(';');
 
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith('access_token=')) {
+        return cookie.substring('access_token='.length);
+      }
+      if (cookie.startsWith('token=')) {
+        return cookie.substring('token='.length);
+      }
+    }
+
+    // Also check localStorage as fallback
+    return localStorage.getItem('token') || null;
+  };
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -578,386 +593,392 @@ const CreateTaskForm = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar role="employee" activeItem="task" />
-      <div className="flex-1 ml-64 p-6">
-        <div className="mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
-          >
-            ← Back
-          </button>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-6xl">
-          <div className="flex items-center justify-between mb-10">
-            <h2 className="text-2xl font-bold text-gray-800">
-              {isEditMode ? 'Edit Task' : 'Assign Tasks'}
-            </h2>
-            <div className="flex gap-2">
-              <button
-                onClick={refreshEmployees}
-                disabled={employeesLoading}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
-              >
-                {employeesLoading ? 'Refreshing...' : 'Refresh Employees'}
-              </button>
-              <button
-                onClick={refreshProjects}
-                disabled={projectsLoading}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
-              >
-                {projectsLoading ? 'Refreshing...' : 'Refresh Projects'}
-              </button>
-            </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* TOP BAR  */}
+        <DashboardHeader />
+        <div className="flex-1 ml-64 p-6">
+          <div className="mb-8">
+            <button
+              onClick={() => navigate(-1)}
+              className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
+            >
+              ← Back
+            </button>
           </div>
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              <strong>Error:</strong> {error}
+          <div className="bg-white rounded-xl shadow-lg p-8 max-w-6xl">
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-2xl font-bold text-gray-800">
+                {isEditMode ? 'Edit Task' : 'Assign Tasks'}
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={refreshEmployees}
+                  disabled={employeesLoading}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
+                >
+                  {employeesLoading ? 'Refreshing...' : 'Refresh Employees'}
+                </button>
+                <button
+                  onClick={refreshProjects}
+                  disabled={projectsLoading}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
+                >
+                  {projectsLoading ? 'Refreshing...' : 'Refresh Projects'}
+                </button>
+              </div>
             </div>
-          )}
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Task Title *
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-                placeholder="Enter the task title"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <Folder className="w-4 h-4" />
-                Project *{' '}
-                {projectsLoading && (
-                  <span className="text-xs text-gray-500 ml-2">
-                    (Loading...)
-                  </span>
-                )}
-              </label>
-              <select
-                name="projectId"
-                value={formData.projectId}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
-                disabled={
-                  loading ||
-                  projectsLoading ||
-                  (isEditMode && formData.projectId)
-                }
-                required={!isEditMode}
-              >
-                <option value="">Select a Project</option>
-                {projectsLoading ? (
-                  <option disabled>Loading projects...</option>
-                ) : projects.length === 0 ? (
-                  <option disabled>No projects available</option>
-                ) : (
-                  projects.map((project) => (
-                    <option key={project._id} value={project._id}>
-                      {project.name}
-                    </option>
-                  ))
-                )}
-              </select>
-              {isEditMode && formData.projectId && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Project cannot be changed for existing tasks
-                </p>
-              )}
-            </div>
-            <div className="grid grid-cols-3 gap-6">
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                <strong>Error:</strong> {error}
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-8">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Deadline *
+                  <FileText className="w-4 h-4" />
+                  Task Title *
                 </label>
                 <input
-                  type="date"
-                  name="deadline"
-                  value={formData.deadline}
+                  type="text"
+                  name="title"
+                  value={formData.title}
                   onChange={handleChange}
                   required
-                  min={new Date().toISOString().split('T')[0]}
+                  placeholder="Enter the task title"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                   disabled={loading}
                 />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <Flag className="w-4 h-4" />
-                  Priority
-                </label>
-                <select
-                  name="priority"
-                  value={formData.priority}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
-                  disabled={loading}
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <Target className="w-4 h-4" />
-                  Milestone{' '}
-                  {milestonesLoading && (
+                  <Folder className="w-4 h-4" />
+                  Project *{' '}
+                  {projectsLoading && (
                     <span className="text-xs text-gray-500 ml-2">
                       (Loading...)
                     </span>
                   )}
                 </label>
                 <select
-                  name="milestone"
-                  value={formData.milestone}
+                  name="projectId"
+                  value={formData.projectId}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
-                  disabled={loading || milestonesLoading || !formData.projectId}
+                  disabled={
+                    loading ||
+                    projectsLoading ||
+                    (isEditMode && formData.projectId)
+                  }
+                  required={!isEditMode}
                 >
-                  <option value="">No Milestone</option>
-                  {!formData.projectId ? (
-                    <option disabled>Select a project first</option>
-                  ) : milestonesLoading ? (
-                    <option disabled>Loading milestones...</option>
-                  ) : milestones.length === 0 ? (
-                    <option disabled>
-                      No milestones available for this project
-                    </option>
+                  <option value="">Select a Project</option>
+                  {projectsLoading ? (
+                    <option disabled>Loading projects...</option>
+                  ) : projects.length === 0 ? (
+                    <option disabled>No projects available</option>
                   ) : (
-                    milestones.map((milestone) => (
-                      <option key={milestone._id} value={milestone._id}>
-                        {milestone.milestoneName || milestone.name}{' '}
-                        {milestone.Status ? ` (${milestone.Status})` : ''}{' '}
-                        {milestone.Start_Date
-                          ? ` - Starts: ${new Date(
-                              milestone.Start_Date
-                            ).toLocaleDateString()}`
-                          : ''}
+                    projects.map((project) => (
+                      <option key={project._id} value={project._id}>
+                        {project.name}
                       </option>
                     ))
                   )}
                 </select>
-                {formData.projectId &&
-                  milestones.length === 0 &&
-                  !milestonesLoading && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      No milestones created for this project yet
-                    </p>
-                  )}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Enter task description"
-                rows="4"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition resize-none"
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <Paperclip className="w-4 h-4" />
-                Attachments{' '}
-                <span className="text-xs text-gray-500 font-normal">
-                  (Max 5 files, 10MB each)
-                </span>
-              </label>
-              <div className="mb-4">
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  disabled={loading || attachments.length >= 5}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Supported formats: PDF, Word, Excel, Images, Text
-                </p>
-              </div>
-              {fileInput &&
-                fileInput.length > 0 &&
-                renderFilePreview(fileInput)}
-              {attachments.length > 0 && renderAttachmentList()}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Assign to Employees *{' '}
-                {employeesLoading && (
-                  <span className="text-xs text-gray-500 ml-2">
-                    (Loading...)
-                  </span>
+                {isEditMode && formData.projectId && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Project cannot be changed for existing tasks
+                  </p>
                 )}
-              </label>
-              <select
-                name="assignedTo"
-                multiple
-                onChange={handleEmployeeSelect}
-                value={formData.assignedTo}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition min-h-[120px]"
-                disabled={loading || employeesLoading}
-                size="5"
-              >
-                {employeesLoading ? (
-                  <option disabled>Loading employees...</option>
-                ) : employees.length === 0 ? (
-                  <option disabled>
-                    No employees available. Please ensure employees are
-                    registered in the system.
-                  </option>
-                ) : (
-                  <>
-                    <option disabled>
-                      -- Select Employees (Hold Ctrl/Cmd for multiple) --
-                    </option>
-                    {employees.map((employee) => {
-                      const employeeId = getEmployeeId(employee);
-                      const displayName = getEmployeeDisplayName(employee);
-                      const roleText =
-                        employee.role === 1
-                          ? 'Employee'
-                          : employee.role === 2
-                          ? 'Manager'
-                          : employee.role === 3
-                          ? 'Admin'
-                          : '';
-                      return (
-                        <option
-                          key={employeeId}
-                          value={employeeId}
-                          title={`${displayName}${
-                            employee.email ? ` (${employee.email})` : ''
-                          }${roleText ? ` - ${roleText}` : ''}`}
-                        >
-                          {displayName}
-                          {employee.email ? ` (${employee.email})` : ''}
-                          {roleText ? ` [${roleText}]` : ''}
-                        </option>
-                      );
-                    })}
-                  </>
-                )}
-              </select>
-              <div className="mt-2 flex flex-col gap-1">
-                <p className="text-xs text-gray-500">
-                  Hold Ctrl/Cmd to select multiple employees
-                </p>
-                {renderSelectedEmployees()}
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-gray-600">
-                    {employees.length} employee
-                    {employees.length !== 1 ? 's' : ''} available
-                  </span>
-                  <button
-                    type="button"
-                    onClick={refreshEmployees}
-                    disabled={employeesLoading}
-                    className="text-xs text-blue-600 hover:text-blue-800"
+              </div>
+              <div className="grid grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Deadline *
+                  </label>
+                  <input
+                    type="date"
+                    name="deadline"
+                    value={formData.deadline}
+                    onChange={handleChange}
+                    required
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    disabled={loading}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Flag className="w-4 h-4" />
+                    Priority
+                  </label>
+                  <select
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
+                    disabled={loading}
                   >
-                    {employeesLoading ? 'Refreshing...' : 'Refresh'}
-                  </button>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Milestone{' '}
+                    {milestonesLoading && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        (Loading...)
+                      </span>
+                    )}
+                  </label>
+                  <select
+                    name="milestone"
+                    value={formData.milestone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
+                    disabled={
+                      loading || milestonesLoading || !formData.projectId
+                    }
+                  >
+                    <option value="">No Milestone</option>
+                    {!formData.projectId ? (
+                      <option disabled>Select a project first</option>
+                    ) : milestonesLoading ? (
+                      <option disabled>Loading milestones...</option>
+                    ) : milestones.length === 0 ? (
+                      <option disabled>
+                        No milestones available for this project
+                      </option>
+                    ) : (
+                      milestones.map((milestone) => (
+                        <option key={milestone._id} value={milestone._id}>
+                          {milestone.milestoneName || milestone.name}{' '}
+                          {milestone.Status ? ` (${milestone.Status})` : ''}{' '}
+                          {milestone.Start_Date
+                            ? ` - Starts: ${new Date(
+                                milestone.Start_Date
+                              ).toLocaleDateString()}`
+                            : ''}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  {formData.projectId &&
+                    milestones.length === 0 &&
+                    !milestonesLoading && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        No milestones created for this project yet
+                      </p>
+                    )}
                 </div>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
-                disabled={loading}
-              >
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-              </select>
-              {formData.status === 'In Progress' && (
-                <p className="text-xs text-blue-600 mt-1">
-                  ⚡ Task is currently in progress (50% complete)
-                </p>
-              )}
-              {formData.status === 'Completed' && (
-                <p className="text-xs text-green-600 mt-1">
-                  ✅ Task is completed (100% complete)
-                </p>
-              )}
-            </div>
-            <div className="pt-6 border-t border-gray-200 flex justify-end gap-4">
-              <button
-                type="button"
-                onClick={() => navigate('/task-history')}
-                disabled={loading}
-                className="px-8 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={
-                  loading ||
-                  employeesLoading ||
-                  employees.length === 0 ||
-                  formData.assignedTo.length === 0 ||
-                  (!formData.projectId && !isEditMode)
-                }
-                className="px-8 py-3 bg-[#087990] text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Enter task description"
+                  rows="4"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition resize-none"
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Paperclip className="w-4 h-4" />
+                  Attachments{' '}
+                  <span className="text-xs text-gray-500 font-normal">
+                    (Max 5 files, 10MB each)
+                  </span>
+                </label>
+                <div className="mb-4">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    disabled={loading || attachments.length >= 5}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Supported formats: PDF, Word, Excel, Images, Text
+                  </p>
+                </div>
+                {fileInput &&
+                  fileInput.length > 0 &&
+                  renderFilePreview(fileInput)}
+                {attachments.length > 0 && renderAttachmentList()}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Assign to Employees *{' '}
+                  {employeesLoading && (
+                    <span className="text-xs text-gray-500 ml-2">
+                      (Loading...)
+                    </span>
+                  )}
+                </label>
+                <select
+                  name="assignedTo"
+                  multiple
+                  onChange={handleEmployeeSelect}
+                  value={formData.assignedTo}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition min-h-[120px]"
+                  disabled={loading || employeesLoading}
+                  size="5"
+                >
+                  {employeesLoading ? (
+                    <option disabled>Loading employees...</option>
+                  ) : employees.length === 0 ? (
+                    <option disabled>
+                      No employees available. Please ensure employees are
+                      registered in the system.
+                    </option>
+                  ) : (
+                    <>
+                      <option disabled>
+                        -- Select Employees (Hold Ctrl/Cmd for multiple) --
+                      </option>
+                      {employees.map((employee) => {
+                        const employeeId = getEmployeeId(employee);
+                        const displayName = getEmployeeDisplayName(employee);
+                        const roleText =
+                          employee.role === 1
+                            ? 'Employee'
+                            : employee.role === 2
+                            ? 'Manager'
+                            : employee.role === 3
+                            ? 'Admin'
+                            : '';
+                        return (
+                          <option
+                            key={employeeId}
+                            value={employeeId}
+                            title={`${displayName}${
+                              employee.email ? ` (${employee.email})` : ''
+                            }${roleText ? ` - ${roleText}` : ''}`}
+                          >
+                            {displayName}
+                            {employee.email ? ` (${employee.email})` : ''}
+                            {roleText ? ` [${roleText}]` : ''}
+                          </option>
+                        );
+                      })}
+                    </>
+                  )}
+                </select>
+                <div className="mt-2 flex flex-col gap-1">
+                  <p className="text-xs text-gray-500">
+                    Hold Ctrl/Cmd to select multiple employees
+                  </p>
+                  {renderSelectedEmployees()}
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-gray-600">
+                      {employees.length} employee
+                      {employees.length !== 1 ? 's' : ''} available
+                    </span>
+                    <button
+                      type="button"
+                      onClick={refreshEmployees}
+                      disabled={employeesLoading}
+                      className="text-xs text-blue-600 hover:text-blue-800"
                     >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    {isEditMode ? 'Updating Task...' : 'Creating Task...'}
-                  </>
-                ) : (
-                  <>
-                    {isEditMode ? 'Update Task' : 'Create Task'}
-                    {fileInput &&
-                      ` (${fileInput.length} file${
-                        fileInput.length !== 1 ? 's' : ''
-                      })`}
-                  </>
+                      {employeesLoading ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
+                  disabled={loading}
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+                {formData.status === 'In Progress' && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    ⚡ Task is currently in progress (50% complete)
+                  </p>
                 )}
-              </button>
-            </div>
-          </form>
+                {formData.status === 'Completed' && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✅ Task is completed (100% complete)
+                  </p>
+                )}
+              </div>
+              <div className="pt-6 border-t border-gray-200 flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => navigate('/task-history')}
+                  disabled={loading}
+                  className="px-8 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    loading ||
+                    employeesLoading ||
+                    employees.length === 0 ||
+                    formData.assignedTo.length === 0 ||
+                    (!formData.projectId && !isEditMode)
+                  }
+                  className="px-8 py-3 bg-[#087990] text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      {isEditMode ? 'Updating Task...' : 'Creating Task...'}
+                    </>
+                  ) : (
+                    <>
+                      {isEditMode ? 'Update Task' : 'Create Task'}
+                      {fileInput &&
+                        ` (${fileInput.length} file${
+                          fileInput.length !== 1 ? 's' : ''
+                        })`}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

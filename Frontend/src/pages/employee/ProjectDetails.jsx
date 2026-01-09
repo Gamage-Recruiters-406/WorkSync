@@ -8,6 +8,7 @@ import OverviewTab from "./OverviewTab";
 import DocumentsTab from "./DocumentsTab";
 import MilestonesTab from "./MilestonesTab";
 import useIsTeamLeader from "../../hooks/useIsTeamLeader";
+import DashboardHeader from "../../components/DashboardHeader";
 
 const TABS = ["overview", "team", "milestones", "documents"];
 
@@ -108,8 +109,8 @@ const ProjectDetails = () => {
 
   const statusColor = {
     active: "bg-green-500",
-    "On Hold": "bg-orange-500",
-    Complete: "bg-red-500",
+    "on-hold": "bg-orange-500",
+    complete: "bg-red-500",
   };
 
 
@@ -125,6 +126,7 @@ const ProjectDetails = () => {
       {/* side bar */}
       <Sidebar/>
       <main className="flex-1 p-6 bg-gray-100">
+        <DashboardHeader/>
         <div className="flex items-center justify-between m-4">
           <button
             onClick={goBack}
@@ -139,7 +141,7 @@ const ProjectDetails = () => {
 
           <div className="text-right text-sm">
             <p>
-              Role : <span className="font-medium">{projectData.role || projectData.assignedRole}</span>
+              Role : <span className="font-medium">{projectData.role || projectData.assignedRole || "-"}</span>
             </p>
             <p>
               Deadline: <span className="font-medium">{new Date(projectData.deadline).toLocaleDateString() || "-"}</span>
@@ -162,7 +164,7 @@ const ProjectDetails = () => {
           <div className="flex items-center gap-2">
             <span className="font-medium">Status :</span>
             <span className={`w-3 h-3 rounded-full ${statusColor[projectData.status || "active"]}`}></span>
-            <span>{projectData.status || "active"}</span>
+            <span className="capitalize">{projectData.status?.replace("-"," ")}</span>
           </div>
         </div>
 

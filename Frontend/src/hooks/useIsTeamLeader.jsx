@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import jwtDecode from "jwt-decode";
 
 const URL_API = "http://localhost:8090";
 
-const getToken = () =>
-  document.cookie
-    .split(";")
-    .find(c => c.trim().startsWith("access_token="))
-    ?.split("=")[1] || null;
+// const getToken = () =>
+//   document.cookie
+//     .split(";")
+//     .find(c => c.trim().startsWith("access_token="))
+//     ?.split("=")[1] || null;
 
 const useIsTeamLeader = (projectId) => {
   const [isTeamLeader, setIsTeamLeader] = useState(false);
@@ -17,20 +18,27 @@ const useIsTeamLeader = (projectId) => {
   useEffect(() => {
     const checkTeamLeader = async () => {
       try {
-        if (!projectId) return;
+        if (!projectId) {
+          setLoading(false);
+          return;
+        } 
 
-        const token = getToken();
-        if (!token) return;
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setLoading(false);
+          return;
+        } 
 
-        const payload = JSON.parse(atob(token.split(".")[1]));
+        const payload = jwtDecode(token);
         const userId = payload.userid;
         setCurrentUserId(userId);
+        
 
         const res = await axios.get(
           `${URL_API}/api/v1/projects/getProject/${projectId}`,
           { withCredentials: true }
         );
-
+        
         const teamLeaderId = res.data?.data?.teamLeader?._id;
 
         setIsTeamLeader(
