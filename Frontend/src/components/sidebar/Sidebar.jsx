@@ -17,6 +17,7 @@ import {
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
+import axios from "axios";
 
 const sidebarContent = {
   admin: {
@@ -202,13 +203,23 @@ function Sidebar() {
     setIsCollapsed(!isCollapsed);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("user");
-    Cookies.remove("access_token", { path: "/" });
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:8090/api/v1/employee/Signout",
+        {},
+        { withCredentials: true }
+      );
 
-    navigate("/login");
+      localStorage.clear();
+
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+
+      localStorage.clear();
+      navigate("/login");
+    }
   };
 
   return (
