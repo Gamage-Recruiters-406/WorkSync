@@ -115,7 +115,7 @@ const LeaveRequest = () => {
   const fetchLeaveHistory = async () => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      const userId = user?.userid;
+      const userId = user?._id;
       if (!userId) {
         console.warn("User ID not found in localStorage");
         setLeaveHistory([]);
