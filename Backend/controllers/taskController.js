@@ -5,8 +5,10 @@ import Task from "../models/Task.js";
 import TaskAttachment from "../models/TaskAttachmentModel.js";
 import Milestone from "../models/milestoneModel.js";
 import Employee from "../models/EmployeeModel.js";
+import Notification from "../models/Notification.js";
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
+import { sendHighPriorityTaskEmail } from "../helpers/emailHelper.js";
 
 const formatTaskForClient = (taskDoc) => {
     if (!taskDoc) return taskDoc;
@@ -238,6 +240,42 @@ filePath: `uploads/tasks/${created._id.toString()}/${file.filename}` // fixed
         const task = await Task.findById(created._id)
             .populate("assignedTo", "FirstName LastName email")
             .populate("milestone", "milestoneName");
+
+        // Send emails and create notifications for high priority tasks
+        if (priority === "High" && assignedEmployeeIds.length > 0) {
+            try {
+                const taskDetails = {
+                    title: title,
+                    description: description,
+                    deadline: deadline,
+                    milestone: task.milestone?.milestoneName || null
+                };
+
+                // Send email and create notification for each assigned employee
+                for (const employee of task.assignedTo) {
+                    // Send email
+                    await sendHighPriorityTaskEmail(
+                        employee.email,
+                        `${employee.FirstName} ${employee.LastName}`,
+                        taskDetails
+                    );
+
+                    // Create notification
+                    await Notification.create({
+                        user: employee._id,
+                        title: "High Priority Task Assigned",
+                        message: `You have been assigned a high priority task: "${title}"`,
+                        type: "HIGH_PRIORITY_TASK",
+                        isRead: false
+                    });
+                }
+
+                console.log(`Emails and notifications sent for high priority task: ${title}`);
+            } catch (notifError) {
+                console.error("Error sending notifications/emails for high priority task:", notifError);
+                // Don't fail the task creation if notification fails
+            }
+        }
 
         res.status(201).json({
             success: true,
