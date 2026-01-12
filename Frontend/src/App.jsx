@@ -48,9 +48,12 @@ import SignUp from "./pages/Signup";
 =======
 import UserProfile from "./pages/employee/UserProfile";
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import UserProfileEdit from "./pages/employee/UserProfileEdit";
 >>>>>>> Stashed changes
 =======
+=======
+>>>>>>> Stashed changes
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import AnnouncementsManagement from './pages/AnnouncementsManagement';
 import AnnouncementDetail from './pages/admin/AnnouncementDetail';
