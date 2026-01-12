@@ -3,6 +3,7 @@ import axios from 'axios';
 const API_URL =
   `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_VERSION}` ||
   'http://localhost:8090/api/v1';
+
 // Create axios instance with default config
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -124,7 +125,7 @@ export const getCurrentUserInfo = async () => {
 
     // Check team leader status
     if (userId) {
-      user.isTeamLeader = await checkTeamLeaderStatus(userId, token);
+      user.isTeamLeader = await checkTeamLeaderStatus(userId);
     }
 
     // Save to localStorage
@@ -158,7 +159,7 @@ export const checkTeamLeaderStatus = async (userId) => {
     }
     return false;
   } catch (error) {
-    console.warn('Could not fetch project data:', error);
+    console.error('Error checking team leader status:', error);
     return false;
   }
 };
@@ -179,11 +180,10 @@ export const taskApi = {
   // Get user tasks (tasks assigned to current user)
   getUserTasks: async (userEmail, userId) => {
     try {
-      console.log("Fetching tasks for user:");
-      const response = await axiosInstance.get('http://localhost:8090/api/v1/task/getAllUserTasks');
-console.log("Response in getUserTasks:", response);
-       const tasks = response.data.data.filter((task) => {
-      if (!Array.isArray(task.assignedTo)) return false;
+      const response = await axiosInstance.get('/task/getAllUserTasks');
+      
+      const tasks = response.data.data.filter((task) => {
+        if (!Array.isArray(task.assignedTo)) return false;
 
         return task.assignedTo.some((assigned) => {
           // case 1: assignedTo = ["USER_ID"]
@@ -203,7 +203,7 @@ console.log("Response in getUserTasks:", response);
           return false;
         });
       });
-console.log("Filtered tasks in getUserTasks:", tasks);
+
       return tasks;
     } catch (error) {
       console.error('Error fetching user tasks:', error);

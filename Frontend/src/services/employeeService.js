@@ -4,10 +4,10 @@ const employeeApi = axios.create({
   baseURL: 'http://localhost:8090/api/v1/employee',
   withCredentials: true,
 });
-
+const base = import.meta.env.VITE_API_BASE_URL;
 export const getAllEmployees = async () => {
   try {
-    const response = await employeeApi.get('/getAllEmployee');
+    const response = await employeeApi.get(`${base}/api/v1/employee/getAllEmployee`, { withCredentials: true });
     return response.data;
   } catch (error) {
     throw error;
@@ -16,7 +16,7 @@ export const getAllEmployees = async () => {
 
 export const getSingleEmployeeById = async (id) => {
   try {
-    const response = await employeeApi.get(`/getSingleEmployeeByID/${id}`);
+    const response = await employeeApi.get(`${base}/api/v1/employee/getSingleEmployeeByID/${id}`, { withCredentials: true });
     return response.data;
   } catch (error) {
     throw error;
@@ -25,7 +25,7 @@ export const getSingleEmployeeById = async (id) => {
 
 export const updateEmployee = async (id, employeeData) => {
   try {
-    const response = await employeeApi.patch(`/updateEmployee/${id}`, employeeData);
+    const response = await employeeApi.patch(`${base}/api/v1/employee/updateEmployee/${id}`, { withCredentials: true },employeeData);
     return response.data;
   } catch (error) {
     throw error;
@@ -34,7 +34,8 @@ export const updateEmployee = async (id, employeeData) => {
 
 export const removeEmployee = async (id) => {
   try {
-    const response = await employeeApi.delete(`/RemoveEmployee/${id}`);
+    const response = await employeeApi.delete(`${base}/api/v1/employee/RemoveEmployee/${id}`,{ withCredentials: true });
+    console.log(response.data);
     return response.data;
   } catch (error) {
     throw error;

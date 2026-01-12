@@ -47,24 +47,17 @@ const CreateTaskForm = () => {
   const [error, setError] = useState('');
   const [fileInput, setFileInput] = useState(null);
 
-  // Helper function to get token from cookies
   const getToken = () => {
-    // Try multiple ways to get the token
     const cookies = document.cookie.split(';');
-
     for (let cookie of cookies) {
       cookie = cookie.trim();
-      if (cookie.startsWith('access_token=')) {
+      if (cookie.startsWith('access_token='))
         return cookie.substring('access_token='.length);
-      }
-      if (cookie.startsWith('token=')) {
-        return cookie.substring('token='.length);
-      }
+      if (cookie.startsWith('token=')) return cookie.substring('token='.length);
     }
-
-    // Also check localStorage as fallback
     return localStorage.getItem('token') || null;
   };
+
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -404,18 +397,6 @@ const CreateTaskForm = () => {
     }
   };
 
-  const refreshEmployees = async () => {
-    setEmployeesLoading(true);
-    await fetchEmployeesByRole();
-    setEmployeesLoading(false);
-  };
-
-  const refreshProjects = async () => {
-    setProjectsLoading(true);
-    await fetchProjects();
-    setProjectsLoading(false);
-  };
-
   const getEmployeeId = (employee) =>
     employee?._id ||
     employee?.id ||
@@ -594,47 +575,27 @@ const CreateTaskForm = () => {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar role="employee" activeItem="task" />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* TOP BAR  */}
         <DashboardHeader />
-        <div className="flex-1 ml-64 p-6">
-          <div className="mb-8">
-            <button
-              onClick={() => navigate(-1)}
-              className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
-            >
-              ← Back
-            </button>
-          </div>
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-6xl">
-            <div className="flex items-center justify-between mb-10">
-              <h2 className="text-2xl font-bold text-gray-800">
+        {/*  sidebar  and mobile padding */}
+        <div className="flex-1 p-4 lg:p-6">
+          {/* Responsive card container */}
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8 w-full max-w-6xl mx-auto">
+            <div className="mb-8">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
                 {isEditMode ? 'Edit Task' : 'Assign Tasks'}
               </h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={refreshEmployees}
-                  disabled={employeesLoading}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
-                >
-                  {employeesLoading ? 'Refreshing...' : 'Refresh Employees'}
-                </button>
-                <button
-                  onClick={refreshProjects}
-                  disabled={projectsLoading}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
-                >
-                  {projectsLoading ? 'Refreshing...' : 'Refresh Projects'}
-                </button>
-              </div>
             </div>
+
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                 <strong>Error:</strong> {error}
               </div>
             )}
-            <form onSubmit={handleSubmit} className="space-y-8">
+
+            <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
+              {/* Task Title */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Task Title *
                 </label>
@@ -649,8 +610,10 @@ const CreateTaskForm = () => {
                   disabled={loading}
                 />
               </div>
+
+              {/* Project Selection */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <Folder className="w-4 h-4" />
                   Project *{' '}
                   {projectsLoading && (
@@ -690,9 +653,11 @@ const CreateTaskForm = () => {
                   </p>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-6">
+
+              {/* Date, Priority, Milestone  */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     Deadline *
                   </label>
@@ -708,7 +673,7 @@ const CreateTaskForm = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                     <Flag className="w-4 h-4" />
                     Priority
                   </label>
@@ -725,7 +690,7 @@ const CreateTaskForm = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                     <Target className="w-4 h-4" />
                     Milestone{' '}
                     {milestonesLoading && (
@@ -775,8 +740,10 @@ const CreateTaskForm = () => {
                     )}
                 </div>
               </div>
+
+              {/* Description */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Description
                 </label>
                 <textarea
@@ -789,8 +756,10 @@ const CreateTaskForm = () => {
                   disabled={loading}
                 />
               </div>
+
+              {/* Attachments */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <Paperclip className="w-4 h-4" />
                   Attachments{' '}
                   <span className="text-xs text-gray-500 font-normal">
@@ -815,8 +784,10 @@ const CreateTaskForm = () => {
                   renderFilePreview(fileInput)}
                 {attachments.length > 0 && renderAttachmentList()}
               </div>
+
+              {/* Employee Assignment */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <Users className="w-4 h-4" />
                   Assign to Employees *{' '}
                   {employeesLoading && (
@@ -831,16 +802,15 @@ const CreateTaskForm = () => {
                   onChange={handleEmployeeSelect}
                   value={formData.assignedTo}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition min-h-[120px]"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition min-h-[100px]"
                   disabled={loading || employeesLoading}
-                  size="5"
+                  size="3"
                 >
                   {employeesLoading ? (
                     <option disabled>Loading employees...</option>
                   ) : employees.length === 0 ? (
                     <option disabled>
-                      No employees available. Please ensure employees are
-                      registered in the system.
+                      No employees available. 
                     </option>
                   ) : (
                     <>
@@ -885,19 +855,13 @@ const CreateTaskForm = () => {
                       {employees.length} employee
                       {employees.length !== 1 ? 's' : ''} available
                     </span>
-                    <button
-                      type="button"
-                      onClick={refreshEmployees}
-                      disabled={employeesLoading}
-                      className="text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      {employeesLoading ? 'Refreshing...' : 'Refresh'}
-                    </button>
                   </div>
                 </div>
               </div>
+
+              {/* Status */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Status
                 </label>
                 <select
@@ -922,12 +886,14 @@ const CreateTaskForm = () => {
                   </p>
                 )}
               </div>
-              <div className="pt-6 border-t border-gray-200 flex justify-end gap-4">
+
+              {/* Form Actions  */}
+              <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
                 <button
                   type="button"
                   onClick={() => navigate('/task-history')}
                   disabled={loading}
-                  className="px-8 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium order-2 sm:order-1"
                 >
                   Cancel
                 </button>
@@ -940,7 +906,7 @@ const CreateTaskForm = () => {
                     formData.assignedTo.length === 0 ||
                     (!formData.projectId && !isEditMode)
                   }
-                  className="px-8 py-3 bg-[#087990] text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-[#087990] text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2 order-1 sm:order-2"
                 >
                   {loading ? (
                     <>
