@@ -2,17 +2,21 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import UploadModal from "./UploadModal";
 import Toast from "../../components/Toast";
+import useIsTeamLeader from "../../hooks/useIsTeamLeader";
+import { Trash2 } from "lucide-react";
+
 
 
 const DocumentsTab = ({projectId, projectData}) => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [filterType, setFilterType] = useState("All");
   const [documents, setDocuments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const projectRole = projectData?.role || projectData?.assignedRole;
-  const isTeamLeader = projectRole === "Team Leader";
+  const { isTeamLeader, loading } = useIsTeamLeader(projectId);
+  const MAX_DOCUMENTS = 5;
+
 
   const URL_API = "http://localhost:8090";
 
@@ -23,13 +27,13 @@ const DocumentsTab = ({projectId, projectData}) => {
         {withCredentials:true}
       );
       setDocuments(res.data.data ||[]);
-      console.log("Fetched attachments:", res.data.data);
+      // console.log("Fetched attachments:", res.data.data);
     } catch (error) {
       setToast({ message: "Failed to fetch documents", type: "error" });
       console.error("Failed to fetch documents", error);
       setDocuments([]);
     } finally {
-      setLoading(false);
+      setPageLoading(false);
     }
   };
 
@@ -53,7 +57,7 @@ const DocumentsTab = ({projectId, projectData}) => {
 
   useEffect(()=>{
     if (!projectId) return;
-    setLoading(true);
+    setPageLoading(true);
     fetchDocuments();
   },[projectId]);
 
@@ -71,6 +75,12 @@ const DocumentsTab = ({projectId, projectData}) => {
 
     return exts.some(ext => name.endsWith(ext));
   });
+
+  if (loading) {
+    return <p className="m-6 text-center text-gray-500">Checking permissions...</p>;
+  }
+  
+  const hasReachedLimit = documents.length >= MAX_DOCUMENTS;
 
   return (
     <>
@@ -90,11 +100,32 @@ const DocumentsTab = ({projectId, projectData}) => {
           </select>
 
           <button
-            onClick={() => setIsUploadOpen(true)}
-            className="px-5 py-2 rounded-md bg-[#087990] text-white text-sm hover:bg-teal-800"
+            onClick={() => {
+              if (hasReachedLimit){
+                setToast({
+                  message: "You can upload a maximum of 5 documents. Please delete one to upload a new file.",
+                  type: "error",
+                });
+                return;
+              }
+              setIsUploadOpen(true);
+            }}
+            disabled={hasReachedLimit}
+            className={`px-5 py-2 rounded-md text-white text-sm 
+              ${hasReachedLimit
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-[#087990] hover:bg-teal-900"
+            }`}
+            
           >
             Upload File
           </button>
+          {hasReachedLimit && (
+            <p className="text-xs text-red-500 mt-1">
+              Maximum of 5 documents allowed per project.
+            </p>
+          )}
+
         </div>
       </div>
 
@@ -108,11 +139,11 @@ const DocumentsTab = ({projectId, projectData}) => {
 
       {/* documents grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl m-6 max-h-[600px] overflow-y-auto">
-      {loading && <p className="m-6 text-gray-500 col-span-2">Loading documents...</p>}
-      {!loading && filteredDocs.length === 0 && (
+      {pageLoading && <p className="m-6 text-gray-500 col-span-2">Loading documents...</p>}
+      {!pageLoading && filteredDocs.length === 0 && (
           <p className="m-6 text-gray-500 col-span-2">No documents found.</p>
       )}
-        {!loading && filteredDocs.length > 0 &&
+        {!pageLoading && filteredDocs.length > 0 &&
         filteredDocs.map((doc) => (
           <div
             key={doc._id}
@@ -136,13 +167,14 @@ const DocumentsTab = ({projectId, projectData}) => {
                 {(doc.fileSize/1024).toFixed(2)} KB
               </p>
             </div>
-            <div className="px-4 py-3 border-t flex justify-end gap-2">
+            <div className="px-4 py-3 border-t flex justify-between gap-2">
             {isTeamLeader && (
               <button
                 onClick={() => setConfirmDelete(doc)}
-                className="px-4 py-1 rounded-md bg-red-500 text-white text-sm hover:bg-red-600"
+                className="p-2 rounded hover:bg-gray-100 hover:text-red-500 text-[#087990]"
+                title="Delete"
               >
-                Delete
+                <Trash2 size={18} />
               </button>
             )}
               <button className="px-4 py-1 rounded-md bg-[#087990] text-white text-sm hover:bg-teal-800">

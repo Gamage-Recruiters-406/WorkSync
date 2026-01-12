@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/sidebar/Sidebar';
+import {
+  getCurrentUserInfo,
+  taskApi,
+  taskTransformers,
+  checkTeamLeaderStatus
+} from '../../services/taskApi';
+import DashboardHeader from "../../components/DashboardHeader";
+
 
 const TaskDetail = () => {
   const { id } = useParams();
@@ -10,629 +18,184 @@ const TaskDetail = () => {
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [readOnly, setReadOnly] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState(null);
-  const [pdfAttachment, setPdfAttachment] = useState(null);
+  const [fileUrl, setFileUrl] = useState(null);
+  const [currentAttachment, setCurrentAttachment] = useState(null);
   const [allAttachments, setAllAttachments] = useState([]);
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfError, setPdfError] = useState('');
+  const [fileLoading, setFileLoading] = useState(false);
+  const [fileError, setFileError] = useState('');
+  const [fileType, setFileType] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [userRole, setUserRole] = useState('employee');
 
-  // Get token from cookies
-  const getToken = () => {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'access_token') {
-        return value;
-      }
-    }
-    return null;
-  };
-
-  // Get current user from token OR localStorage
-  const getCurrentUser = () => {
-    try {
-      // Try localStorage first
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-
-          // Get user ID from various possible fields
-          let userId = parsedUser._id || parsedUser.id || parsedUser.userid;
-
-          // If userId is an object, get the string value
-          if (userId && typeof userId === 'object') {
-            userId = userId._id || userId.id || userId.userid;
-          }
-
-          if (userId) {
-            return {
-              id: userId,
-              _id: userId,
-              name: parsedUser.FirstName
-                ? `${parsedUser.FirstName} ${parsedUser.LastName || ''}`.trim()
-                : parsedUser.name || parsedUser.username || 'User',
-              email: parsedUser.email || 'user@example.com',
-              role: parsedUser.role || 1, // Default to employee role (1)
-            };
-          }
-        } catch (e) {
-          return null;
-        }
-      }
-
-      // Get token from cookies
-      const token = getToken();
-      if (!token) {
-        return null;
-      }
-
-      try {
-        // Decode JWT token
-        const parts = token.split('.');
-        if (parts.length !== 3) {
-          return null;
-        }
-
-        let payload;
-        try {
-          const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-          const jsonPayload = decodeURIComponent(
-            atob(base64)
-              .split('')
-              .map(function (c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-              })
-              .join('')
-          );
-          payload = JSON.parse(jsonPayload);
-        } catch (decodeError) {
-          payload = JSON.parse(atob(parts[1]));
-        }
-
-        // Extract user ID from various possible fields
-        let userId =
-          payload.userid ||
-          payload.userId ||
-          payload._id ||
-          payload.id ||
-          payload.sub ||
-          payload.user?.id ||
-          payload.user?._id;
-
-        // If userId is an object, get the string value
-        if (userId && typeof userId === 'object') {
-          userId = userId._id || userId.id || userId.userid;
-        }
-
-        const userName =
-          payload.name ||
-          payload.username ||
-          payload.FirstName ||
-          payload.user?.name ||
-          payload.user?.username ||
-          'User';
-
-        if (!userId) {
-          return null;
-        }
-
-        return {
-          id: userId,
-          _id: userId,
-          name: userName,
-          email: payload.email || payload.user?.email || 'user@example.com',
-          role: payload.role || payload.user?.role || 1,
-        };
-      } catch (decodeError) {
-        return null;
-      }
-    } catch (error) {
-      return null;
-    }
-  };
-
-  // Check authentication and initialize current user
   useEffect(() => {
-    const user = getCurrentUser();
-    const token = getToken();
+    const loadUserAndTask = async () => {
+      try {
+        // Get current user
+        const user = await getCurrentUserInfo();
+        if (!user) {
+          alert('Your session has expired. Please login again.');
+          navigate('/login');
+          return;
+        }
+        
+        setCurrentUser(user);
+        
+        // Check if user is team leader
+        const isTeamLeader = await checkTeamLeaderStatus(user.id);
+        setUserRole(isTeamLeader ? 'team-leader' : 'employee');
+        
+        if (id) {
+          await fetchTaskDetail(user);
+        } else {
+          setError('No task ID provided');
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error loading user:', error);
+        alert('Failed to load user information. Please login again.');
+        navigate('/login');
+      }
+    };
 
-    if (!token || !user) {
-      alert('Your session has expired. Please login again.');
-      navigate('/login');
-      return;
-    }
-
-    setCurrentUser(user);
-
-    // Fetch task details if ID exists
-    if (id) {
-      fetchTaskDetail();
-    } else {
-      setError('No task ID provided');
-      setLoading(false);
-    }
+    loadUserAndTask();
   }, [id, navigate]);
 
-  // Enhanced PDF Viewer Component
-  const PDFViewer = ({ pdfUrl, attachment, onDownload }) => {
-    const [viewerLoading, setViewerLoading] = useState(true);
-    const [viewerError, setViewerError] = useState(null);
-
-    const handleLoad = () => {
-      setViewerLoading(false);
-    };
-
-    const handleError = () => {
-      setViewerError(
-        'Unable to display PDF preview. Try downloading the file.'
-      );
-      setViewerLoading(false);
-    };
-
-    return (
-      <div className="relative h-[500px] border-2 border-gray-200 rounded-lg overflow-hidden">
-        {/* Loading overlay */}
-        {viewerLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-10">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
-              <p className="text-gray-600">Loading PDF preview...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Error overlay */}
-        {viewerError && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-95 z-10 p-4">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-3">
-              <i className="fas fa-exclamation-triangle text-red-500 text-xl"></i>
-            </div>
-            <h3 className="font-medium text-gray-800 mb-1">
-              Preview Unavailable
-            </h3>
-            <p className="text-gray-600 text-center mb-4">{viewerError}</p>
-            <button
-              onClick={onDownload}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-            >
-              <i className="fas fa-download"></i>
-              Download PDF
-            </button>
-          </div>
-        )}
-
-        {/* PDF Object tag - Primary method */}
-        <object
-          data={pdfUrl}
-          type="application/pdf"
-          className="w-full h-full"
-          onLoad={handleLoad}
-          onError={handleError}
-          title={`PDF Preview: ${attachment?.originalName || 'Document'}`}
-        >
-          {/* Fallback content if object tag fails */}
-          <div className="h-full flex flex-col items-center justify-center bg-gray-50 p-6">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <i className="fas fa-file-pdf text-blue-500 text-2xl"></i>
-            </div>
-            <h3 className="text-lg font-medium text-gray-800 mb-2">
-              PDF Preview Not Supported
-            </h3>
-            <p className="text-gray-600 text-center mb-4">
-              Your browser doesn't support embedded PDF preview. Please download
-              the file to view it.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={onDownload}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-              >
-                <i className="fas fa-download"></i>
-                Download PDF
-              </button>
-              <button
-                onClick={() => window.open(pdfUrl, '_blank')}
-                className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-              >
-                <i className="fas fa-external-link-alt"></i>
-                Open in New Tab
-              </button>
-            </div>
-          </div>
-        </object>
-
-        {/* PDF Controls */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white bg-opacity-95 rounded-lg shadow-lg border border-gray-200 p-2 flex gap-2">
-          <button
-            onClick={onDownload}
-            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium"
-            title="Download PDF"
-          >
-            <i className="fas fa-download"></i>
-            Download
-          </button>
-          <button
-            onClick={() => window.open(pdfUrl, '_blank')}
-            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 text-sm font-medium"
-            title="Open in new tab"
-          >
-            <i className="fas fa-external-link-alt"></i>
-            Open Tab
-          </button>
-          {attachment && (
-            <div className="px-3 py-2 text-xs text-gray-500 border-l border-gray-300 ml-2 pl-2">
-              {formatFileSize(attachment.fileSize)}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Fetch task details from API
-  const fetchTaskDetail = async () => {
+  const fetchTaskDetail = async (user) => {
     try {
       setLoading(true);
       setError('');
-      setPdfLoading(true);
-      setPdfError('');
-      setPdfUrl(null);
-      setPdfAttachment(null);
+      setFileLoading(true);
+      setFileError('');
+      setFileUrl(null);
+      setCurrentAttachment(null);
+      setFileType(null);
+      setIsDownloading(false);
 
-      const token = getToken();
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
+      // Fetch task details
+      const response = await taskApi.getTaskDetails(id);
+      
+      if (response.success && response.data) {
+        const formattedTask = taskTransformers.transformTask(response.data);
+        setTask(formattedTask);
 
-      const user = getCurrentUser();
-      if (!user) {
-        throw new Error('User not found');
-      }
+        // Check if user is assigned to this task
+        const userEmail = user.email;
+        const userId = user.id;
+        const isAssigned = checkIfUserIsAssigned(response.data, userEmail, userId);
+        setReadOnly(!isAssigned);
 
-      // First, try to fetch the specific task directly
-      try {
-        const response = await fetch(
-          `http://localhost:8090/api/v1/task/taskDetails/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          }
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-
-          if (result.success && result.data) {
-            const formattedTask = transformTask(result.data);
-            setTask(formattedTask);
-
-            // Process attachments from backend response
-            if (
-              result.data.attachments &&
-              Array.isArray(result.data.attachments)
-            ) {
-              const attachments = result.data.attachments;
-              setAllAttachments(attachments);
-
-              // Find PDF attachments
-              const pdfAttachments = attachments.filter((att) => {
-                const isPDF =
-                  att.fileType?.toLowerCase() === 'application/pdf' ||
-                  att.originalName?.toLowerCase().endsWith('.pdf') ||
-                  att.filename?.toLowerCase().endsWith('.pdf');
-                return isPDF;
-              });
-
-              if (pdfAttachments.length > 0) {
-                const pdfAttachment = pdfAttachments[0];
-
-                setPdfAttachment(pdfAttachment);
-
-                // Always try preview URL first
-                const previewUrl = `http://localhost:8090/api/v1/task/${id}/attachments/${pdfAttachment._id}/preview`;
-                setPdfUrl(previewUrl); // Set it directly
-
-                // Let the PDFViewer component handle errors
-                setPdfError('');
-              } else {
-                setPdfError('No PDF documents attached to this task');
-              }
-            } else {
-              setPdfError('No documents attached to this task');
-            }
-
-            setPdfLoading(false);
-            setLoading(false); // Add this line
-            return;
-          } else {
-            // If direct fetch returns but no success, use fallback
-            await fetchAllTasksAndFindTask(user);
-          }
-        } else {
-          // If direct fetch fails, use fallback
-          await fetchAllTasksAndFindTask(user);
-        }
-      } catch (directError) {
-        console.error('Direct fetch error:', directError);
-        // If direct fetch throws an error, use fallback
-        await fetchAllTasksAndFindTask(user);
-      }
-    } catch (error) {
-      console.error('Error in fetchTaskDetail:', error);
-      setError(error.message || 'Failed to load task details');
-      setPdfError('Failed to load task details');
-      setPdfLoading(false);
-      setLoading(false);
-    }
-  };
-  // Test if a URL is accessible
-  const testUrlAccessibility = async (url) => {
-    try {
-      const token = getToken();
-      const response = await fetch(url, {
-        method: 'HEAD',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return response.ok;
-    } catch (error) {
-      console.error('Error testing URL accessibility:', error);
-      return false;
-    }
-  };
-
-  // Fetch all tasks and find the specific task
-  // Fetch all tasks and find the specific task
-  const fetchAllTasksAndFindTask = async (user) => {
-    try {
-      const token = getToken();
-      if (!token) {
-        setError('No authentication token');
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(
-        'http://localhost:8090/api/v1/task/getAllTasks',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        }
-      );
-
-      if (!response.ok) {
-        setError(`Failed to fetch tasks: ${response.status}`);
-        setLoading(false);
-        return;
-      }
-
-      const result = await response.json();
-
-      if (!result.success || !result.data || !Array.isArray(result.data)) {
-        setError('No tasks found for this user');
-        setLoading(false);
-        return;
-      }
-
-      const tasks = result.data;
-
-      // Find the specific task by ID
-      const foundTask = tasks.find((task) => task._id === id);
-
-      if (!foundTask) {
-        setError(`Task with ID ${id} not found in your tasks`);
-        setLoading(false);
-        return;
-      }
-
-      const formattedTask = transformTask(foundTask);
-      setTask(formattedTask);
-
-      // Fetch attachments separately
-      await fetchTaskAttachments(id);
-    } catch (error) {
-      console.error('Error in fetchAllTasksAndFindTask:', error);
-      setError(error.message || 'Failed to load task from tasks list');
-      setLoading(false);
-    }
-  };
-  // Fetch attachments separately
-  const fetchTaskAttachments = async (taskId) => {
-    try {
-      const token = getToken();
-      if (!token) return;
-
-      const response = await fetch(
-        `http://localhost:8090/api/v1/task/taskDetails/${taskId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data && result.data.attachments) {
-          const attachments = result.data.attachments;
+        // Handle attachments
+        if (response.data.attachments && Array.isArray(response.data.attachments)) {
+          const attachments = response.data.attachments;
           setAllAttachments(attachments);
 
-          // Find PDF attachments
-          const pdfAttachments = attachments.filter(
-            (att) =>
-              att.fileType?.toLowerCase() === 'application/pdf' ||
-              att.originalName?.toLowerCase().endsWith('.pdf') ||
-              att.filename?.toLowerCase().endsWith('.pdf')
+          // Find first previewable file
+          const previewableAttachment = attachments.find(att => 
+            taskTransformers.isPreviewableFile(att)
           );
 
-          if (pdfAttachments.length > 0) {
-            const pdfAttachment = pdfAttachments[0];
-            setPdfAttachment(pdfAttachment);
-
-            // Generate PDF preview URL
-            const pdfUrl = `http://localhost:8090/api/v1/task/${taskId}/attachments/${pdfAttachment._id}/preview`;
-
-            // Test URL
-            const isAccessible = await testUrlAccessibility(pdfUrl);
-            if (isAccessible) {
-              setPdfUrl(pdfUrl);
-            } else {
-              // Fallback to download URL if preview doesn't work
-              const downloadUrl = `http://localhost:8090/api/v1/task/${taskId}/attachments/${pdfAttachment._id}/download`;
-              setPdfUrl(downloadUrl);
-            }
-
-            setPdfError('');
+          if (previewableAttachment) {
+            setCurrentAttachment(previewableAttachment);
+            const type = taskTransformers.getFileType(previewableAttachment);
+            setFileType(type);
+            
+            // Get preview URL
+            const previewUrl = taskApi.getAttachmentPreviewUrl(id, previewableAttachment._id);
+            setFileUrl(previewUrl);
+            setFileError('');
+          } else if (attachments.length > 0) {
+            setFileError('No previewable files (PDF or images) attached to this task');
           } else {
-            setPdfError('No PDF documents attached to this task');
+            setFileError('No documents attached to this task');
           }
+        } else {
+          setFileError('No documents attached to this task');
         }
+        
+        setFileLoading(false);
+        setLoading(false);
+      } else {
+        setError('Failed to load task details');
+        setLoading(false);
       }
     } catch (error) {
-      setPdfError('Failed to load attachments');
-      console.error('Error in fetchTaskAttachments:', error);
-    } finally {
-      setPdfLoading(false);
+      console.error('Error fetching task details:', error);
+      
+      // Fallback: Try to get task from all tasks list
+      try {
+        await fetchTaskFromAllTasks(user);
+      } catch (fallbackError) {
+        setError(error.message || 'Failed to load task details', fallbackError);
+        setFileError('Failed to load task details');
+        setLoading(false);
+      }
     }
   };
 
-  // Transform single task to UI format
-  const transformTask = (taskData) => {
-    let assignees = [];
-    if (Array.isArray(taskData.assignedTo)) {
-      assignees = taskData.assignedTo.map((user) => {
-        if (typeof user === 'object' && user !== null) {
-          return {
-            id: user._id || user.id || user.userId,
-            _id: user._id || user.id || user.userId,
-            name:
-              user.name ||
-              (user.firstName && user.lastName
-                ? `${user.firstName} ${user.lastName}`.trim()
-                : '') ||
-              (user.FirstName && user.LastName
-                ? `${user.FirstName} ${user.LastName}`.trim()
-                : '') ||
-              user.username ||
-              user.email ||
-              'Unknown User',
-            email: user.email || 'No email',
-            avatar: (
-              user.name ||
-              user.username ||
-              user.firstName ||
-              user.FirstName ||
-              'U'
-            )
-              .charAt(0)
-              .toUpperCase(),
-          };
+  const fetchTaskFromAllTasks = async (user) => {
+    try {
+      const response = await taskApi.getAllTasks();
+      
+      if (response.success && Array.isArray(response.data)) {
+        const foundTask = response.data.find(task => task._id === id);
+        
+        if (!foundTask) {
+          setError(`Task with ID ${id} not found in your tasks`);
+          setLoading(false);
+          return;
         }
-
-        if (typeof user === 'string') {
-          return {
-            id: user,
-            _id: user,
-            name: `User ${user.substring(0, 6)}`,
-            email: 'No email',
-            avatar: 'U',
-          };
+        
+        const formattedTask = taskTransformers.transformTask(foundTask);
+        setTask(formattedTask);
+        
+        // Check if user is assigned
+        const isAssigned = checkIfUserIsAssigned(foundTask, user.email, user.id);
+        setReadOnly(!isAssigned);
+        
+        // Try to get attachments separately
+        if (foundTask.attachments && Array.isArray(foundTask.attachments)) {
+          setAllAttachments(foundTask.attachments);
+          
+          const previewableAttachment = foundTask.attachments.find(att => 
+            taskTransformers.isPreviewableFile(att)
+          );
+          
+          if (previewableAttachment) {
+            setCurrentAttachment(previewableAttachment);
+            const type = taskTransformers.getFileType(previewableAttachment);
+            setFileType(type);
+            
+            const previewUrl = taskApi.getAttachmentPreviewUrl(id, previewableAttachment._id);
+            setFileUrl(previewUrl);
+            setFileError('');
+          }
         }
-
-        return {
-          id: 'unknown',
-          _id: 'unknown',
-          name: 'Unknown User',
-          email: 'No email',
-          avatar: 'U',
-        };
-      });
-    }
-
-    let milestone = 'No Milestone';
-    if (taskData.milestone) {
-      if (typeof taskData.milestone === 'object') {
-        milestone =
-          taskData.milestone.milestoneName ||
-          taskData.milestone.name ||
-          `M-${taskData.milestone._id?.slice(-4)}`;
+        
+        setLoading(false);
       } else {
-        milestone = taskData.milestone;
+        setError('No tasks found');
+        setLoading(false);
       }
+    } catch (error) {
+      console.error('Error fetching all tasks:', error);
+      throw error;
     }
-
-    const status = (taskData.status || 'pending').toLowerCase();
-    let progress = 0;
-    if (status === 'completed' || taskData.status === 'Completed') {
-      progress = 100;
-    } else if (
-      status === 'in progress' ||
-      status === 'in-progress' ||
-      taskData.status === 'In Progress'
-    ) {
-      progress = 50;
-    }
-
-    let createdBy = 'Unknown';
-    if (taskData.createdBy) {
-      if (typeof taskData.createdBy === 'object') {
-        createdBy =
-          taskData.createdBy.name ||
-          (taskData.createdBy.firstName && taskData.createdBy.lastName
-            ? `${taskData.createdBy.firstName} ${taskData.createdBy.lastName}`.trim()
-            : taskData.createdBy.username ||
-              taskData.createdBy.email ||
-              'Unknown');
-      } else {
-        createdBy = taskData.createdBy;
-      }
-    }
-
-    return {
-      id: taskData._id || taskData.id,
-      _id: taskData._id || taskData.id,
-      title: taskData.title || 'Untitled Task',
-      milestone: milestone,
-      deadline: taskData.deadline
-        ? new Date(taskData.deadline).toISOString().split('T')[0]
-        : 'No deadline',
-      deadlineTime: taskData.deadline
-        ? new Date(taskData.deadline).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : null,
-      priority: (taskData.priority || 'medium').toLowerCase(),
-      status: status,
-      assignees:
-        assignees.length > 0
-          ? assignees
-          : [{ id: 'unassigned', name: 'Unassigned', email: '', avatar: 'U' }],
-      attachments: taskData.attachments || [],
-      description: taskData.description || 'No description provided',
-      progress: progress,
-      createdAt: taskData.createdAt
-        ? new Date(taskData.createdAt).toLocaleDateString()
-        : 'Unknown',
-      createdBy: createdBy,
-      tags: taskData.tags || [],
-      estimatedHours: taskData.estimatedHours || 0,
-      actualHours: taskData.actualHours || 0,
-      dependencies: taskData.dependencies || [],
-    };
   };
 
-  // Update task status
+  const checkIfUserIsAssigned = (task, userEmail, userId) => {
+    if (!task.assignedTo || !Array.isArray(task.assignedTo)) return false;
+    
+    return task.assignedTo.some(assigned => {
+      if (typeof assigned === 'object') {
+        return assigned.email === userEmail || assigned._id === userId;
+      }
+      if (typeof assigned === 'string') {
+        return assigned === userEmail || assigned === userId;
+      }
+      return false;
+    });
+  };
+
   const handleUpdateStatus = async (newStatus) => {
     if (readOnly) {
       alert('You can only update status for tasks assigned to you.');
@@ -640,158 +203,240 @@ const TaskDetail = () => {
     }
 
     try {
-      const token = getToken();
-      if (!token) {
-        alert('Please login again');
-        return;
-      }
-
-      const response = await fetch(
-        `http://localhost:8090/api/v1/task/updateTaskStatus/${id}`,
-        {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          alert(`Task marked as ${newStatus}!`);
-          setTask((prev) => ({
-            ...prev,
-            status: newStatus.toLowerCase(),
-            progress:
-              newStatus === 'Completed'
-                ? 100
-                : newStatus === 'In Progress'
-                ? 50
-                : 0,
-          }));
-        } else {
-          throw new Error(result.message || 'Failed to update task status');
-        }
+      const result = await taskApi.updateTaskStatus(id, newStatus);
+      
+      if (result.success) {
+        // Update local state
+        updateTaskStatusLocal(newStatus);
+        
+        // Refresh from server to ensure consistency
+        setTimeout(() => {
+          const user = currentUser || getCurrentUserInfo();
+          if (user) fetchTaskDetail(user);
+        }, 500);
+        
+        alert(`Task marked as ${newStatus}!`);
       } else {
-        const errorText = await response.text();
-        console.error('Failed to update status:', errorText);
-
-
-        setTask((prev) => ({
-          ...prev,
-          status: newStatus.toLowerCase(),
-          progress:
-            newStatus === 'Completed'
-              ? 100
-              : newStatus === 'In Progress'
-              ? 50
-              : 0,
-        }));
-
-        alert(`Task marked as ${newStatus} (local update)!`);
+        throw new Error(result.message || 'Failed to update task status');
       }
     } catch (error) {
       console.error('Error updating task status:', error);
-      setTask((prev) => ({
-        ...prev,
-        status: newStatus.toLowerCase(),
-        progress:
-          newStatus === 'Completed'
-            ? 100
-            : newStatus === 'In Progress'
-            ? 50
-            : 0,
-      }));
-
-      alert(`Task marked as ${newStatus} (local update due to error)!`);
+      alert('Error updating task: ' + error.message);
+      
+      // Revert by refreshing from server
+      const user = currentUser || getCurrentUserInfo();
+      if (user) fetchTaskDetail(user);
     }
   };
 
-  // Handle PDF download
-  const handleDownloadPdf = async () => {
-    if (!pdfAttachment) {
-      alert('No PDF available for download');
-      return;
-    }
-
-    try {
-      const token = getToken();
-      if (!token) {
-        alert('Please login again');
-        return;
-      }
-
-      const downloadUrl = `http://localhost:8090/api/v1/task/${id}/attachments/${pdfAttachment._id}/download`;
-
-      const response = await fetch(downloadUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download =
-          pdfAttachment.originalName || `Task-${task?.title || 'document'}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } else {
-        alert('Failed to download PDF');
-      }
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      alert('Error downloading PDF');
-    }
+  const updateTaskStatusLocal = (newStatus) => {
+    setTask(prev => ({
+      ...prev,
+      status: newStatus.toLowerCase(),
+      progress: newStatus === 'Completed' ? 100 : newStatus === 'In Progress' ? 50 : 0,
+    }));
   };
 
-  // Handle attachment download
   const handleDownloadAttachment = async (attachment) => {
+    if (isDownloading) return;
+
     try {
-      const token = getToken();
-      if (!token) {
-        alert('Please login again');
-        return;
-      }
-
-      const downloadUrl = `http://localhost:8090/api/v1/task/${id}/attachments/${attachment._id}/download`;
-
-      const response = await fetch(downloadUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download =
-          attachment.originalName || `attachment-${attachment._id}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } else {
-        alert('Failed to download attachment');
-      }
+      setIsDownloading(true);
+      
+      await taskApi.downloadAttachment(id, attachment._id, attachment.originalName);
     } catch (error) {
-      alert('Error downloading attachment');
       console.error('Error downloading attachment:', error);
+      
+      // Fallback: Try to open preview URL
+      if (fileUrl) {
+        window.open(fileUrl, '_blank');
+      } else {
+        alert(`Error downloading file: ${error.message}`);
+      }
+    } finally {
+      setIsDownloading(false);
     }
   };
 
-  // Get priority color
+  const handleSelectAttachment = async (attachment) => {
+    setCurrentAttachment(attachment);
+    const type = taskTransformers.getFileType(attachment);
+    setFileType(type);
+    
+    const previewUrl = taskApi.getAttachmentPreviewUrl(id, attachment._id);
+    setFileUrl(previewUrl);
+  };
+
+  const FileViewer = ({ fileUrl, attachment, onDownload }) => {
+    const isPdf = fileType === 'pdf';
+    const isImage = fileType === 'image';
+
+    const handleOpenInNewTab = () => {
+      if (fileUrl) {
+        const newWindow = window.open(fileUrl, '_blank', 'noopener,noreferrer');
+        if (newWindow) newWindow.opener = null;
+      }
+    };
+
+    return (
+      <div className="h-[500px] border-2 border-gray-200 rounded-lg overflow-hidden">
+        {isImage ? (
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-hidden bg-gray-900 flex items-center justify-center">
+              <img
+                src={fileUrl}
+                alt={attachment?.originalName || 'Task Image'}
+                className="max-h-full max-w-full object-contain"
+                onError={(e) => {
+                  console.error('Image failed to load:', fileUrl);
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = `
+                    <div class="text-center text-white p-6">
+                      <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+                      <p>Failed to load image. Please download instead.</p>
+                    </div>
+                  `;
+                }}
+              />
+            </div>
+            <div className="bg-white border-t border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-file-image text-blue-500"></i>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {attachment?.originalName || 'Task Image'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {taskTransformers.formatFileSize(attachment?.fileSize || 0)} • Image
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleOpenInNewTab}
+                    className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 flex items-center gap-2"
+                  >
+                    <i className="fas fa-external-link-alt"></i>
+                    Open Full
+                  </button>
+                  <button
+                    onClick={onDownload}
+                    disabled={isDownloading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <i className="fas fa-download"></i>
+                    {isDownloading ? 'Downloading...' : 'Download'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : isPdf ? (
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={fileUrl}
+                className="w-full h-full border-0"
+                title="PDF Preview"
+              />
+            </div>
+            <div className="bg-white border-t border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-file-pdf text-red-500"></i>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {attachment?.originalName || 'Task Document'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {taskTransformers.formatFileSize(attachment?.fileSize || 0)} • PDF Document
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleOpenInNewTab}
+                    className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 flex items-center gap-2"
+                  >
+                    <i className="fas fa-external-link-alt"></i>
+                    Open in New Tab
+                  </button>
+                  <button
+                    onClick={onDownload}
+                    disabled={isDownloading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <i className="fas fa-download"></i>
+                    {isDownloading ? 'Downloading...' : 'Download PDF'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center bg-gray-50 p-6">
+            <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+              <i className="fas fa-file text-blue-500 text-5xl"></i>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              {attachment?.originalName || 'Task Attachment'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              This file type cannot be previewed. Please download to view.
+            </p>
+            <button
+              onClick={onDownload}
+              disabled={isDownloading}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <i className="fas fa-download"></i>
+              {isDownloading ? 'Downloading...' : 'Download File'}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const getButtonClasses = (color, isDisabled = false) => {
+    const baseClasses =
+      'px-6 py-3 rounded-lg font-semibold border-2 flex items-center justify-center gap-2 transition-all duration-300';
+
+    if (isDisabled) {
+      return `${baseClasses} opacity-50 cursor-not-allowed border-gray-300 text-gray-400`;
+    }
+
+    switch (color) {
+      case 'green':
+        return `${baseClasses} text-green-600 bg-white hover:bg-green-50 border-green-600 hover:shadow-md`;
+      case 'red':
+        return `${baseClasses} text-red-600 bg-white hover:bg-red-50 border-red-600 hover:shadow-md`;
+      case 'blue':
+        return `${baseClasses} text-blue-600 bg-white hover:bg-blue-50 border-blue-600 hover:shadow-md`;
+      default:
+        return `${baseClasses} text-gray-600 bg-white hover:bg-gray-50 border-gray-600 hover:shadow-md`;
+    }
+  };
+
+  const getCurrentTaskButtonConfig = () => {
+    if (!task) return null;
+    return taskTransformers.getStatusButtonConfig(task.status);
+  };
+
+  const handleUpdateStatusClick = () => {
+    if (!task || readOnly) return;
+
+    const buttonConfig = taskTransformers.getStatusButtonConfig(task.status);
+    handleUpdateStatus(buttonConfig.nextStatus);
+  };
+
   const getPriorityColor = (priority) => {
-    switch (priority.toLowerCase()) {
+    switch (priority?.toLowerCase()) {
       case 'high':
         return 'border-red-500 text-red-600';
       case 'medium':
@@ -803,45 +448,10 @@ const TaskDetail = () => {
     }
   };
 
-  // Format file size
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString || dateString === 'No deadline') return 'No deadline';
-
-    try {
-      const date = new Date(dateString);
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      if (date.toDateString() === today.toDateString()) {
-        return 'Today';
-      } else if (date.toDateString() === tomorrow.toDateString()) {
-        return 'Tomorrow';
-      }
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return dateString;
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex h-screen">
-        <Sidebar role={currentUser?.role || 'employee'} activeItem="task" />
+        <Sidebar role={userRole} activeItem="task" />
         <main className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -855,7 +465,7 @@ const TaskDetail = () => {
   if (error && !task) {
     return (
       <div className="flex h-screen">
-        <Sidebar role={currentUser?.role || 'employee'} activeItem="task" />
+        <Sidebar role={userRole} activeItem="task" />
         <main className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center">
           <div className="text-center max-w-md">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -865,42 +475,38 @@ const TaskDetail = () => {
               Task Not Found
             </h3>
             <p className="text-gray-500 mb-4">{error}</p>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => navigate('/tasks')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2"
-              >
-                <i className="fas fa-arrow-left"></i>
-                Back to Tasks
-              </button>
-            </div>
+            <button
+              onClick={() => navigate('/tasks')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2"
+            >
+              <i className="fas fa-arrow-left"></i>Back to Tasks
+            </button>
           </div>
         </main>
       </div>
     );
   }
 
+  const buttonConfig = getCurrentTaskButtonConfig();
+
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar role={currentUser?.role || 'employee'} activeItem="task" />
-
+      <Sidebar role={userRole} activeItem="task" />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* TOP BAR  */}
+        <DashboardHeader />
       <main className="flex-1 overflow-auto">
         <div className="p-8">
-          {/* Back button and title */}
           <div className="mb-6">
             <button
               onClick={() => navigate('/tasks')}
               className="mb-4 text-gray-600 hover:text-gray-800 flex items-center gap-2"
             >
-              <i className="fas fa-arrow-left"></i>
-              Back to Tasks
+              <i className="fas fa-arrow-left"></i>Back to Tasks
             </button>
-
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
               Task: {task?.title || 'Untitled Task'}
             </h1>
-
-            {/* Task metadata */}
             <div className="flex items-center gap-4 text-gray-600 text-sm">
               <div className="flex items-center gap-2">
                 <i className="fas fa-flag text-gray-400"></i>
@@ -930,21 +536,16 @@ const TaskDetail = () => {
             </div>
           </div>
 
-          {/* Warning for read-only access */}
           {readOnly && (
             <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg text-orange-700">
               <div className="flex items-center gap-2">
                 <i className="fas fa-exclamation-triangle"></i>
                 <p className="font-medium">Read-only Access</p>
               </div>
-              <p className="text-sm mt-1">
-                You are viewing this task in read-only mode because you are not
-                assigned to it.
-              </p>
+              <p className="text-sm mt-1">You can only view this task because you are not assigned to it.</p>
             </div>
           )}
 
-          {/* Error message if any */}
           {error && !readOnly && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
               <p className="font-medium">Error:</p>
@@ -952,16 +553,13 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Main Content - Task Details + PDF Preview */}
           {task && (
             <div className="bg-white border-2 border-gray-200 rounded-lg p-6 mb-8">
               <div className="flex gap-8">
-                {/* LEFT: Task Details Section */}
                 <div className="flex-1 border-2 border-gray-200 rounded-lg p-4">
                   <h2 className="text-xl font-semibold text-gray-800 mb-4">
                     Task Details
                   </h2>
-
                   <div className="space-y-4">
                     <div>
                       <h3 className="font-medium text-gray-700 mb-1">Task:</h3>
@@ -969,50 +567,41 @@ const TaskDetail = () => {
                         {task.title}
                       </p>
                     </div>
-
                     <div>
-                      <h3 className="font-medium text-gray-700 mb-1">
-                        Objective:
-                      </h3>
+                      <h3 className="font-medium text-gray-700 mb-1">Objective:</h3>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-gray-900 whitespace-pre-line">
                           {task.description || 'No description provided'}
                         </p>
                       </div>
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <h3 className="font-medium text-gray-700 mb-1">
-                          Deadline:
-                        </h3>
+                        <h3 className="font-medium text-gray-700 mb-1">Deadline:</h3>
                         <div className="flex items-center gap-2">
                           <i className="fas fa-calendar text-gray-500"></i>
                           <span
                             className={`text-lg font-semibold ${
                               task.deadline &&
                               task.deadline !== 'No deadline' &&
-                              new Date(task.deadline) < new Date()
+                              taskTransformers.isOverdue(task.deadline)
                                 ? 'text-red-600'
                                 : 'text-gray-800'
                             }`}
                           >
-                            {formatDate(task.deadline)}
+                            {taskTransformers.formatDate(task.deadline)}
                           </span>
                           {task.deadline &&
                             task.deadline !== 'No deadline' &&
-                            new Date(task.deadline) < new Date() && (
+                            taskTransformers.isOverdue(task.deadline) && (
                               <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
                                 Overdue
                               </span>
                             )}
                         </div>
                       </div>
-
                       <div>
-                        <h3 className="font-medium text-gray-700 mb-1">
-                          Priority:
-                        </h3>
+                        <h3 className="font-medium text-gray-700 mb-1">Priority:</h3>
                         <div
                           className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${getPriorityColor(
                             task.priority
@@ -1031,37 +620,43 @@ const TaskDetail = () => {
                         </div>
                       </div>
                     </div>
-
                     <div>
-                      <h3 className="font-medium text-gray-700 mb-1">
-                        Assignees:
-                      </h3>
+                      <h3 className="font-medium text-gray-700 mb-1">Assignees:</h3>
                       <div className="space-y-2">
-                        {task.assignees.map((assignee, index) => (
-                          <div
-                            key={assignee.id || index}
-                            className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
-                          >
-                            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-semibold">
-                              {assignee.avatar}
+                        {task.assigneeObjects && task.assigneeObjects.length > 0 ? (
+                          task.assigneeObjects.map((assignee, index) => (
+                            <div
+                              key={assignee.id || index}
+                              className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
+                            >
+                              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-semibold">
+                                {assignee.avatar}
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-800">
+                                  {assignee.name}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {assignee.email}
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex items-center gap-3 p-2">
+                            <div className="w-10 h-10 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center">
+                              <i className="fas fa-user-slash"></i>
                             </div>
                             <div>
-                              <p className="font-medium text-gray-800">
-                                {assignee.name}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {assignee.email}
-                              </p>
+                              <p className="font-medium text-gray-800">Unassigned</p>
+                              <p className="text-sm text-gray-500">No assignees yet</p>
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
-
                     <div>
-                      <h3 className="font-medium text-gray-700 mb-1">
-                        Status:
-                      </h3>
+                      <h3 className="font-medium text-gray-700 mb-1">Status:</h3>
                       <div className="flex items-center gap-3">
                         <div
                           className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -1086,11 +681,8 @@ const TaskDetail = () => {
                         ></div>
                       </div>
                     </div>
-
                     <div>
-                      <h3 className="font-medium text-gray-700 mb-1">
-                        Progress:
-                      </h3>
+                      <h3 className="font-medium text-gray-700 mb-1">Progress:</h3>
                       <div className="space-y-2">
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
                           <div
@@ -1108,159 +700,198 @@ const TaskDetail = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* All Attachments List */}
+                  
                   {allAttachments.length > 0 && (
                     <div className="mt-6 pt-6 border-t border-gray-200">
                       <h3 className="font-medium text-gray-700 mb-2">
                         All Attachments ({allAttachments.length}):
                       </h3>
                       <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {allAttachments.map((attachment) => (
-                          <div
-                            key={attachment._id}
-                            className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg border border-gray-200"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                                {attachment.fileType?.includes('pdf') ? (
-                                  <i className="fas fa-file-pdf text-red-500 text-xl"></i>
-                                ) : attachment.fileType?.includes('word') ||
-                                  attachment.originalName?.endsWith('.docx') ||
-                                  attachment.originalName?.endsWith('.doc') ? (
-                                  <i className="fas fa-file-word text-blue-500 text-xl"></i>
-                                ) : attachment.fileType?.includes('image') ? (
-                                  <i className="fas fa-file-image text-green-500 text-xl"></i>
-                                ) : (
-                                  <i className="fas fa-file text-gray-500 text-xl"></i>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-gray-800 truncate">
-                                  {attachment.originalName}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {formatFileSize(attachment.fileSize)} •{' '}
-                                  {attachment.fileType || 'Unknown type'}
-                                </p>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() =>
-                                handleDownloadAttachment(attachment)
-                              }
-                              className="ml-2 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
-                              title="Download"
+                        {allAttachments.map((attachment) => {
+                          const isCurrent = currentAttachment?._id === attachment._id;
+                          const type = taskTransformers.getFileType(attachment);
+                          return (
+                            <div
+                              key={attachment._id}
+                              className={`flex items-center justify-between p-3 rounded-lg border ${
+                                isCurrent
+                                  ? 'bg-blue-50 border-blue-300'
+                                  : 'hover:bg-gray-50 border-gray-200'
+                              } cursor-pointer`}
+                              onClick={() => handleSelectAttachment(attachment)}
                             >
-                              <i className="fas fa-download"></i>
-                            </button>
-                          </div>
-                        ))}
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                                  {type === 'pdf' ? (
+                                    <i className="fas fa-file-pdf text-red-500 text-xl"></i>
+                                  ) : type === 'image' ? (
+                                    <i className="fas fa-file-image text-green-500 text-xl"></i>
+                                  ) : attachment.fileType?.includes('word') ||
+                                    attachment.originalName?.endsWith('.docx') ||
+                                    attachment.originalName?.endsWith('.doc') ? (
+                                    <i className="fas fa-file-word text-blue-500 text-xl"></i>
+                                  ) : (
+                                    <i className="fas fa-file text-gray-500 text-xl"></i>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-800 truncate">
+                                    {attachment.originalName}
+                                    {isCurrent && (
+                                      <span className="ml-2 text-xs text-blue-600">
+                                        (Viewing)
+                                      </span>
+                                    )}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {taskTransformers.formatFileSize(attachment.fileSize)} •{' '}
+                                    {type === 'pdf'
+                                      ? 'PDF'
+                                      : type === 'image'
+                                      ? 'Image'
+                                      : attachment.fileType || 'File'}
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadAttachment(attachment);
+                                }}
+                                disabled={isDownloading}
+                                className="ml-2 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Download"
+                              >
+                                <i className="fas fa-download"></i>
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
                 </div>
-
-                {/* RIGHT: PDF Preview Section */}
+                
                 <div className="flex-1">
                   <div className="border-2 border-gray-200 rounded-lg p-4 h-full">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        <i className="fas fa-file-pdf text-red-500"></i>
+                        {fileType === 'pdf' ? (
+                          <i className="fas fa-file-pdf text-red-500"></i>
+                        ) : fileType === 'image' ? (
+                          <i className="fas fa-file-image text-green-500"></i>
+                        ) : (
+                          <i className="fas fa-file text-gray-500"></i>
+                        )}
                         <div>
                           <h3 className="font-semibold text-gray-800">
-                            {pdfAttachment
-                              ? pdfAttachment.originalName
-                              : 'Document Preview'}
+                            {currentAttachment
+                              ? currentAttachment.originalName
+                              : 'File Preview'}
                           </h3>
-                          {pdfAttachment && (
+                          {currentAttachment && (
                             <p className="text-sm text-gray-500">
-                              {formatFileSize(pdfAttachment.fileSize)} • PDF
-                              Document
+                              {taskTransformers.formatFileSize(currentAttachment.fileSize)} •{' '}
+                              {fileType === 'pdf'
+                                ? 'PDF Document'
+                                : fileType === 'image'
+                                ? 'Image'
+                                : 'File'}
                             </p>
                           )}
                         </div>
                       </div>
-
-                      {/* Download PDF Button - ADDED HERE */}
-                      {pdfAttachment && (
+                      {currentAttachment && (
                         <button
-                          onClick={handleDownloadPdf}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors duration-200"
-                          title="Download PDF"
+                          onClick={() => handleDownloadAttachment(currentAttachment)}
+                          disabled={isDownloading}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Download"
                         >
                           <i className="fas fa-download"></i>
-                          Download PDF
+                          {isDownloading
+                            ? 'Downloading...'
+                            : fileType === 'pdf'
+                            ? 'Download PDF'
+                            : fileType === 'image'
+                            ? 'Download Image'
+                            : 'Download File'}
                         </button>
                       )}
                     </div>
-
-                    {pdfLoading ? (
+                    
+                    {fileLoading ? (
                       <div className="flex items-center justify-center h-[500px] border-2 border-dashed border-gray-300 rounded-lg">
                         <div className="text-center">
                           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
                           <p className="text-gray-600">
-                            Loading PDF document...
+                            Loading{' '}
+                            {fileType === 'pdf'
+                              ? 'PDF'
+                              : fileType === 'image'
+                              ? 'image'
+                              : 'file'}
+                            ...
                           </p>
                         </div>
                       </div>
-                    ) : pdfUrl && pdfAttachment ? (
-                      <PDFViewer
-                        pdfUrl={pdfUrl}
-                        attachment={pdfAttachment}
-                        onDownload={handleDownloadPdf}
+                    ) : fileUrl && currentAttachment ? (
+                      <FileViewer
+                        fileUrl={fileUrl}
+                        attachment={currentAttachment}
+                        onDownload={() => handleDownloadAttachment(currentAttachment)}
                       />
-                    ) : pdfError ? (
+                    ) : fileError ? (
                       <div className="flex flex-col items-center justify-center h-[500px] border-2 border-dashed border-gray-300 rounded-lg">
                         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                          <i className="fas fa-file-pdf text-4xl text-gray-400"></i>
+                          <i className="fas fa-file text-4xl text-gray-400"></i>
                         </div>
                         <h3 className="text-lg font-medium text-gray-800 mb-2">
-                          No PDF Document
+                          No Preview Available
                         </h3>
                         <p className="text-gray-600 text-center mb-6 max-w-md">
-                          {pdfError}
+                          {fileError}
                         </p>
-                        {/* Download button for error state */}
-                        {pdfAttachment && (
+                        {allAttachments.length > 0 && (
                           <button
-                            onClick={handleDownloadPdf}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                            onClick={() => handleDownloadAttachment(allAttachments[0])}
+                            disabled={isDownloading}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <i className="fas fa-download"></i>
-                            Download PDF
+                            Download First Attachment
                           </button>
                         )}
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center h-[500px] border-2 border-dashed border-gray-300 rounded-lg">
                         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                          <i className="fas fa-file-pdf text-4xl text-gray-400"></i>
+                          <i className="fas fa-file text-4xl text-gray-400"></i>
                         </div>
                         <h3 className="text-lg font-medium text-gray-800 mb-2">
-                          No Document Attached
+                          No File Attached
                         </h3>
                         <p className="text-gray-600 text-center mb-6 max-w-md">
-                          This task doesn't have any attached PDF documents.
+                          This task doesn't have any attached files.
                         </p>
                       </div>
                     )}
-
-                    {pdfError && !pdfLoading && (
+                    
+                    {fileError && !fileLoading && (
                       <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                         <div className="flex items-center gap-2 text-red-700">
                           <i className="fas fa-exclamation-circle"></i>
-                          <p className="font-medium">Document Error</p>
+                          <p className="font-medium">File Error</p>
                         </div>
-                        <p className="text-sm text-red-600 mt-1">{pdfError}</p>
-                        {/* Download button for error message */}
-                        {pdfAttachment && (
+                        <p className="text-sm text-red-600 mt-1">{fileError}</p>
+                        {currentAttachment && (
                           <button
-                            onClick={handleDownloadPdf}
-                            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                            onClick={() => handleDownloadAttachment(currentAttachment)}
+                            disabled={isDownloading}
+                            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <i className="fas fa-download"></i>
-                            Download PDF
+                            Download File
                           </button>
                         )}
                       </div>
@@ -1271,48 +902,29 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-4 mb-8">
-            <button
-              onClick={() => handleUpdateStatus('In Progress')}
-              disabled={readOnly || task?.status === 'in progress'}
-              className={`px-6 py-3 rounded-lg font-semibold border-2 flex items-center gap-2 ${
-                readOnly || task?.status === 'in progress'
-                  ? 'opacity-50 cursor-not-allowed border-gray-300 text-gray-400'
-                  : 'border-green-500 text-green-600 hover:bg-green-50'
-              }`}
-            >
-              <i className="fas fa-play"></i>
-              {task?.status === 'in progress'
-                ? 'In Progress'
-                : 'Mark as In Progress'}
-            </button>
-
-            <button
-              onClick={() => handleUpdateStatus('Completed')}
-              disabled={readOnly || task?.status === 'completed'}
-              className={`px-6 py-3 rounded-lg font-semibold border-2 flex items-center gap-2 ${
-                readOnly || task?.status === 'completed'
-                  ? 'opacity-50 cursor-not-allowed border-gray-300 text-gray-400'
-                  : 'border-red-500 text-red-600 hover:bg-red-50'
-              }`}
-            >
-              <i className="fas fa-check"></i>
-              {task?.status === 'completed' ? 'Completed' : 'Mark as Completed'}
-            </button>
-
-            {!readOnly && (
+          {/* Action Buttons Section */}
+          <div className="flex flex-wrap gap-4 mb-8">
+            {buttonConfig && (
               <button
-                onClick={() => navigate(`/edit-task/${id}`)}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold flex items-center gap-2"
+                onClick={handleUpdateStatusClick}
+                disabled={
+                  readOnly ||
+                  task?.status === buttonConfig.nextStatus.toLowerCase()
+                }
+                className={getButtonClasses(
+                  buttonConfig.color,
+                  readOnly ||
+                    task?.status === buttonConfig.nextStatus.toLowerCase()
+                )}
               >
-                <i className="fas fa-edit"></i>
-                Edit Task
+                <i className={`fas fa-${buttonConfig.icon.toLowerCase()}`}></i>
+                {buttonConfig.label}
               </button>
             )}
           </div>
         </div>
       </main>
+    </div>
     </div>
   );
 };

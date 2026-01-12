@@ -11,6 +11,7 @@ import Sidebar from '../../../components/sidebar/Sidebar';
 import TopBar from '../../../components/sidebar/Topbar';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import DashboardHeader from '../../../components/DashboardHeader';
 
 const DepartmentDetails = () => {
   const { id } = useParams();
@@ -91,7 +92,7 @@ const DepartmentDetails = () => {
       <div className="flex bg-[#F8FAFC] min-h-screen">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar />
+           <DashboardHeader/>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#087990]"></div>
@@ -108,7 +109,7 @@ const DepartmentDetails = () => {
       <div className="flex bg-[#F8FAFC] min-h-screen">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar />
+        <DashboardHeader/>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center py-12">
               <p className="text-red-600">{error || 'Department not found'}</p>

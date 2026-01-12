@@ -3,6 +3,7 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import api from "../../api/axios";
 import { AiOutlineCheckCircle, AiOutlineCloseCircle } from "react-icons/ai";
 import { X } from "lucide-react";
+import DashboardHeader from "../../components/DashboardHeader";
 
 // -------------------- Custom Alert --------------------
 const CustomAlert = ({ message, type, onClose }) => {
@@ -123,8 +124,12 @@ const ManageLeaves = () => {
   return (
     <div className="flex h-screen">
       <Sidebar />
+      
 
-      <div className="flex-1 p-6 bg-gray-50 overflow-auto space-y-6">
+      <div className="flex-1 bg-gray-50 overflow-auto space-y-6">
+        <DashboardHeader />   
+        <div className="flex-1 p-6 space-y-6">
+          
         <h1 className="text-2xl font-semibold text-gray-800">
           Leave Management
         </h1>
@@ -208,6 +213,7 @@ const ManageLeaves = () => {
               </tbody>
             </table>
           )}
+        </div>
         </div>
       </div>
 

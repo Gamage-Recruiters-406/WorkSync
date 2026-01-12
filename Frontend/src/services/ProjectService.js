@@ -24,6 +24,7 @@ const apiRequest = async (endpoint, options = {}) => {
 
   try {
     const response = await fetch(url, config);
+    console.log("response",response)
     const data = await response.json();
 
     if (!response.ok) {
@@ -39,21 +40,21 @@ const apiRequest = async (endpoint, options = {}) => {
 
 // Get all projects
 export const getAllProjects = async () => {
-  return apiRequest('/projects/getAllProjects', {
+  return apiRequest('/api/v1/projects/getAllProjects', {
     method: 'GET',
   });
 };
 
 // Get single project by ID
 export const getProject = async (id) => {
-  return apiRequest(`/projects/getProject/${id}`, {
+  return apiRequest(`/api/v1/projects/getProject/${id}`, {
     method: 'GET',
   });
 };
 
 // Create a new project
 export const createProject = async (projectData) => {
-  return apiRequest('/projects/createProject', {
+  return apiRequest('/api/v1/projects/createProject', {
     method: 'POST',
     body: JSON.stringify(projectData),
   });
@@ -61,7 +62,7 @@ export const createProject = async (projectData) => {
 
 // Update a project
 export const updateProject = async (id, projectData) => {
-  return apiRequest(`/projects/updateProject/${id}`, {
+  return apiRequest(`/api/v1/projects/updateProject/${id}`, {
     method: 'PUT',
     body: JSON.stringify(projectData),
   });
@@ -69,14 +70,14 @@ export const updateProject = async (id, projectData) => {
 
 // Delete a project
 export const deleteProject = async (id) => {
-  return apiRequest(`/projects/deleteProject/${id}`, {
+  return apiRequest(`/api/v1/projects/deleteProject/${id}`, {
     method: 'DELETE',
   });
 };
 
 // Update project status
 export const updateProjectStatus = async (id, status) => {
-  return apiRequest(`/projects/updateProjectStatus/${id}`, {
+  return apiRequest(`/api/v1/projects/updateProjectStatus/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
   });
@@ -84,7 +85,7 @@ export const updateProjectStatus = async (id, status) => {
 
 // Get project progress report
 export const getProjectReport = async (id) => {
-  const endpoint = id ? `/projects/projectReport/${id}` : '/projects/projectReport';
+  const endpoint = id ? `/api/v1/projects/projectReport/${id}` : '/api/v1/project/projectReport';
   return apiRequest(endpoint, {
     method: 'GET',
   });
@@ -92,7 +93,20 @@ export const getProjectReport = async (id) => {
 
 // Get all users (for team leader dropdown)
 export const getAllUsers = async () => {
-  return apiRequest('/project-team/all', {
+  return apiRequest('/api/v1/employee/getEmloyeesByRole', {
     method: 'GET',
+  });
+};
+
+// Get all employe (for team leader dropdown)
+export const getAllEmployee = async () => {
+  return apiRequest('/api/v1/employee/getAllEmployee', {
+    method: 'GET',
+  });
+};
+
+export const getAllMilestones = async (projectId) => {
+  return apiRequest(`/api/v1/millestone/getAllMilestones/${projectId}`, {
+    method: "GET",
   });
 };

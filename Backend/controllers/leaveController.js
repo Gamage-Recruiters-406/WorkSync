@@ -24,12 +24,85 @@ const LEAVE_POLICY = {
   casual: 5,
 };
 
+// Total leaves allowed per year (sum of all types)
+const TOTAL_LEAVES_PER_YEAR = LEAVE_POLICY.sick + LEAVE_POLICY.annual + LEAVE_POLICY.casual; // 25
+
 // Helper to calculate days between dates (including both start and end)
 const calculateDays = (start, end) => {
   const startDate = new Date(start);
   const endDate = new Date(end);
   const diffTime = Math.abs(endDate - startDate);
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) +1;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+};
+
+// Helper to check both yearly total limit AND individual leave type limits
+const checkLeaveLimits = async (userId, leaveType, newStartDate, newEndDate, excludeLeaveId = null) => {
+  const currentYear = new Date().getFullYear();
+  const yearStart = new Date(currentYear, 0, 1);
+  const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+  // Get all approved leaves for this year
+  const query = {
+    requestedBy: userId,
+    sts: "approved", // Only count approved leaves
+    startDate: { $lte: yearEnd },
+    endDate: { $gte: yearStart }
+  };
+
+  // Exclude current leave if updating
+  if (excludeLeaveId) {
+    query._id = { $ne: excludeLeaveId };
+  }
+
+  const approvedLeaves = await LeaveRequest.find(query);
+
+  // Calculate used leave days by type
+  const usedByType = { sick: 0, annual: 0, casual: 0 };
+  let totalUsed = 0;
+
+  approvedLeaves.forEach(leave => {
+    const overlapStart = leave.startDate < yearStart ? yearStart : leave.startDate;
+    const overlapEnd = leave.endDate > yearEnd ? yearEnd : leave.endDate;
+
+    if (overlapStart <= overlapEnd) {
+      const days = calculateDays(overlapStart, overlapEnd);
+      if (usedByType[leave.leaveType] !== undefined) {
+        usedByType[leave.leaveType] += days;
+        totalUsed += days;
+      }
+    }
+  });
+
+  // Calculate new request days
+  const newLeaveDays = calculateDays(newStartDate, newEndDate);
+
+  // 1. Check individual leave type limit
+  if (usedByType[leaveType] + newLeaveDays > LEAVE_POLICY[leaveType]) {
+    throw {
+      status: 400,
+      message: `${leaveType.charAt(0).toUpperCase() + leaveType.slice(1)} leave limit exceeded. You can only take ${LEAVE_POLICY[leaveType]} ${leaveType} leaves per year.`,
+    };
+  }
+
+  // 2. Check total yearly limit
+  if (totalUsed + newLeaveDays > TOTAL_LEAVES_PER_YEAR) {
+    throw {
+      status: 400,
+      message: `Total leave limit exceeded. You can only take ${TOTAL_LEAVES_PER_YEAR} leaves per year across all types.`,
+    };
+  }
+
+  return { 
+    usedByType, 
+    totalUsed, 
+    newLeaveDays,
+    remainingByType: {
+      sick: Math.max(0, LEAVE_POLICY.sick - usedByType.sick),
+      annual: Math.max(0, LEAVE_POLICY.annual - usedByType.annual),
+      casual: Math.max(0, LEAVE_POLICY.casual - usedByType.casual)
+    },
+    totalRemaining: Math.max(0, TOTAL_LEAVES_PER_YEAR - totalUsed)
+  };
 };
 
 // Create Leave Request
@@ -43,6 +116,14 @@ export const createLeaveRequest = async (req, res) => {
     // Check for overlapping leaves
     await checkLeaveOverlap(
       req.user.userid,
+      req.body.startDate,
+      req.body.endDate
+    );
+
+    // Check leave limits (both type-specific and total)
+    await checkLeaveLimits(
+      req.user.userid,
+      req.body.leaveType,
       req.body.startDate,
       req.body.endDate
     );
@@ -73,7 +154,6 @@ export const updateLeaveRequest = async (req, res) => {
 
     const leaveRequest = await checkLeaveRequestExists(id);
 
-    // Use unified permission checker
     if (!hasLeavePermission(leaveRequest, req.user, 'update')) {
       throw {
         status: 403,
@@ -81,7 +161,6 @@ export const updateLeaveRequest = async (req, res) => {
       };
     }
 
-    // Only allow specific fields to be updated
     const allowedUpdates = ["leaveType", "reason", "startDate", "endDate"];
     const updates = {};
     
@@ -101,6 +180,17 @@ export const updateLeaveRequest = async (req, res) => {
     // Create temporary object for validation
     const tempData = { ...leaveRequest.toObject(), ...updates };
     validateLeaveRequest(tempData);
+
+    // Only check leave limits if the leave is approved
+    if (leaveRequest.sts === "approved" && (updates.startDate || updates.endDate || updates.leaveType)) {
+      await checkLeaveLimits(
+        req.user.userid,
+        updates.leaveType || leaveRequest.leaveType,
+        updates.startDate || leaveRequest.startDate,
+        updates.endDate || leaveRequest.endDate,
+        id
+      );
+    }
 
     // Check for overlapping leaves (excluding current leave)
     if (updates.startDate || updates.endDate) {
@@ -162,6 +252,17 @@ export const updateLeaveStatus = async (req, res) => {
         status: 403,
         message: "You don't have permission to perform this action.",
       };
+    }
+
+    // Check leave limits BEFORE approving
+    if (sts === "approved") {
+      await checkLeaveLimits(
+        leaveRequest.requestedBy,
+        leaveRequest.leaveType,
+        leaveRequest.startDate,
+        leaveRequest.endDate,
+        id
+      );
     }
 
     // Prepare update data
@@ -319,10 +420,10 @@ export const getLeaveBalance = async (req, res) => {
     const yearStart = new Date(currentYear, 0, 1);
     const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
 
-    // Get approved leaves that overlap with the current year
+    // Get only APPROVED leaves that overlap with the current year
     const leaves = await LeaveRequest.find({
       requestedBy: userId,
-      sts: "approved",
+      sts: "approved", // Only count approved leaves
       $or: [
         { 
           startDate: { $lte: yearEnd },
@@ -331,7 +432,9 @@ export const getLeaveBalance = async (req, res) => {
       ]
     });
 
+    // Calculate used leaves by type (only approved)
     const used = { sick: 0, annual: 0, casual: 0 };
+    let totalUsedDays = 0;
 
     leaves.forEach(leave => {
       // Calculate overlapping days with current year
@@ -342,6 +445,7 @@ export const getLeaveBalance = async (req, res) => {
         const days = calculateDays(overlapStart, overlapEnd);
         if (used[leave.leaveType] !== undefined) {
           used[leave.leaveType] += days;
+          totalUsedDays += days;
         }
       }
     });
@@ -351,15 +455,23 @@ export const getLeaveBalance = async (req, res) => {
       year: currentYear,
       policy: LEAVE_POLICY,
       used,
+      totalUsed: totalUsedDays,
+      totalAllowed: TOTAL_LEAVES_PER_YEAR,
       remaining: {
         sick: Math.max(0, LEAVE_POLICY.sick - used.sick),
         annual: Math.max(0, LEAVE_POLICY.annual - used.annual),
-        casual: Math.max(0, LEAVE_POLICY.casual - used.casual)
+        casual: Math.max(0, LEAVE_POLICY.casual - used.casual),
+        total: Math.max(0, TOTAL_LEAVES_PER_YEAR - totalUsedDays)
       },
       usage: {
         sick: `${used.sick}/${LEAVE_POLICY.sick}`,
         annual: `${used.annual}/${LEAVE_POLICY.annual}`,
         casual: `${used.casual}/${LEAVE_POLICY.casual}`,
+        total: `${totalUsedDays}/${TOTAL_LEAVES_PER_YEAR}`
+      },
+      limits: {
+        individualType: "Annual: 10, Casual: 5, Sick: 10",
+        totalYearly: "Maximum 25 days per year across all types"
       }
     });
   } catch (error) {
