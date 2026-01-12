@@ -46,10 +46,6 @@ const UserProfile = () => {
     fetchUserProfile();
   }, []);
 
-  const handleEditClick = () => {
-    navigate("/user/profile/edit");
-  };
-
   const handleDeleteClick = async () => {
     if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
       try {
@@ -229,22 +225,6 @@ const UserProfile = () => {
                       disabled
                       className="rounded-xl border border-gray-300 bg-gray-50 px-5 py-3 text-gray-700 font-medium text-lg focus:outline-none cursor-not-allowed"
                     />
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-4 pt-4">
-                    <button
-                      onClick={handleEditClick}
-                      className="flex-1 rounded-xl bg-[#0a7d91] px-6 py-3 font-semibold text-white hover:bg-[#096b7d] transition-colors shadow-md hover:shadow-lg"
-                    >
-                      Edit Details
-                    </button>
-                    <button
-                      onClick={handleDeleteClick}
-                      className="px-8 rounded-xl border-2 border-[#0a7d91] text-[#0a7d91] px-6 py-3 font-semibold hover:bg-[#0a7d91] hover:text-white transition-colors"
-                    >
-                      Delete
-                    </button>
                   </div>
                 </div>
               </div>
