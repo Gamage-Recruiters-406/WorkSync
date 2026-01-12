@@ -28,18 +28,6 @@ export default function WorkingHoursSettings() {
     );
   };
 
-  const addLeaveType = () => {
-    if (!newLeave.trim()) return;
-
-    const updatedSettings = {
-      ...settings,
-      leaveTypes: [...settings.leaveTypes, newLeave.trim()],
-    };
-
-    saveSettings(updatedSettings);
-    setNewLeave("");
-  };
-
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-8 ">
       <h2 className="text-xl font-semibold mb-6">
@@ -96,22 +84,6 @@ export default function WorkingHoursSettings() {
       {/* Leave Types */}
       <h3 className="text-lg font-semibold mb-3">Leave Types</h3>
 
-      <div className="flex gap-3 mb-4">
-        <input
-          type="text"
-          placeholder="Example: Sick Leave"
-          value={newLeave}
-          onChange={(e) => setNewLeave(e.target.value)}
-          className="w-full rounded-lg px-3 py-2 border border-[#087990] focus:outline-none focus:ring-2 focus:ring-teal-500"
-        />
-        <button
-          onClick={addLeaveType}
-          className="bg-[#087990] text-white px-4 py-2 rounded-lg hover:text-black hover:bg-gray-300"
-        >
-          Add leave type
-        </button>
-      </div>
-
       {/* Existing Leave Types Table */}
       <div className="border border-[#087990] rounded-lg overflow-hidden mb-6">
         <div className="bg-gray-300 px-4 py-2 font-medium border-b border-[#087990]">
@@ -124,18 +96,6 @@ export default function WorkingHoursSettings() {
             </li>
           ))}
         </ul>
-      </div>
-
-      {/* Leave Dropdown */}
-      <div>
-        {/*<label className="block text-sm font-medium mb-1">
-          Leave Type Dropdown
-        </label>
-        <select className="w-full border rounded-lg px-3 py-2">
-          {settings.leaveTypes.map((leave, index) => (
-            <option key={index}>{leave}</option>
-          ))}
-        </select>*/}
       </div>
     </div>
   );
