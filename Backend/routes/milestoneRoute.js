@@ -15,7 +15,7 @@ const router = express.Router();
 import { requiredSignIn, isManagerOrAdmin } from '../middlewares/AuthMiddleware.js';
 
 // Create Milestone (Admin/Manager only)
-router.post('/createMilestone', requiredSignIn, isManagerOrAdmin, createMilestone);
+router.post('/createMilestone', requiredSignIn, createMilestone);
 
 // Get all milestones
 router.get('/getAllMilestones/:pid', requiredSignIn, getAllMilestones);
