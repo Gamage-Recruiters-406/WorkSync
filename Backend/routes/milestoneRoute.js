@@ -27,7 +27,7 @@ router.get('/getMilestone/:id', requiredSignIn, getMilestone);
 router.get('/getMilestoneDetails/:id', requiredSignIn, getMilestoneDetails);
 
 // Update milestones (Admin/Manager only)
-router.put('/updateMilestone/:id', requiredSignIn, isManagerOrAdmin, updateMilestone);
+router.put('/updateMilestone/:id', requiredSignIn, updateMilestone);
 
 // Update milestone status (All authenticated users)
 router.patch('/updateMilestoneStatus/:id', requiredSignIn, updateMilestoneStatus);
