@@ -230,12 +230,7 @@ const UserProfileEdit = () => {
                   {/* Employee ID - Read Only */}
                   <div className="flex flex-col">
                     <label className="text-sm text-gray-500 mb-2 font-medium">
-<<<<<<< Updated upstream
-                      Employee ID
-=======
-<<<<<<< Updated upstream
-                      User ID
-=======
+
                       Employee ID
                     </label>
                     <input
@@ -303,8 +298,7 @@ const UserProfileEdit = () => {
                   <div className="flex flex-col">
                     <label className="text-sm text-gray-500 mb-2 font-medium">
                       Contact Number
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+
                     </label>
                     <input
                       type="text"
