@@ -1,12 +1,12 @@
 import Announcement from "../models/Announcement.js";
 import { v4 as uuidv4 } from "uuid";
-import User from "../models/User.js";
+import Employees from "../models/EmployeeModel.js"
 import Notification from "../models/Notification.js";
 import File from "../models/AnnouncemetAttachmet.js";
 import fs from "fs";
 import path from "path";
 
-// Create Announcement
+// Create Announcements
 export async function createAnnouncement(req, res) {
   try {
     const {
@@ -49,13 +49,13 @@ export async function createAnnouncement(req, res) {
     });
 
     // NOTIFICATION LOGIC
-    if (notifyRoles?.length > 0) {
-      const roles = notifyRoles?.map(Number);
+    if (audience?.length > 0) {
+      const roles = audience?.map(Number);
 
-      const users = await User.find({ role: { $in: roles } }).select("_id");
+      const users = await Employees.find({ role: { $in: roles } }).select("_id");
 
-      const notifications = users.map((user) => ({
-        user: user._id,
+      const notifications = users.map((employee) => ({
+        user: employee._id,
         title: "New Announcement",
         message: title,
         announcementId: newAnnouncement.announcementId,
@@ -77,7 +77,7 @@ export async function createAnnouncement(req, res) {
 //Get All Announcements for manager
 export async function getManagerAnnouncements(req, res) {
   try {
-    const announcements = await Announcement.find({ audience: "Manager" }).sort(
+    const announcements = await Announcement.find({ audience: "2" }).sort(
       { createdAt: -1 }
     );
 
@@ -93,7 +93,7 @@ export async function getManagerAnnouncements(req, res) {
 export async function getEmployeeAnnouncements(req, res) {
   try {
     const announcements = await Announcement.find({
-      audience: "Employee",
+      audience: "1",
     }).sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -108,7 +108,7 @@ export async function getEmployeeAnnouncements(req, res) {
 //get announcement for admin
 export async function getAdminAnnouncements(req, res) {
   try {
-    const announcements = await Announcement.find({ audience: "Admin" }).sort({
+    const announcements = await Announcement.find({ audience: "3" }).sort({
       createdAt: -1,
     });
 
@@ -344,6 +344,7 @@ export async function likeAnnouncement(req, res) {
 
 //notification
 export async function getMyNotifications(req, res) {
+  console.log("vvvvvvvv",req.header)
   const notifications = await Notification.find({
     user: req.user.userid,
   }).sort({ createdAt: -1 });

@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
+import axios from "axios";
 
 const sidebarContent = {
   admin: {
@@ -96,7 +98,7 @@ const sidebarContent = {
         key: "dashboard",
         label: "Dashboard",
         icon: HouseIcon,
-        path: "/user/user-dashboard",
+        path: "/user/dashboard",
       },
       {
         key: "project-team",
@@ -201,6 +203,25 @@ function Sidebar() {
     setIsCollapsed(!isCollapsed);
   };
 
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:8090/api/v1/employee/Signout",
+        {},
+        { withCredentials: true }
+      );
+
+      localStorage.clear();
+
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+
+      localStorage.clear();
+      navigate("/login");
+    }
+  };
+
   return (
     <aside
       className={`flex flex-col min-h-full bg-gray-200 shadow-lg transition-all duration-300 ${
@@ -290,7 +311,7 @@ function Sidebar() {
 
         {/* Logout Button */}
         <button
-          onClick={() => navigate("/login")}
+          onClick={handleLogout}
           className={`flex items-center gap-4 ${
             isCollapsed ? "justify-center" : ""
           } px-4 py-3 w-full rounded-lg text-sm font-medium text-[#087990] hover:bg-gray-300 hover:text-teal-800 transition-colors`}

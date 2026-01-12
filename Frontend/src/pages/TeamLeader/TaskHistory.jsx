@@ -1,83 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-
+import { useNavigate } from 'react-router-dom';
 import {
   Search,
   Calendar,
   Filter,
-  ChevronRight,
   Edit,
   Trash2,
   AlertCircle,
   User,
+  Download,
+  Eye,
+  Clock,
+  FileText,
+  File,
   Folder,
+  Shield,
 } from 'lucide-react';
-
-// Define API base URL
-const API_URL = 'http://localhost:8090/api/v1';
-
-// Mock Data for development
-const MOCK_TASKS = [
-  {
-    _id: '61a1b2c3d4e5f67890123456',
-    title: 'Design Homepage UI',
-    description: 'Mock data for development.',
-    deadline: '2024-12-20T23:59:59.000Z',
-    priority: 'High',
-    status: 'In Progress',
-    milestoneId: '61a1b2c3d4e5f67890123457',
-    assignedTo: ['61a1b2c3d4e5f67890123458', '61a1b2c3d4e5f67890123459'],
-    createdAt: '2024-11-15T10:30:00.000Z',
-    updatedAt: '2024-11-28T14:45:00.000Z',
-  },
-  {
-    _id: '61a1b2c3d4e5f6789012345a',
-    title: 'Implement User Authentication',
-    description: 'Mock data for development.',
-    deadline: '2024-12-10T23:59:59.000Z',
-    priority: 'Medium',
-    status: 'Pending',
-    milestoneId: '61a1b2c3d4e5f6789012345b',
-    assignedTo: ['61a1b2c3d4e5f67890123458'],
-    createdAt: '2024-11-10T09:15:00.000Z',
-    updatedAt: '2024-11-25T16:20:00.000Z',
-  },
-];
-
-const MOCK_USERS = [
-  {
-    _id: '61a1b2c3d4e5f67890123458',
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    role: 'developer',
-  },
-  {
-    _id: '61a1b2c3d4e5f67890123459',
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    role: 'designer',
-  },
-];
-
-const MOCK_MILESTONES = [
-  {
-    _id: '61a1b2c3d4e5f67890123457',
-    milestoneName: 'UI/UX Design Phase',
-    description: 'Complete all design work for the application',
-    deadline: '2024-12-25T23:59:59.000Z',
-    status: 'In Progress',
-  },
-  {
-    _id: '61a1b2c3d4e5f6789012345b',
-    milestoneName: 'Authentication System',
-    description: 'Implement secure user authentication and authorization',
-    deadline: '2024-12-15T23:59:59.000Z',
-    status: 'Pending',
-  },
-];
-
-// Flag to control whether to use mock data (set to true for development)
-const USE_MOCK_DATA = true;
+import Sidebar from '../../components/sidebar/Sidebar';
+import {
+  taskApi,
+  employeeApi,
+  projectApi,
+  getCurrentUserInfo,
+  taskTransformers,
+} from '../../services/taskApi';
+import DashboardHeader from '../../components/DashboardHeader';
 
 const TaskHistory = () => {
   const [tasks, setTasks] = useState([]);
@@ -85,23 +32,24 @@ const TaskHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [selectedPriority, setSelectedPriority] = useState('');
-  const [selectedUser, setSelectedUser] = useState('');
-  const [users, setUsers] = useState([]);
-  const [milestones, setMilestones] = useState([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    pending: 0,
-    completed: 0,
-  });
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [employees, setEmployees] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingTeamLeader, setCheckingTeamLeader] = useState(false);
+  const [projects, setProjects] = useState([]);
   const navigate = useNavigate();
 
-  // Get token from cookies
-  const getToken = () => {
-    return document.cookie.replace(
-      /(?:(?:^|.*;\s*)access_token\s*=\s*([^;]*).*$)|^.*$/,
-      '$1'
-    );
+  // Calculate stats directly from tasks
+  const stats = {
+    total: tasks.length,
+    active: tasks.filter((task) => task.status?.toLowerCase() === 'in progress')
+      .length,
+    pending: tasks.filter((task) => task.status?.toLowerCase() === 'pending')
+      .length,
+    completed: tasks.filter(
+      (task) => task.status?.toLowerCase() === 'completed'
+    ).length,
   };
 
   useEffect(() => {
@@ -111,363 +59,448 @@ const TaskHistory = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      if (USE_MOCK_DATA) {
-        // Use mock data for development
-        setTasks(MOCK_TASKS);
-        setUsers(MOCK_USERS);
-        setMilestones(MOCK_MILESTONES);
-        calculateStats(MOCK_TASKS);
-      } else {
-        // Try to fetch from actual API
-        await Promise.all([fetchTasks(), fetchUsers(), fetchMilestones()]);
-      }
+      await Promise.all([
+        fetchTasks(),
+        fetchEmployeesByRole(),
+        fetchCurrentUser(),
+        fetchProjects(),
+      ]);
     } catch (error) {
       console.error('Error fetching data:', error);
-      // Fallback to mock data if API fails
-      setTasks(MOCK_TASKS);
-      setUsers(MOCK_USERS);
-      setMilestones(MOCK_MILESTONES);
-      calculateStats(MOCK_TASKS);
+      alert(
+        'Failed to load tasks. Please check your connection and try again.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch projects
+  const fetchProjects = async () => {
+    try {
+      const response = await projectApi.getAllProjects();
+      if (response.success && Array.isArray(response.data)) {
+        setProjects(response.data);
+      } else {
+        setProjects([]);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      setProjects([]);
+    }
+  };
+
+  const fetchCurrentUser = async () => {
+    try {
+      // Get user from our API helper
+      const user = await getCurrentUserInfo();
+
+      if (user) {
+        setCurrentUser(user);
+        localStorage.setItem('currentUser', JSON.stringify(user));
+      } else {
+        // Fallback to localStorage
+        const stored = localStorage.getItem('currentUser');
+        if (stored) setCurrentUser(JSON.parse(stored));
+      }
+    } catch (error) {
+      const stored = localStorage.getItem('currentUser');
+      if (stored) setCurrentUser(JSON.parse(stored));
+      console.error('Error fetching current user:', error);
+    } finally {
+      setCheckingTeamLeader(false);
+    }
+  };
+
   const fetchTasks = async () => {
     try {
-      const token = getToken();
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
+      const response = await taskApi.getAllTasks();
+      let tasksArray = [];
 
-      const response = await fetch(`${API_URL}/task`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      if (response.success && response.data)
+        tasksArray = Array.isArray(response.data) ? response.data : [];
+      else if (response.tasks)
+        tasksArray = Array.isArray(response.tasks) ? response.tasks : [];
+      else if (response.data?.tasks)
+        tasksArray = Array.isArray(response.data.tasks)
+          ? response.data.tasks
+          : [];
+      else if (Array.isArray(response)) tasksArray = response;
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        setTasks(result.data);
-        calculateStats(result.data);
-      } else if (result.tasks) {
-        setTasks(result.tasks);
-        calculateStats(result.tasks);
-      } else {
-        throw new Error('Invalid response structure from tasks API');
-      }
+      setTasks(tasksArray);
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      throw error; // Re-throw to trigger mock data fallback
+      setTasks([]);
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchEmployeesByRole = async () => {
     try {
-      const token = getToken();
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
+      const response = await employeeApi.getEmployeesByRole();
+      let employeesArray = [];
 
-      const response = await fetch(`${API_URL}/userAuth/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      if (response.success && response.Employees)
+        employeesArray = Array.isArray(response.Employees)
+          ? response.Employees
+          : [];
+      else if (response.employees)
+        employeesArray = Array.isArray(response.employees)
+          ? response.employees
+          : [];
+      else if (response.data?.employees)
+        employeesArray = Array.isArray(response.data.employees)
+          ? response.data.employees
+          : [];
+      else if (Array.isArray(response)) employeesArray = response;
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const transformedEmployees = employeesArray.map((employee) => ({
+        _id: employee._id || employee.id,
+        id: employee._id || employee.id,
+        name:
+          employee.FirstName && employee.LastName
+            ? `${employee.FirstName} ${employee.LastName}`.trim()
+            : employee.name || employee.email || 'Unknown Employee',
+        email: employee.email,
+        role: employee.role,
+      }));
 
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        setUsers(result.data);
-      } else if (result.users) {
-        setUsers(result.users);
-      }
+      setEmployees(transformedEmployees);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      throw error; // Re-throw to trigger mock data fallback
+      console.error('Error fetching employees:', error);
+      setEmployees([]);
     }
   };
 
-  const fetchMilestones = async () => {
-    try {
-      const token = getToken();
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
+  // Get project name for a task
+  const getProjectName = (task) => {
+    if (!task.project || !projects.length) return 'No Project';
 
-      const response = await fetch(`${API_URL}/millestone`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        setMilestones(result.data);
-      } else if (result.milestones) {
-        setMilestones(result.milestones);
-      }
-    } catch (error) {
-      console.error('Error fetching milestones:', error);
-      throw error; // Re-throw to trigger mock data fallback
+    // Check if task has project ID
+    if (task.project._id) {
+      const project = projects.find((p) => p._id === task.project._id);
+      return project ? project.name : 'Unknown Project';
     }
-  };
 
-  const calculateStats = (tasks) => {
-    const stats = {
-      total: tasks.length,
-      active: tasks.filter(
-        (task) => task.status?.toLowerCase() === 'in progress'
-      ).length,
-      pending: tasks.filter((task) => task.status?.toLowerCase() === 'pending')
-        .length,
-      completed: tasks.filter(
-        (task) => task.status?.toLowerCase() === 'completed'
-      ).length,
-    };
-    setStats(stats);
+    // Check if task has project object directly
+    if (typeof task.project === 'string') {
+      const project = projects.find((p) => p._id === task.project);
+      return project ? project.name : 'Unknown Project';
+    }
+
+    // Check if task has project name directly
+    if (task.project?.name) {
+      return task.project.name;
+    }
+
+    return 'No Project';
   };
 
   const handleDelete = async (taskId) => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      try {
-        if (USE_MOCK_DATA) {
-          // Mock delete operation
-          const updatedTasks = tasks.filter((task) => task._id !== taskId);
-          setTasks(updatedTasks);
-          calculateStats(updatedTasks);
-          alert('Task deleted successfully (mock)!');
-        } else {
-          // Actual API call
-          const token = getToken();
-          if (!token) {
-            throw new Error('No authentication token found');
-          }
+    if (
+      !taskId ||
+      !window.confirm('Are you sure you want to delete this task?')
+    )
+      return;
 
-          const response = await fetch(`${API_URL}/task/${taskId}`, {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          const result = await response.json();
-
-          if (result.success) {
-            alert('Task deleted successfully!');
-            fetchTasks(); // Refresh the task list
-          } else {
-            throw new Error(result.message || 'Failed to delete task');
-          }
-        }
-      } catch (error) {
-        console.error('Error deleting task:', error);
-        alert(`Error: ${error.message}`);
-      }
+    try {
+      await taskApi.deleteTask(taskId);
+      alert('Task deleted successfully!');
+      setTasks((prev) => prev.filter((task) => task._id !== taskId));
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert(`Error: ${error.message}`);
     }
   };
 
-  const getUserName = (userId) => {
-    if (!userId) return 'Unassigned';
-    const user = users.find((u) => u._id === userId);
-    return user ? user.name : `User (${userId.substring(0, 6)}...)`;
+  const navigateTo = (path, taskId = '') => {
+    navigate(`/${path}${taskId ? `/${taskId}` : ''}`, {
+      state: {
+        currentUser,
+        userRole: currentUser?.role,
+        userId: currentUser?._id,
+        userName: currentUser?.name,
+        userEmail: currentUser?.email,
+        timestamp: new Date().toISOString(),
+      },
+    });
   };
 
-  const getMilestoneName = (milestoneId) => {
-    if (!milestoneId) return 'No Milestone';
-    const milestone = milestones.find((m) => m._id === milestoneId);
-    return milestone
-      ? milestone.milestoneName
-      : `Milestone (${milestoneId.substring(0, 6)}...)`;
+  const getMilestoneName = (milestone) => {
+    if (!milestone) return null;
+    if (typeof milestone === 'object')
+      return milestone.milestoneName || milestone.name || 'Unnamed Milestone';
+    if (typeof milestone === 'string') return milestone;
+    return 'Unknown Milestone';
   };
 
-  // Filter tasks based on search and filters
+  const getEmployeeName = (employeeOrId) => {
+    if (!employeeOrId) return 'Unassigned';
+
+    if (typeof employeeOrId === 'object') {
+      return employeeOrId.FirstName && employeeOrId.LastName
+        ? `${employeeOrId.FirstName} ${employeeOrId.LastName}`.trim()
+        : employeeOrId.name ||
+            employeeOrId.email ||
+            `Employee ${employeeOrId._id?.substring(0, 6) || 'Unknown'}`;
+    }
+
+    if (typeof employeeOrId === 'string') {
+      const employee = employees.find(
+        (emp) => (emp._id || emp.id || emp.userId) === employeeOrId
+      );
+      return employee
+        ? getEmployeeName(employee)
+        : `Employee (${employeeOrId.substring(0, 6)}...)`;
+    }
+
+    return 'Unknown Employee';
+  };
+
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch =
-      searchTerm === '' ||
-      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchTerm.toLowerCase());
+      !searchTerm ||
+      task.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getProjectName(task).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getMilestoneName(task.milestone)
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
     const matchesPriority =
-      selectedPriority === '' ||
+      !selectedPriority ||
       task.priority?.toLowerCase() === selectedPriority.toLowerCase();
 
-    const matchesUser =
-      selectedUser === '' ||
+    const matchesStatus =
+      !selectedStatus ||
+      task.status?.toLowerCase() === selectedStatus.toLowerCase();
+
+    const matchesEmployee =
+      !selectedEmployee ||
       (Array.isArray(task.assignedTo) &&
-        task.assignedTo.includes(selectedUser));
+        task.assignedTo.some((employee) =>
+          typeof employee === 'object'
+            ? employee._id === selectedEmployee ||
+              employee.FirstName === selectedEmployee ||
+              employee.LastName === selectedEmployee
+            : employee === selectedEmployee
+        ));
 
     const matchesDate =
-      dateRange.start === '' ||
-      dateRange.end === '' ||
+      !dateRange.start ||
+      !dateRange.end ||
       (task.deadline &&
         new Date(task.deadline) >= new Date(dateRange.start) &&
         new Date(task.deadline) <= new Date(dateRange.end));
 
-    return matchesSearch && matchesPriority && matchesUser && matchesDate;
+    return (
+      matchesSearch &&
+      matchesPriority &&
+      matchesStatus &&
+      matchesEmployee &&
+      matchesDate
+    );
   });
 
   const getPriorityColor = (priority) => {
-    switch (priority?.toLowerCase()) {
-      case 'high':
-        return 'bg-red-100 text-red-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    return taskTransformers.getPriorityColor(priority);
   };
 
   const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'in progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    return taskTransformers.getStatusColor(status);
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'No deadline';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    return taskTransformers.formatDate(dateString);
   };
 
-  const getDaysRemaining = (deadline) => {
-    if (!deadline) return null;
-    const today = new Date();
-    const deadlineDate = new Date(deadline);
-    const diffTime = deadlineDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+  const isOverdue = (deadline) => {
+    return taskTransformers.isOverdue(deadline);
   };
+
+  const formatDateTime = (dateString) => {
+    return taskTransformers.formatDateTime(dateString);
+  };
+
+  const getRoleName = (roleNumber) => {
+    switch (parseInt(roleNumber)) {
+      case 1:
+        return 'Employee';
+      case 2:
+        return 'Manager';
+      case 3:
+        return 'Admin';
+      default:
+        return `Role ${roleNumber}`;
+    }
+  };
+
+  // Get user role tag
+  const getUserRoleTag = () => {
+    if (!currentUser) return null;
+
+    if (currentUser.isTeamLeader) {
+      return {
+        text: 'Team Leader',
+        bgColor: 'bg-purple-100',
+        textColor: 'text-purple-800',
+        icon: null,
+      };
+    }
+  };
+
+  const clearFilters = () => {
+    setDateRange({ start: '', end: '' });
+    setSelectedEmployee('');
+    setSelectedPriority('');
+    setSelectedStatus('');
+    setSearchTerm('');
+  };
+
+  // Only show loading when we're still checking team leader status
+  if (loading || checkingTeamLeader) {
+    return (
+      <div className="flex bg-[#F8FAFC] min-h-screen">
+        <Sidebar />
+        <main className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">
+              {checkingTeamLeader
+                ? 'Checking permissions...'
+                : 'Loading tasks...'}
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const roleTag = getUserRoleTag();
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-     
+    <div className="flex bg-[#F8FAFC] min-h-screen">
+      <Sidebar
+        role={
+          currentUser?.role
+            ? getRoleName(currentUser.role).toLowerCase()
+            : 'employee'
+        }
+        activeItem="task"
+        userName={currentUser?.name}
+        userEmail={currentUser?.email}
+      />
 
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* TOP BAR */}
+        <DashboardHeader />
 
-      {/* Main Content */}
-      <div className="flex-1 ml-4">
-        {/* Top Navigation Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Task Management
-            </h1>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search tasks..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-64"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        {/* SCROLLABLE CONTENT */}
+        <div className="flex-1 overflow-auto p-4 lg:p-5">
+          {/* PAGE HEADER  */}
+          <div className="mb-4 lg:mb-5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+              <div>
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-800">
+                  Task History & Management
+                </h1>
+                {currentUser && (
+                  <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-gray-600">
+                    <User className="w-4 h-4 flex-shrink-0" />
+                    <span className="font-medium truncate max-w-[150px] sm:max-w-none">
+                      {currentUser.name}
+                    </span>
+                    <span className="text-gray-500 hidden sm:inline">•</span>
+
+                    {/* Show only one role tag */}
+                    {roleTag && (
+                      <span
+                        className={`px-2 py-1 ${roleTag.bgColor} ${roleTag.textColor} text-xs rounded-full flex items-center gap-1`}
+                      >
+                        {roleTag.icon && roleTag.icon}
+                        {roleTag.text}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-              <button
-                onClick={() => navigate('/create-task')}
-                className="flex items-center gap-2 px-4 py-2 bg-[#087990] text-white font-medium rounded-lg hover:bg-blue-700"
-              >
-                + Create Task
-              </button>
+              {/* showing CREATE TASK button ONLY FOR TEAM LEADERS */}
+              {currentUser?.isTeamLeader && (
+                <button
+                  onClick={() => navigateTo('create-task')}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#087990] text-white font-medium rounded-lg hover:bg-blue-700 transition mt-2 sm:mt-0"
+                >
+                  + Create Task
+                </button>
+              )}
+            </div>
+
+            {/* STATS */}
+            <div className="flex flex-wrap items-center gap-3 lg:gap-6 mt-3 lg:mt-4">
+              {Object.entries(stats).map(([key, value]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <span
+                    className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      key === 'total'
+                        ? 'bg-gray-500'
+                        : key === 'active'
+                        ? 'bg-blue-500'
+                        : key === 'pending'
+                        ? 'bg-yellow-500'
+                        : 'bg-green-500'
+                    }`}
+                  ></span>
+                  <span className="text-sm text-gray-600 capitalize whitespace-nowrap">
+                    {key}:
+                  </span>
+                  <span
+                    className={`font-medium ${
+                      key === 'active'
+                        ? 'text-blue-600'
+                        : key === 'pending'
+                        ? 'text-yellow-600'
+                        : key === 'completed'
+                        ? 'text-green-600'
+                        : 'text-gray-800'
+                    }`}
+                  >
+                    {value}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Status Bar */}
-          <div className="flex items-center gap-6 mt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Total Tasks:</span>
-              <span className="font-medium text-gray-800">{stats.total}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-              <span className="text-sm text-gray-600">In Progress:</span>
-              <span className="font-medium text-blue-600">{stats.active}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-              <span className="text-sm text-gray-600">Pending:</span>
-              <span className="font-medium text-yellow-600">
-                {stats.pending}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500"></span>
-              <span className="text-sm text-gray-600">Completed:</span>
-              <span className="font-medium text-green-600">
-                {stats.completed}
-              </span>
-            </div>
-            {USE_MOCK_DATA && (
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                <span className="text-sm text-gray-600">Mock Data:</span>
-                <span className="font-medium text-purple-600">Active</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="p-6">
-          {/* Filters Section */}
-          <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-center mb-4">
+          {/* FILTERS SECTION  */}
+          <div className="mb-4 lg:mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
               <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-gray-600" />
+                <Filter className="w-5 h-5 text-gray-600 flex-shrink-0" />
                 <span className="text-sm text-gray-600">Filters</span>
               </div>
             </div>
 
-            <div className="flex items-end gap-4">
-              <div className="flex-1">
+            {/* Filters Grid  */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Date Range
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="date"
-                    className="w-40 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     value={dateRange.start}
                     onChange={(e) =>
                       setDateRange({ ...dateRange, start: e.target.value })
                     }
                   />
-                  <span className="self-center text-sm text-gray-500">to</span>
+                  <span className="self-center text-sm text-gray-500 whitespace-nowrap">
+                    to
+                  </span>
                   <input
                     type="date"
-                    className="w-40 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     value={dateRange.end}
                     onChange={(e) =>
                       setDateRange({ ...dateRange, end: e.target.value })
@@ -476,31 +509,34 @@ const TaskHistory = () => {
                 </div>
               </div>
 
-              <div className="w-48">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <User className="w-4 h-4 inline mr-1" />
-                  Assigned To
+                  Assigned Employee
                 </label>
                 <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  value={selectedUser}
-                  onChange={(e) => setSelectedUser(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  value={selectedEmployee}
+                  onChange={(e) => setSelectedEmployee(e.target.value)}
                 >
-                  <option value="">All Users</option>
-                  {users.map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.name} ({user.email})
+                  <option value="">All Employees</option>
+                  {employees.map((employee) => (
+                    <option key={employee._id} value={employee._id}>
+                      {employee.name.length > 20
+                        ? `${employee.name.substring(0, 20)}...`
+                        : employee.name}
+                      {employee.role ? ` (${getRoleName(employee.role)})` : ''}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="w-36">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Priority
                 </label>
                 <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   value={selectedPriority}
                   onChange={(e) => setSelectedPriority(e.target.value)}
                 >
@@ -511,148 +547,233 @@ const TaskHistory = () => {
                 </select>
               </div>
 
-              <div className="self-end">
-                <button
-                  onClick={() => {
-                    setDateRange({ start: '', end: '' });
-                    setSelectedUser('');
-                    setSelectedPriority('');
-                    setSearchTerm('');
-                  }}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
                 >
-                  Clear Filters
+                  <option value="">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="in progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Results and Clear Filters  */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 lg:mt-6">
+              <div className="text-sm text-gray-600">
+                Showing{' '}
+                <span className="font-semibold">{filteredTasks.length}</span> of{' '}
+                <span className="font-semibold">{tasks.length}</span> tasks
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition w-full sm:w-auto"
+                >
+                  Clear All Filters
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Tasks List */}
-          <div className="space-y-4">
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <p className="mt-2 text-gray-600">Loading tasks...</p>
-              </div>
-            ) : filteredTasks.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
-                <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No tasks found
+          {/* TASKS LIST*/}
+          <div className="space-y-3 lg:space-y-4">
+            {filteredTasks.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-12 text-center">
+                <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-6 h-6 lg:w-8 lg:h-8 text-gray-400" />
+                </div>
+                <h3 className="text-base lg:text-lg font-semibold text-gray-700 mb-2">
+                  {searchTerm ||
+                  selectedPriority ||
+                  selectedEmployee ||
+                  selectedStatus ||
+                  dateRange.start ||
+                  dateRange.end
+                    ? 'No matching tasks found'
+                    : 'No tasks found'}
                 </h3>
-                <p className="text-gray-600 mb-6">
-                  {tasks.length === 0
-                    ? 'No tasks have been created yet. Create your first task!'
-                    : 'No tasks match your filters. Try adjusting your search criteria.'}
+                <p className="text-gray-500 mb-4 lg:mb-6 text-sm lg:text-base">
+                  {searchTerm ||
+                  selectedPriority ||
+                  selectedEmployee ||
+                  selectedStatus ||
+                  dateRange.start ||
+                  dateRange.end
+                    ? 'Try adjusting your filters'
+                    : 'There are no tasks in the system yet.'}
                 </p>
-                <button
-                  onClick={() => navigate('/create-task')}
-                  className="inline-flex items-center px-6 py-3 bg-[#087990] text-white font-medium rounded-lg hover:bg-blue-700"
-                >
-                  + Create Task
-                </button>
+                {/* SHOW CREATE TASK BUTTON ONLY FOR TEAM LEADERS */}
+                {currentUser?.isTeamLeader && (
+                  <button
+                    onClick={() => navigateTo('create-task')}
+                    className="bg-[#087990] hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition text-sm lg:text-base"
+                  >
+                    + Create Task
+                  </button>
+                )}
               </div>
             ) : (
               filteredTasks.map((task) => {
-                const daysRemaining = getDaysRemaining(task.deadline);
+                const projectName = getProjectName(task);
+
                 return (
                   <div
                     key={task._id}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                    className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="text-xl font-semibold text-gray-800">
-                            {task.title}
-                          </h3>
-                          <div className="flex gap-2">
+                    <div className="flex">
+                      <div className="w-2 bg-[#087990]" />
+
+                      <div className="flex-1 p-4 lg:p-5">
+                        {/* Task Header */}
+                        <div className="flex flex-col lg:flex-row justify-between items-start gap-3 mb-3 lg:mb-4">
+                          <div className="flex-1">
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-2 mb-2">
+                              <h3 className="text-base lg:text-lg font-semibold text-gray-800 break-words">
+                                {task.title || 'Untitled Task'}
+                              </h3>
+                            </div>
+                            <div className="text-gray-600 text-xs lg:text-sm">
+                              {projectName && projectName !== 'No Project' && (
+                                <div className="flex items-center gap-1 mb-1">
+                                  <Folder className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                                  <span className="font-medium">Project:</span>
+                                  <span className="ml-1 text-gray-700 truncate">
+                                    {projectName}
+                                  </span>
+                                </div>
+                              )}
+                              {task.milestone && (
+                                <div className="truncate">
+                                  <span className="font-medium">
+                                    Milestone:
+                                  </span>
+                                  <span className="ml-1">
+                                    {getMilestoneName(task.milestone)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 w-full lg:w-auto">
                             <button
-                              onClick={() => navigate(`/edit-task/${task._id}`)}
-                              className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 text-sm"
+                              onClick={() =>
+                                navigateTo('task-details', task._id)
+                              }
+                              className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 text-xs lg:text-sm transition flex-1 lg:flex-none justify-center"
                             >
-                              <Edit className="w-4 h-4" />
-                              Edit
+                              <Eye className="w-3 h-3 lg:w-4 lg:h-4" />
+                              <span>View Details</span>
                             </button>
-                            <button
-                              onClick={() => handleDelete(task._id)}
-                              className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete
-                            </button>
+                            {/* SHOW EDIT AND DELETE BUTTONS ONLY FOR TEAM LEADERS */}
+                            {currentUser?.isTeamLeader && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    navigateTo('edit-task', task._id)
+                                  }
+                                  className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 text-xs lg:text-sm transition flex-1 lg:flex-none justify-center"
+                                >
+                                  <Edit className="w-3 h-3 lg:w-4 lg:h-4" />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(task._id)}
+                                  className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-xs lg:text-sm transition flex-1 lg:flex-none justify-center"
+                                >
+                                  <Trash2 className="w-3 h-3 lg:w-4 lg:h-4" />
+                                  <span>Delete</span>
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
 
-                        <p className="text-gray-600 mb-4">{task.description}</p>
-
-                        <div className="flex flex-wrap gap-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            <span className="font-medium">Deadline:</span>
-                            <span className="text-gray-700">
+                        {/* Task Details*/}
+                        <div className="flex flex-wrap gap-3 lg:gap-6 text-xs lg:text-sm text-gray-700 mb-3">
+                          <div className="min-w-[120px]">
+                            <strong className="block mb-1">Deadline:</strong>
+                            <span
+                              className={
+                                isOverdue(task.deadline)
+                                  ? 'text-red-600 font-semibold'
+                                  : 'text-gray-800'
+                              }
+                            >
                               {formatDate(task.deadline)}
-                              {daysRemaining !== null && (
-                                <span
-                                  className={`ml-2 ${
-                                    daysRemaining < 0
-                                      ? 'text-red-600'
-                                      : daysRemaining <= 3
-                                      ? 'text-yellow-600'
-                                      : 'text-green-600'
-                                  }`}
-                                >
-                                  (
-                                  {daysRemaining < 0
-                                    ? `${Math.abs(daysRemaining)} days overdue`
-                                    : `${daysRemaining} days left`}
-                                  )
-                                </span>
-                              )}
+                              {isOverdue(task.deadline) && ' (Overdue)'}
                             </span>
                           </div>
-
-                          <span
-                            className={`px-3 py-1 rounded-full font-medium ${getPriorityColor(
-                              task.priority
-                            )}`}
-                          >
-                            {task.priority} Priority
-                          </span>
-
-                          <span
-                            className={`px-3 py-1 rounded-full font-medium ${getStatusColor(
-                              task.status
-                            )}`}
-                          >
-                            {task.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                      <div className="text-sm text-gray-600 flex items-center gap-2">
-                        <Folder className="w-4 h-4" />
-                        <span className="font-medium">Milestone:</span>
-                        <span>{getMilestoneName(task.milestoneId)}</span>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Assigned to:</span>{' '}
-                        {Array.isArray(task.assignedTo) &&
-                        task.assignedTo.length > 0 ? (
-                          <div className="flex gap-2 mt-1">
-                            {task.assignedTo.map((userId) => (
-                              <span
-                                key={userId}
-                                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium"
-                              >
-                                {getUserName(userId)}
-                              </span>
-                            ))}
+                          <div className="min-w-[100px]">
+                            <strong className="block mb-1">Priority:</strong>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${getPriorityColor(
+                                task.priority
+                              )}`}
+                            >
+                              {task.priority
+                                ? task.priority.charAt(0).toUpperCase() +
+                                  task.priority.slice(1)
+                                : 'Not Set'}
+                            </span>
                           </div>
-                        ) : (
-                          <span className="text-gray-400">Unassigned</span>
+                          <div className="min-w-[100px]">
+                            <strong className="block mb-1">Status:</strong>
+                            <span
+                              className={`font-semibold ${getStatusColor(
+                                task.status
+                              )}`}
+                            >
+                              {task.status
+                                ? task.status.charAt(0).toUpperCase() +
+                                  task.status.slice(1)
+                                : 'Not Set'}
+                            </span>
+                          </div>
+                          <div className="min-w-[140px]">
+                            <strong className="block mb-1">Created:</strong>
+                            <span className="text-gray-800">
+                              {formatDateTime(task.createdAt)}
+                            </span>
+                          </div>
+                          {task.assignedTo?.length > 0 && (
+                            <div className="min-w-full lg:min-w-[150px] flex-1">
+                              <strong className="block mb-1">Assignees:</strong>
+                              <span className="text-gray-800 line-clamp-2">
+                                {task.assignedTo
+                                  .map(getEmployeeName)
+                                  .join(', ')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Task Description */}
+                        {task.description && (
+                          <div className="mt-3 text-xs lg:text-sm text-gray-600">
+                            {task.description.length > 120 ? (
+                              <>
+                                {task.description.substring(0, 120)}...
+                                <button
+                                  onClick={() =>
+                                    navigateTo('task-details', task._id)
+                                  }
+                                  className="ml-2 text-blue-600 hover:text-blue-800"
+                                >
+                                  Read more
+                                </button>
+                              </>
+                            ) : (
+                              task.description
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

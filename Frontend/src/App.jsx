@@ -11,6 +11,8 @@ import Users from "./pages/admin/Users";
 import ManageLeaves from "./pages/admin/ManageLeaves";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
+
+import ProjectsDashboard from "./pages/admin/ProjectsDashboard";
 import Departments from "./pages/admin/Department/Departments";
 import Projects from "./pages/admin/Projects";
 import AdminReport from "./pages/reportAnalytics/AdminReport";
@@ -27,11 +29,14 @@ import UserAnnouncements from "./pages/employee/UserAnnouncements";
 import CreateTaskForm from "./pages/TeamLeader/CreateTaskForm";
 import TaskHistory from "./pages/TeamLeader/TaskHistory";
 import Login from "./pages/Login";
+import TaskDetail from "./pages/employee/TaskDetail";
 
 import { Navigate } from "react-router-dom";
+//import AdminReport from "./pages/reportAnalytics/AdminReport";
 
-import { useState } from "react";
-
+//import EmployeeList from './pages/admin/EmployeeList';
+import EditEmployee from "./pages/admin/EditEmployee";
+import ProtectedRoute from "./auth/ProtectedRoute";
 import ApproveUser from "./pages/admin/ApproveUser";
 import Sidebar from "./components/sidebar/Sidebar";
 import DashboardUI from "./components/DashboardUI";
@@ -42,43 +47,36 @@ import CompanyInfoSettings from "./pages/systemSetting/CompanyInfoSettings";
 import ProfileSettings from "./pages/systemSetting/ProfileSettings";
 import RolesAttendanceSettings from "./pages/systemSetting/RolesAttendanceSettings";
 import WorkingHoursSettings from "./pages/systemSetting/WorkingHoursSettings";
-<<<<<<< Updated upstream
+
+import ProjectDetailsAdmin from "./pages/admin/ProjectDetaisAdmin";
 import ManagerDashboard from "./pages/manager/managerDashboard";
 import SignUp from "./pages/Signup";
-=======
 import UserProfile from "./pages/employee/UserProfile";
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 import UserProfileEdit from "./pages/employee/UserProfileEdit";
->>>>>>> Stashed changes
-=======
-=======
->>>>>>> Stashed changes
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import AnnouncementsManagement from './pages/AnnouncementsManagement';
 import AnnouncementDetail from './pages/admin/AnnouncementDetail';
->>>>>>> Stashed changes
 
 function App() {
-  const [collapsed, setCollapsed] = useState(false);
-
   return (
     <Router>
       <Routes>
         {/* Default route - redirect to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
 
         {/* Authentication routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
 
-        {/* Dashboard routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
         <Route path="*" element={<Navigate to="/login" replace />} />
 
         {/* System Settings (Tabs)*/}
-        <Route path="/admin/system-settings" element={<SystemSettings />}>
+        <Route path="/admin/system-settings" element={
+          <ProtectedRoute allowedRoles={[3]}>
+            <SystemSettings />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Navigate to="profile" replace />} />
           <Route path="company-info" element={<CompanyInfoSettings />} />
           <Route path="profile" element={<ProfileSettings />} />
           <Route
@@ -88,35 +86,112 @@ function App() {
           <Route path="working-hours" element={<WorkingHoursSettings />} />
         </Route>
 
-        {/* Admin Routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/users" element={<EmployeeList />} />
-        <Route path="/admin/employee-list" element={<EmployeeList />} />
-        <Route path="/admin/assign-task" element={<AssignTask />} />
-        <Route path="/admin/users" element={<Users />} />
-        <Route path="/admin/manage-leaves" element={<ManageLeaves />} />
-        <Route path="/admin/reports" element={<AdminReport />} />
-        <Route path="/admin/announcements" element={<AdminAnnouncements />} />
-        <Route path="/admin/departments" element={<Departments />} />
-        <Route path="/admin/projects" element={<Projects />} />
-        <Route path="/admin/attendance" element={<AdminAttendance />} />
-        <Route path="/admin/Approve" element={<ApproveUser />} />
-        <Route path="/admin/D-details/:id" element={<DepartmentDetails />} />
+        {/* Admin Routes - Only accessible by role 3 */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <EmployeeList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/edit-employee/:id"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <EditEmployee />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/assign-task"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <AssignTask />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/manage-leaves"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <ManageLeaves />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <AdminReport />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/announcements"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <AdminAnnouncements />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/departments"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <Departments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/projects"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <ProjectsDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/projects/:id"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <ProjectDetailsAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/attendance"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <AdminAttendance />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/Approve"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <ApproveUser />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/D-details/:id"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <DepartmentDetails />
+            </ProtectedRoute>
+          }
+        />
 
-<<<<<<< Updated upstream
-        {/* Employee Routes */}
-        <Route path="/user/dashboard" element={<UserDashboard />} />
-        <Route path="/user/project-team" element={<ProjectTeam />} />
-        <Route path="/user/task" element={<Task />} />
-        <Route path="/user/attendance" element={<UserAttendance />} />
-        <Route path="/user/reports" element={<UserReports />} />
-        <Route path="/user/announcements" element={<UserAnnouncements />} />
-        <Route path="/user/leave-request" element={<LeaveRequest />} />
-        <Route path="/user/user-dashboard" element={<DashboardUI />} />
-        <Route path="/user/project-team/:id" element={<ProjectDetails />} />
-        <Route path="/user/profile" element={<UserProfile />} />
-        <Route path="/user/profile/edit" element={<UserProfileEdit />} />
-=======
         {/* Employee Routes - Only accessible by role 1 */}
         <Route
           path="/user/dashboard"
@@ -199,22 +274,69 @@ function App() {
           }
         />
         <Route
-          path="/task-details/:id"
+          path="/user/profile/edit"
           element={
             <ProtectedRoute allowedRoles={[1]}>
+              <UserProfileEdit />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/task-details/:id"
+          element={
+            <ProtectedRoute allowedRoles={[1,3]}>
               <TaskDetail />
             </ProtectedRoute>
           }
         />
->>>>>>> Stashed changes
 
         {/* Team Leader - Employee Routes */}
-        <Route path="/create-task" element={<CreateTaskForm />} />
-        <Route path="/edit-task/:taskId" element={<CreateTaskForm />} />
-        <Route path="/task-history" element={<TaskHistory />} />
+        <Route
+          path="/create-task"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <CreateTaskForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit-task/:taskId"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <CreateTaskForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/task-history"
+          element={
+            <ProtectedRoute allowedRoles={[1,3]}>
+              <TaskHistory />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Manager Routes */}
-        <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+        {/* Manager Routes - Only accessible by role 2 */}
+        <Route
+          path="/manager/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[2]}>
+              <ManagerDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* New Route for AnnouncementsPage */}
+        <Route
+          path="/announcements"
+          element={
+            <ProtectedRoute allowedRoles={[1, 2, 3]}>
+              <AnnouncementsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/user/announcements" element={<AnnouncementsManagement />} />
+         <Route path="/announcement-detail/:id" element={<AnnouncementDetail />} />
       </Routes>
     </Router>
   );

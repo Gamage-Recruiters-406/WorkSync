@@ -59,7 +59,7 @@ export default function TaskTable({ data }) {
   };*/
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow mt-6">
+    <div className="bg-white p-4 text-center rounded-xl border-2 border-[#087990] shadow-lg mt-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-700">Tasks Report</h2>
         <div>
@@ -81,7 +81,7 @@ export default function TaskTable({ data }) {
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse rounded-xl overflow-hidden">
-          <thead className="bg-gray-300">
+          <thead className="bg-[#087990] text-white">
             <tr>
               <th className="px-4 py-2 border text-left">Task Name</th>
               <th className="px-4 py-2 border text-left">createdAt</th>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Shield, UserCog, Filter, Download, Check, Trash2, X, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import Sidebar from '../../components/sidebar/Sidebar';
-import TopBar from '../../components/sidebar/Topbar';
 import axios from 'axios';
+import DashboardHeader from '../../components/DashboardHeader';
 
 const UserRolesPage = () => {
   const [users, setUsers] = useState([]);
@@ -51,35 +51,43 @@ const UserRolesPage = () => {
     }, 3000);
   };
 
-  const handleApprove = async (userId) => {
-    try {
-      const response = await axios.put('http://localhost:8090/api/v1/userAuth/updateUserStatus', { userId, status: 'Approved' }, { withCredentials: true });
-      const data = response.data;
-      if (data.success) {
-        setUsers(users.map(user => {
-          if (user.id === userId) {
-            showNotification('success', `${user.firstName} ${user.lastName} has been approved successfully!`);
-            return {
-              ...user,
-              status: 'Approved',
-            };
-          }
-          return user;
-        }));
+const handleApprove = async (Id) => {
+  try {
+    const response = await axios.post(
+      `http://localhost:8090/api/v1/employee/RejisterEmployee/${Id}`,
+      {}, // 👈 no body needed
+      {
+        withCredentials: true, // 👈 MUST be here
       }
-    } catch (error) {
-      console.error('Error approving user:', error);
-      showNotification('error', 'Failed to approve user');
-    }
-  };
+    );
 
-  const handleReject = async (userId) => {
+    const data = response.data;
+
+    if (data.success) {
+      setUsers(users.map(user => {
+        if (user.id === Id) {
+          showNotification(
+            'success',
+            `${user.firstName} ${user.lastName} has been approved successfully!`
+          );
+          return { ...user, status: 'Approved' };
+        }
+        return user;
+      }));
+    }
+  } catch (error) {
+    console.error('Error approving user:', error);
+    showNotification('error', 'Unauthorized or failed to approve user');
+  }
+};
+
+  const handleReject = async (Id) => {
     try {
-      const response = await axios.put('http://localhost:8090/api/v1/userAuth/updateUserStatus', { userId, status: 'Rejected' }, { withCredentials: true });
+      const response = await axios.delete(`http://localhost:8090/api/v1/userAuth/removeResume/${Id}`, { withCredentials: true });
       const data = response.data;
       if (data.success) {
         setUsers(users.map(user => {
-          if (user.id === userId) {
+          if (user.id === Id) {
             showNotification('error', `${user.firstName} ${user.lastName} has been rejected.`);
             return {
               ...user,
@@ -113,7 +121,7 @@ const UserRolesPage = () => {
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+       <DashboardHeader/>
 
         {/* Notification Popup */}
         {notification && (

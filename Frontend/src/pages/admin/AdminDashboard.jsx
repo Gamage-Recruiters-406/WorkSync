@@ -18,8 +18,8 @@ import {
   Settings,
   Building,
 } from 'lucide-react';
-import TopBar from "../../components/sidebar/Topbar";
 import axios from "axios";
+import DashboardHeader from "../../components/DashboardHeader";
 
 const StatCard = ({ icon: Icon, label, value, action, bgColor, iconColor, link }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -109,6 +109,8 @@ const AdminDashboard = () => {
   const [attendanceTrendsLoading, setAttendanceTrendsLoading] = useState(true);
   const [taskDistribution, setTaskDistribution] = useState({completed: 0, inProgress: 0, pending: 0, overdue: 0});
   const [taskDistributionLoading, setTaskDistributionLoading] = useState(true);
+  const [userName, setUserName] = useState(true);
+  const [userLoading, setUserLoading] = useState(true);
 
   // API Base URL
   const API_BASE_URL = "http://localhost:8090/api/v1/";
@@ -123,6 +125,62 @@ const AdminDashboard = () => {
   const hideTooltip = () => setTooltip({ ...tooltip, visible: false });
 
   useEffect(() => {
+     // Fetch logged-in user data
+  const fetchUserData = async () => {
+  setUserLoading(true);
+  try {
+    // get stored user from localStorage
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      console.warn("No user found in localStorage");
+      navigate("/login");
+      return;
+    }
+
+    const user = JSON.parse(storedUser);
+    const userId = user.userid;
+
+    // get token from cookie
+    const getToken = () =>
+      document.cookie
+        .split(";")
+        .find((c) => c.trim().startsWith("access_token="))
+        ?.split("=")[1] || null;
+
+    const token = getToken();
+
+    // fetch user data using the ID
+    const response = await axios.get(
+      `${API_BASE_URL}employee/getSingleEmployeeByID/${userId}`,
+      {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.data.success && response.data.user) {
+      const userData = response.data.user;
+      setUserName(
+        `${userData.FirstName ? `${userData.FirstName[0]}.` : ""} ${
+          userData.LastName || ""
+        }`.trim() || "User"
+      );
+    } else {
+      console.warn("User data fetch failed:", response.data);
+    }
+  } catch (err) {
+    console.error("Fetch user data error:", err);
+    if (err.response?.status === 401) {
+      navigate("/login");
+    }
+  } finally {
+    setUserLoading(false);
+  }
+};
+
     const fetchDepartments = async () => {
       setDepartmentsLoading(true);
       try {
@@ -175,7 +233,7 @@ const AdminDashboard = () => {
           withCredentials: true,
         });
         const leaves = response.data.data || [];
-        const pending = leaves.filter(l => l.status?.toLowerCase() === 'pending').length;
+        const pending = leaves.filter((l) => l.sts === "pending").length;
         setPendingLeaves(pending.toString());
       } catch (err) {
         console.error("Fetch leaves error:", err);
@@ -271,6 +329,7 @@ const AdminDashboard = () => {
       }
     };
 
+    fetchUserData();
     fetchDepartments();
     fetchDashboardStats();
     fetchActiveProjects();
@@ -421,14 +480,14 @@ const AdminDashboard = () => {
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* TOP BAR */}
-        <TopBar/>
+       <DashboardHeader/>
         
 
         {/* SCROLLABLE CONTENT */}
         <div className="flex-1 overflow-auto p-5">
           {/* WELCOME */}
           <div className="mb-5">
-            <h1 className="text-2xl font-bold text-gray-800 mb-1">Welcome back, K. Perera!</h1>
+            <h1 className="text-2xl font-bold text-gray-800 mb-1">Welcome back, {userName}!</h1>
             <p className="text-sm text-gray-600">Here's what's happening with your organization today</p>
           </div>
 
@@ -445,7 +504,7 @@ const AdminDashboard = () => {
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-gray-800">Attendance Trends<br /><span className="text-xs font-normal text-gray-500">(Last 7 Days)</span></h3>
-                <button className="text-[#087990] text-xs font-medium hover:underline">View Report</button>
+                <button onClick={() => navigate("/admin/attendance")} className="text-[#087990] text-xs font-medium hover:underline">View Report</button>
               </div>
               {attendanceTrendsLoading ? (
                 <div className="text-center py-12">
@@ -495,7 +554,7 @@ const AdminDashboard = () => {
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-gray-800">Task Status Distribution</h3>
-                <button className="text-[#087990] text-xs font-medium hover:underline">View All Tasks</button>
+                <button onClick={() => navigate("/admin/assign-task")} className="text-[#087990] text-xs font-medium hover:underline">View All Tasks</button>
               </div>
               {taskDistributionLoading ? (
                 <div className="text-center py-12">
@@ -550,7 +609,7 @@ const AdminDashboard = () => {
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-gray-800">Department-wise<br />Capacity</h3>
-                <button className="text-[#087990] text-xs font-medium hover:underline">Manage Departments</button>
+                <button onClick={() => navigate("/admin/departments")} className="text-[#087990] text-xs font-medium hover:underline">Manage Departments</button>
               </div>
               <div className="h-40 flex items-end justify-between gap-2">
                 {departmentsLoading ? (
