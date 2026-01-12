@@ -347,42 +347,22 @@ export default function DashboardUI() {
           />
         </section>
 
-        <section className="grid grid-cols-3 gap-6">
-          <div className="col-span-2">
-            <div className="rounded-[12px] bg-card p-4 shadow-md">
-              <h3 className="text-lg font-semibold text-text-primary">
-                Recent Activities
-              </h3>
-              <ul className="mt-3 space-y-3 text-text-secondary">
-                {recentActivities.map((it) => (
-                  <li key={it.id} className="flex items-start gap-3">
-                    <div className="mt-1 h-2 w-2 rounded-full bg-[#0E8A8A]/80" />
-                    <div className="text-sm">{it.text}</div>
-                  </li>
-                ))}
-                {recentActivities.length === 0 && (
-                  <li className="text-sm text-gray-500">No recent updates</li>
-                )}
-              </ul>
-            </div>
-          </div>
-          <div className="col-span-1">
-            <div className="space-y-4">
-              <div className="rounded-[12px] bg-card p-3 shadow-md">
-                <div className="text-sm font-semibold text-text-primary">
-                  Complete Profile
-                </div>
-                <div className="mt-3 text-sm text-text-secondary">
-                  Your profile was done with {profile.completion}%
-                </div>
-                <div className="mt-3 h-3 w-full rounded-full bg-[#E5E7EB]">
-                  <div
-                    className="h-3 rounded-full bg-primary"
-                    style={{ width: `${profile.completion}%` }}
-                  />
-                </div>
-              </div>
-            </div>
+        <section>
+          <div className="rounded-[12px] bg-card p-4 shadow-md">
+            <h3 className="text-lg font-semibold text-text-primary">
+              Recent Activities
+            </h3>
+            <ul className="mt-3 space-y-3 text-text-secondary">
+              {recentActivities.map((it) => (
+                <li key={it.id} className="flex items-start gap-3">
+                  <div className="mt-1 h-2 w-2 rounded-full bg-[#0E8A8A]/80" />
+                  <div className="text-sm">{it.text}</div>
+                </li>
+              ))}
+              {recentActivities.length === 0 && (
+                <li className="text-sm text-gray-500">No recent updates</li>
+              )}
+            </ul>
           </div>
         </section>
       </main>
