@@ -55,3 +55,11 @@ coverage/
 node_modules
 uploads/
 uploads/**
+.gitignore
+
+#prevent uploading resume
+Resumes
+
+
+
+
