@@ -47,7 +47,13 @@ import ManagerDashboard from "./pages/manager/managerDashboard";
 import SignUp from "./pages/Signup";
 =======
 import UserProfile from "./pages/employee/UserProfile";
+<<<<<<< Updated upstream
 import UserProfileEdit from "./pages/employee/UserProfileEdit";
+>>>>>>> Stashed changes
+=======
+import AnnouncementsPage from "./pages/AnnouncementsPage";
+import AnnouncementsManagement from './pages/AnnouncementsManagement';
+import AnnouncementDetail from './pages/admin/AnnouncementDetail';
 >>>>>>> Stashed changes
 
 function App() {
@@ -94,6 +100,7 @@ function App() {
         <Route path="/admin/Approve" element={<ApproveUser />} />
         <Route path="/admin/D-details/:id" element={<DepartmentDetails />} />
 
+<<<<<<< Updated upstream
         {/* Employee Routes */}
         <Route path="/user/dashboard" element={<UserDashboard />} />
         <Route path="/user/project-team" element={<ProjectTeam />} />
@@ -106,6 +113,97 @@ function App() {
         <Route path="/user/project-team/:id" element={<ProjectDetails />} />
         <Route path="/user/profile" element={<UserProfile />} />
         <Route path="/user/profile/edit" element={<UserProfileEdit />} />
+=======
+        {/* Employee Routes - Only accessible by role 1 */}
+        <Route
+          path="/user/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <DashboardUI />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/project-team"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <ProjectTeam />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/task"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <Task />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/attendance"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <UserAttendance />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/reports"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <UserReports />
+            </ProtectedRoute>
+          }
+        />
+        {/* <Route
+          path="/user/announcements"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <UserAnnouncements />
+            </ProtectedRoute>
+          }
+        /> */}
+        <Route
+          path="/user/leave-request"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <LeaveRequest />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/user-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <DashboardUI />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/project-team/:id"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <ProjectDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/profile"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <UserProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/task-details/:id"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <TaskDetail />
+            </ProtectedRoute>
+          }
+        />
+>>>>>>> Stashed changes
 
         {/* Team Leader - Employee Routes */}
         <Route path="/create-task" element={<CreateTaskForm />} />
