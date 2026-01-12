@@ -284,7 +284,7 @@ function App() {
         <Route
           path="/task-details/:id"
           element={
-            <ProtectedRoute allowedRoles={[1]}>
+            <ProtectedRoute allowedRoles={[1,3]}>
               <TaskDetail />
             </ProtectedRoute>
           }
@@ -310,7 +310,7 @@ function App() {
         <Route
           path="/task-history"
           element={
-            <ProtectedRoute allowedRoles={[1]}>
+            <ProtectedRoute allowedRoles={[1,3]}>
               <TaskHistory />
             </ProtectedRoute>
           }
