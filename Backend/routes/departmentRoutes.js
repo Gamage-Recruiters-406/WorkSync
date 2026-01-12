@@ -18,7 +18,7 @@ const router = express.Router();
 router.get("/getAllDepartments", requiredSignIn, isAdmin, getAllDepartments);
 
 // Get Single Department - GET /api/v1/department/getDepartment/:id
-router.get("/getDepartment/:id", requiredSignIn, isAdmin, getDepartment);
+router.get("/getDepartment/:id", requiredSignIn, getDepartment);
 
 // Create Department - POST /api/v1/department/createDepartment
 router.post('/createDepartment', requiredSignIn, isAdmin, createDepartment);
