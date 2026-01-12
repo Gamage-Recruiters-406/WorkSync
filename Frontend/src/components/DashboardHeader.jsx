@@ -10,7 +10,7 @@ const DashboardHeader = () => {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         const user = JSON.parse(storedUser);
-        const userId = user.userid;
+        const userId = user.id;
 
         const getToken = () =>
           document.cookie

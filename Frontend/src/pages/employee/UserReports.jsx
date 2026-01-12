@@ -21,7 +21,7 @@ export default function UserReports() {
   const stored = localStorage.getItem("user");
   const data = stored ? JSON.parse(stored) : null;
 
-  const userId = data?.userid;
+  const userId = data?.id;
 
   const [kpis, setKpis] = useState({
     totalAttendance: 0,
