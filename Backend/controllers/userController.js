@@ -173,6 +173,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+
 //reject user resume controller
 export const removeResume = async (req, res) => {
     try {

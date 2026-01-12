@@ -230,7 +230,7 @@ export const SignOut = async(req, res) => {
 //remove employee
 export const RemoveEmployee = async (req, res) => {
   try {
-    const {id} = req.params();
+    const {id} = req.params;
 
     const existUser = await EmployeeModel.findById(id);
     if(!existUser){
@@ -242,7 +242,7 @@ export const RemoveEmployee = async (req, res) => {
 
     await EmployeeModel.findByIdAndDelete(id);
     res.status(200).json({
-      success: false,
+      success: true,
       message: 'Employee removed successfully.'
     })
 
