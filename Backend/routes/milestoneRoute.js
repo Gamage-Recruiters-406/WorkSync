@@ -33,6 +33,6 @@ router.put('/updateMilestone/:id', requiredSignIn, isManagerOrAdmin, updateMiles
 router.patch('/updateMilestoneStatus/:id', requiredSignIn, updateMilestoneStatus);
 
 // Delete milestone (Admin/Manager only)
-router.delete('/deleteMilestone/:id', requiredSignIn, isManagerOrAdmin, deleteMilestone);
+router.delete('/deleteMilestone/:id', requiredSignIn, deleteMilestone);
 
 export default router;
