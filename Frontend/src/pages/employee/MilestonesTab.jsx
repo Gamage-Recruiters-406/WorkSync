@@ -22,7 +22,7 @@ const MilestonesTab = ({projectId, projectData}) => {
   const [confirmDelete, setConfirmDelete] = useState(null);
 
 
-  const URL_API = "http://localhost:8090";
+  const URL_API = import.meta.env.VITE_API_BASE_URL;
 
   const fetchMilestones = async () => {
     try {
