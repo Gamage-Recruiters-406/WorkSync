@@ -153,7 +153,7 @@ const LeaveRequest = () => {
   // -------------------- Fetch leave balance --------------------
   const fetchLeaveBalance = async () => {
     try {
-      const res = await api.get("/leave-balance");
+      const res = await api.get(`${API_URL}/api/v1/leave-request/leave-balance`);
       const payload = res.data || {};
 
       // payload.used expected: { sick: 0, annual: 1, casual: 1 }
