@@ -1,6 +1,5 @@
 // API base URL 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090' // Remove trailing slash if any
- );
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 
 // Helper function to get auth token from localStorage
