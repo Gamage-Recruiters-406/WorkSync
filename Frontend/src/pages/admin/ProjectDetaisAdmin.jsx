@@ -31,7 +31,7 @@ const ProjectDetailsAdmin = () => {
     const [uploading, setUploading] = useState(false);
     const [downloadingReport, setDownloadingReport] = useState(false);
 
-    const URL_API = "http://localhost:8090";
+    const URL_API = import.meta.env.VITE_API_BASE_URL;
 
     useEffect(() => {
     let isMounted = true;

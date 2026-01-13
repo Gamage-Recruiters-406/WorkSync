@@ -4,6 +4,7 @@ import { Search, Bell } from "lucide-react";
 const DashboardHeader = () => {
   const [role, setRole] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     try {
@@ -22,7 +23,7 @@ const DashboardHeader = () => {
 
         const fun = async () => {
           const response = await fetch(
-            `http://localhost:8090/api/v1/employee/getSingleEmployeeByID/${userId}`,
+            `${API_URL}/api/v1/employee/getSingleEmployeeByID/${userId}`,
             {
               credentials: "include",
               headers: {

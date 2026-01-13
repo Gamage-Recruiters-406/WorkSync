@@ -44,7 +44,7 @@ export const removeEmployee = async (id) => {
 
 export const createEmployee = async (employeeData) => {
   try {
-    const response = await employeeApi.post('/addEmployee', employeeData);
+    const response = await employeeApi.post(`${base}/api/v1/employee/addEmployee`, employeeData);
     return response.data;
   } catch (error) {
     throw error;

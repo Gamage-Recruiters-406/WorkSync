@@ -45,7 +45,7 @@ const Departments = () => {
   const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   // API Base URL
-  const API_BASE_URL = "http://localhost:8090/api/v1/department";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // Fetch departments on component mount
   useEffect(() => {
@@ -55,7 +55,7 @@ const Departments = () => {
   const fetchDepartments = async () => {
     setFetchLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/getAllDepartments`, {
+      const response = await axios.get(`${API_BASE_URL}/api/v1/department/getAllDepartments`, {
         withCredentials: true,
       });
 
@@ -119,7 +119,7 @@ const Departments = () => {
     setError("");
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/createDepartment`,
+        `${API_BASE_URL}/api/v1/department/createDepartment`,
         formData,
         { withCredentials: true }
       );
@@ -169,7 +169,7 @@ const Departments = () => {
     setError("");
     try {
       const response = await axios.put(
-        `${API_BASE_URL}/updateDepartment/${editingId}`,
+        `${API_BASE_URL}/api/v1/department/updateDepartment/${editingId}`,
         formData,
         { withCredentials: true }
       );
@@ -208,7 +208,7 @@ const Departments = () => {
     setError("");
     try {
       const response = await axios.delete(
-        `${API_BASE_URL}/deleteDepartment/${id}`,
+        `${API_BASE_URL}/api/v1/department/deleteDepartment/${id}`,
         { withCredentials: true }
       );
 
@@ -236,7 +236,7 @@ const Departments = () => {
   const handleStatusChange = async (id) => {
     try {
       const response = await axios.put(
-        `${API_BASE_URL}/changeStatus/${id}`,
+        `${API_BASE_URL}/api/v1/department/changeStatus/${id}`,
         {},
         { withCredentials: true }
       );

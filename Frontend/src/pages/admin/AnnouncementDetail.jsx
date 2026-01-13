@@ -18,7 +18,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../../components/sidebar/Sidebar";
 import api from "../../api/axios";
 
-const API_ORIGIN = "http://localhost:8090"; // change if needed
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL; // change if needed
 
 const AnnouncementDetail = () => {
   const { id } = useParams();
@@ -73,7 +73,7 @@ const AnnouncementDetail = () => {
       setErrorMsg("");
 
       const res = await api.get(
-        `http://localhost:8090/api/v1/announcement/getAnnouncement/${id}`
+        `${API_ORIGIN}/api/v1/announcement/getAnnouncement/${id}`
       );
 
       setAnnouncement(res?.data?.data || null);

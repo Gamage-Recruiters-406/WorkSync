@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ ADD THIS
+import { useNavigate } from "react-router-dom";
 import {
   Bell,
   Search,
@@ -21,7 +21,7 @@ const PRIMARY = "#087990";
 const DELETE_COLOR = "#E53E3E";
 
 const AnnouncementsManagement = () => {
-  const navigate = useNavigate(); // ✅ ADD THIS
+  const navigate = useNavigate();
 
   const [showAll, setShowAll] = useState(false);
   const [selectedAll, setSelectedAll] = useState("All");
@@ -30,41 +30,84 @@ const AnnouncementsManagement = () => {
   const [recentAnnouncements, setRecentAnnouncements] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ================= FETCH =================
+  // NEW: logged in user role
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Use env base URL (Vite)
+  const base = import.meta.env.VITE_API_BASE_URL;
+
+  // ================= FETCH LOGGED USER =================
+  const fetchLoggedUser = async () => {
+    try {
+      // This endpoint should return logged-in user info (same one you used in profile)
+      const res = await api.get(`${base}/api/v1/employee/getSingleEmployee`, {
+        withCredentials: true,
+      });
+
+      const user = res.data?.user;
+      const role = user?.role;
+
+      setIsAdmin(Number(role) === 3); // role 3 => admin
+    } catch (err) {
+      console.error("Failed to fetch logged user:", err);
+      setIsAdmin(false);
+    }
+  };
+
+  // ================= FETCH ANNOUNCEMENTS =================
   const fetchAnnouncements = async () => {
     try {
       setLoading(true);
 
-      const res = await api.get(
-        "http://localhost:8090/api/v1/announcement/getAnnouncements"
-      );
+      const res = await api.get(`${base}/api/v1/announcement/getAnnouncements`, {
+        withCredentials: true,
+      });
 
-      const data = res.data.data || [];
+      const data = res.data?.data || [];
       setPinnedAnnouncements(data.filter((a) => a.isPinned));
       setRecentAnnouncements(data.filter((a) => !a.isPinned));
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch announcements:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    fetchLoggedUser();
     fetchAnnouncements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ================= ACTIONS =================
   const handleDelete = async (id) => {
+    if (!isAdmin) {
+      alert("Only admins can delete announcements.");
+      return;
+    }
+
     if (!window.confirm("Delete this announcement?")) return;
-    await api.delete(
-      `http://localhost:8090/api/v1/announcement/deleteAnnouncement/${id}`
-    );
-    fetchAnnouncements();
+
+    try {
+      await api.delete(`${base}/api/v1/announcement/deleteAnnouncement/${id}`, {
+        withCredentials: true,
+      });
+      fetchAnnouncements();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert(err?.response?.data?.message || "Failed to delete announcement");
+    }
   };
 
   const handleLike = async (id) => {
-    await api.put(`http://localhost:8090/api/v1/announcement/like/${id}`);
-    fetchAnnouncements();
+    try {
+      await api.put(`${base}/api/v1/announcement/like/${id}`, null, {
+        withCredentials: true,
+      });
+      fetchAnnouncements();
+    } catch (err) {
+      console.error("Like failed:", err);
+    }
   };
 
   const handleShare = (title) => {
@@ -76,7 +119,6 @@ const AnnouncementsManagement = () => {
     alert("Mark as Read handled via notifications");
   };
 
-  // ✅ NEW: view details
   const handleViewDetails = (id) => {
     navigate(`/announcement-detail/${id}`);
   };
@@ -117,7 +159,7 @@ const AnnouncementsManagement = () => {
 
               <div className="flex justify-between gap-3">
                 <button
-                  onClick={() => handleViewDetails(item.announcementId)} // ✅ ADD
+                  onClick={() => handleViewDetails(item.announcementId)}
                   className="flex items-center gap-2 px-4 py-2 border rounded-lg"
                   style={{ borderColor: PRIMARY, color: PRIMARY }}
                 >
@@ -139,6 +181,17 @@ const AnnouncementsManagement = () => {
                 >
                   <Share size={16} /> Share
                 </button>
+
+                {/* OPTIONAL: show delete on pinned too (admin only) */}
+                {isAdmin && (
+                  <button
+                    onClick={() => handleDelete(item.announcementId)}
+                    className="flex items-center gap-2 px-5 py-2 border rounded-lg"
+                    style={{ borderColor: DELETE_COLOR, color: DELETE_COLOR }}
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -157,7 +210,7 @@ const AnnouncementsManagement = () => {
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleViewDetails(item.announcementId)} // ✅ ADD
+                    onClick={() => handleViewDetails(item.announcementId)}
                     className="w-full px-4 py-2 border rounded-lg"
                     style={{ borderColor: PRIMARY, color: PRIMARY }}
                   >
@@ -172,13 +225,16 @@ const AnnouncementsManagement = () => {
                     👍 Like ({item.likesCount || 0})
                   </button>
 
-                  <button
-                    onClick={() => handleDelete(item.announcementId)}
-                    className="px-4 py-2 border rounded-lg"
-                    style={{ borderColor: DELETE_COLOR, color: DELETE_COLOR }}
-                  >
-                    Delete
-                  </button>
+                  {/* Delete button only for admin */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleDelete(item.announcementId)}
+                      className="px-4 py-2 border rounded-lg"
+                      style={{ borderColor: DELETE_COLOR, color: DELETE_COLOR }}
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

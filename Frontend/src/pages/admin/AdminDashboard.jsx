@@ -113,7 +113,7 @@ const AdminDashboard = () => {
   const [userLoading, setUserLoading] = useState(true);
 
   // API Base URL
-  const API_BASE_URL = "http://localhost:8090/api/v1/";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const showTooltip = (e, title, content) => {
     // update position on mouse move
@@ -151,7 +151,7 @@ const AdminDashboard = () => {
 
     // fetch user data using the ID
     const response = await axios.get(
-      `${API_BASE_URL}employee/getSingleEmployeeByID/${userId}`,
+      `${API_BASE_URL}/api/v1/employee/getSingleEmployeeByID/${userId}`,
       {
         withCredentials: true,
         headers: {
@@ -184,7 +184,7 @@ const AdminDashboard = () => {
     const fetchDepartments = async () => {
       setDepartmentsLoading(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}department/getAllDepartments`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/department/getAllDepartments`, {
           withCredentials: true,
         });
         if (response.data.success) {
@@ -199,7 +199,7 @@ const AdminDashboard = () => {
 
     const fetchDashboardStats = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}attendance/dashboard-stats`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/attendance/dashboard-stats`, {
           withCredentials: true,
         });
         if (response.data.success) {
@@ -215,7 +215,7 @@ const AdminDashboard = () => {
 
     const fetchActiveProjects = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}projects/getAllProjects`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/projects/getAllProjects`, {
           withCredentials: true,
         });
         const projects = response.data.data || [];
@@ -229,7 +229,7 @@ const AdminDashboard = () => {
 
     const fetchPendingLeaves = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}leave-request/getAllLeaves`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/leave-request/getAllLeaves`, {
           withCredentials: true,
         });
         const leaves = response.data.data || [];
@@ -243,7 +243,7 @@ const AdminDashboard = () => {
 
     const fetchAnnouncements = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}announcement/getActiveAnnouncements`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/announcement/getActiveAnnouncements`, {
           withCredentials: true,
         });
         setAnnouncementsCount((response.data.data || []).length.toString());
@@ -256,7 +256,7 @@ const AdminDashboard = () => {
     const fetchTasks = async () => {
       setTaskDistributionLoading(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}task/getAllTasks`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/task/getAllTasks`, {
           withCredentials: true,
         });
         const tasks = response.data.data || [];
@@ -290,7 +290,7 @@ const AdminDashboard = () => {
     const fetchAttendanceTrends = async () => {
       setAttendanceTrendsLoading(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}attendance/getAttendent?viewType=week`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/attendance/getAttendent?viewType=week`, {
           withCredentials: true,
         });
         if (response.data.success) {
@@ -405,7 +405,7 @@ const AdminDashboard = () => {
     setError("");
     try {
       const response = await axios.post(
-        `${API_BASE_URL}department/createDepartment`,
+        `${API_BASE_URL}/api/v1/department/createDepartment`,
         formData,
         { withCredentials: true }
       );
