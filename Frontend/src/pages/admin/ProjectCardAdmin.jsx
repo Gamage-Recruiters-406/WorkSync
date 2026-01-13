@@ -82,7 +82,7 @@ console.log("TEAM LEADER NAME 👉", project?.teamLeaderName);
     }
   };
 
-  const URL_API = 'http://localhost:8090';
+  const URL_API = import.meta.env.VITE_API_BASE_URL;
 
   const handleViewDetails = (projectId) => {
     if (onView) {
