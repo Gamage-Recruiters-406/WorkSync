@@ -17,7 +17,7 @@ import {
 import Sidebar from "../../components/sidebar/Sidebar";
 import api from "../../api/axios";
 
-const API_URL = "http://localhost:8090/api/v1/announcement/createAnnouncement";
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 // must match multer field name in backend
 const FILE_FIELD = "files";
@@ -289,7 +289,7 @@ const AdminAnnouncements = () => {
 
       files.forEach((file) => fd.append(FILE_FIELD, file));
 
-      const res = await api.post(API_URL, fd, {
+      const res = await api.post(`${API_URL}/api/v1/announcement/createAnnouncement`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
