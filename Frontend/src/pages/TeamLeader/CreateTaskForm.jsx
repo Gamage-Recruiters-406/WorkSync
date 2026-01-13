@@ -17,8 +17,7 @@ import Sidebar from '../../components/sidebar/Sidebar';
 import DashboardHeader from '../../components/DashboardHeader';
 
 const API_URL =
-  `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_VERSION}` ||
-  'http://localhost:8090/api/v1';
+  `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_VERSION}`;
 
 const CreateTaskForm = () => {
   const { taskId } = useParams();
