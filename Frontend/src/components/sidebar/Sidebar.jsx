@@ -12,11 +12,14 @@ import {
   SquareChartGantt,
   User,
   UserCheck,
+  UserCircle,
 } from "lucide-react";
-import { NavLink,useNavigate } from "react-router-dom";
-import { useState,} from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
+import axios from "axios";
 
-const sidebarContent = { 
+const sidebarContent = {
   admin: {
     main: [
       {
@@ -95,7 +98,7 @@ const sidebarContent = {
         key: "dashboard",
         label: "Dashboard",
         icon: HouseIcon,
-        path: "/user/user-dashboard",
+        path: "/user/dashboard",
       },
       {
         key: "project-team",
@@ -133,6 +136,12 @@ const sidebarContent = {
         icon: SquareChartGantt,
         path: "/user/leave-request",
       },
+      {
+        key: "profile",
+        label: "Profile",
+        icon: UserCircle,
+        path: "/user/profile",
+      },
     ],
     footer: [
       {
@@ -149,26 +158,73 @@ const sidebarContent = {
       },
     ],
   },
+  manager: {
+    main: [
+      {
+        key: "dashboard",
+        label: "Dashboard",
+        icon: HouseIcon,
+        path: "/manager/dashboard",
+      },
+    ],
+  },
 };
 
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [role, setRole] = useState(null);
 
-  const user = {
-    role: "employee",
-      role: "admin",
-  };
-  const menumainItems = sidebarContent[user.role].main || [];
-  const menufooterItems = sidebarContent[user.role].footer || [];
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+
+        // Role mapping: 3-admin, 2-manager, 1-employee
+        const roleMap = {
+          3: "admin",
+          2: "manager",
+          1: "employee",
+        };
+
+        setRole(roleMap[user.role] || null);
+      }
+    } catch (error) {
+      console.error("Failed to parse user data:", error);
+      setRole(null);
+    }
+  }, []);
+
+  const menumainItems = sidebarContent[role]?.main || [];
+  const menufooterItems = sidebarContent[role]?.footer || [];
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:8090/api/v1/employee/Signout",
+        {},
+        { withCredentials: true }
+      );
+
+      localStorage.clear();
+
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+
+      localStorage.clear();
+      navigate("/login");
+    }
+  };
+
   return (
     <aside
-      className={`flex flex-col h-screen bg-gray-200 shadow-lg transition-all duration-300 ${
+      className={`flex flex-col min-h-full bg-gray-200 shadow-lg transition-all duration-300 ${
         isCollapsed ? "w-15" : "w-72"
       }`}
     >
@@ -254,7 +310,8 @@ function Sidebar() {
         })}
 
         {/* Logout Button */}
-        <button  onClick={() => navigate("/login") }
+        <button
+          onClick={handleLogout}
           className={`flex items-center gap-4 ${
             isCollapsed ? "justify-center" : ""
           } px-4 py-3 w-full rounded-lg text-sm font-medium text-[#087990] hover:bg-gray-300 hover:text-teal-800 transition-colors`}

@@ -9,11 +9,15 @@ import {
   Eye,
   Edit,
   Trash2,
+  Search,
 } from "lucide-react";
 import Sidebar from "../../../components/sidebar/Sidebar";
 import TopBar from "../../../components/sidebar/Topbar";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import DashboardHeader from "../../../components/DashboardHeader";
 
 const Departments = () => {
   const navigate = useNavigate();
@@ -33,9 +37,12 @@ const Departments = () => {
     status: "Active",
     location: "",
     email: "",
-    contactNumber: "",
+    number: "",
     description: "",
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   // API Base URL
   const API_BASE_URL = "http://localhost:8090/api/v1/department";
@@ -98,7 +105,7 @@ const Departments = () => {
     }
     const phoneRegex =
       /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
-    if (!formData.contactNumber || !phoneRegex.test(formData.contactNumber)) {
+    if (!formData.number || !phoneRegex.test(formData.number)) {
       setError("Valid contact number is required");
       return false;
     }
@@ -149,7 +156,7 @@ const Departments = () => {
       status: dept.status || "Active",
       location: dept.location || "",
       email: dept.email || "",
-      contactNumber: dept.contactNumber || "",
+      number: dept.conactNumber || "",
       description: dept.description || "",
     });
     setShowEditModal(true);
@@ -262,7 +269,7 @@ const Departments = () => {
       status: "Active",
       location: "",
       email: "",
-      contactNumber: "",
+      number: "",
       description: "",
     });
     setEditingId(null);
@@ -367,6 +374,22 @@ const Departments = () => {
     };
   };
 
+const handleExport = () => {
+  const doc = new jsPDF();
+  autoTable(doc, {
+    head: [['Department Name', 'Code', 'Capacity', 'Department Head', 'Status', 'Created Date']],
+    body: departments.map(dept => [
+      dept.name,
+      dept.departmentCode,
+      dept.capacity || 0,
+      dept.departmentHead?.name || 'N/A',
+      dept.status,
+      formatDate(dept.createdAt)
+    ]),
+  });
+  doc.save(`departments_report_${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`);
+};
+
   // Calculate statistics
   const totalCapacity = departments.reduce(
     (sum, d) => sum + (d.capacity || 0),
@@ -376,11 +399,16 @@ const Departments = () => {
   const averageDepartmentSize =
     departments.length > 0 ? Math.round(totalCapacity / departments.length) : 0;
 
+  const filteredDepartments = departments.filter(dept => 
+    dept.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    (filter === 'all' || dept.status.toLowerCase() === filter)
+  );
+
   return (
     <div className="flex bg-[#F8FAFC] min-h-screen">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+      <DashboardHeader/>
 
         {/* Success/Error Messages */}
         {(success || error) && (
@@ -408,9 +436,6 @@ const Departments = () => {
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-5 mr-9 py-4 text-base md:text-base text-white bg-[#087990] rounded-lg hover:bg-[#076a7d] transition-colors shadow-md"
-              style={{
-                background: "linear-gradient(135deg, #087990 0%, #D9D9D9 100%)",
-              }}
             >
               + Add Department
             </button>
@@ -503,11 +528,52 @@ const Departments = () => {
                 All Departments
               </h2>
               <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Filter size={16} />
-                  Filter
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search by name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#087990] w-64"
+                  />
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowFilterMenu(!showFilterMenu)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Filter size={16} />
+                    Filter
+                  </button>
+                  {showFilterMenu && (
+                    <div className="absolute top-full right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 divide-y divide-gray-100 z-10">
+                      <button
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
+                        onClick={() => { setFilter('all'); setShowFilterMenu(false); }}
+                      >
+                        All
+                      </button>
+                      <button
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
+                        onClick={() => { setFilter('active'); setShowFilterMenu(false); }}
+                      >
+                        Active
+                      </button>
+                      <button
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
+                        onClick={() => { setFilter('inactive'); setShowFilterMenu(false); }}
+                      >
+                        Inactive
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  disabled={fetchLoading}
+                >
                   <Download size={16} />
                   Export
                 </button>
@@ -519,7 +585,7 @@ const Departments = () => {
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#087990]"></div>
                 <p className="mt-4 text-gray-600">Loading departments...</p>
               </div>
-            ) : departments.length === 0 ? (
+            ) : filteredDepartments.length === 0 ? (
               <div className="text-center py-12">
                 <Building2 className="mx-auto h-12 w-12 text-gray-400" />
                 <p className="mt-4 text-gray-600">No departments found</p>
@@ -553,7 +619,7 @@ const Departments = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {departments.map((dept) => (
+                    {filteredDepartments.map((dept) => (
                       <tr
                         key={dept._id}
                         className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -766,8 +832,8 @@ const Departments = () => {
                   </label>
                   <input
                     type="tel"
-                    name="contactNumber"
-                    value={formData.contactNumber}
+                    name="number"
+                    value={formData.number}
                     onChange={handleInputChange}
                     placeholder="+1 (555) 000-0000"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087990] focus:border-transparent text-sm"
@@ -816,5 +882,5 @@ const Departments = () => {
     </div>
   );
 };
-
+ 
 export default Departments;

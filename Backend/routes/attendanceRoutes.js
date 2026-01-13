@@ -31,7 +31,7 @@ router.get("/get-single-user-attendance/:id", requiredSignIn, isManagerOrAdmin, 
 router.patch("/EndAttendance/:id", requiredSignIn, clockOutController);
 
 // Generate attendance report 
-router.get("/attendanceReport", requiredSignIn, isManagerOrAdmin, generateAttendanceReport);
+router.get("/attendanceReport", requiredSignIn, generateAttendanceReport);
 
 // Manual Admin Update (Fix mistakes Admin Full Access)
 router.put("/update/:attendanceId", requiredSignIn, isManagerOrAdmin, updateAttendanceController);

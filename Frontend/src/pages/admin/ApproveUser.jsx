@@ -1,71 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Shield, UserCog, Filter, Download, Check, Trash2, X, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import Sidebar from '../../components/sidebar/Sidebar';
-import TopBar from '../../components/sidebar/Topbar';
-import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import DashboardHeader from '../../components/DashboardHeader';
 
 const UserRolesPage = () => {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: 'John Smith',
-      email: 'john.smith@worksync.com',
-      avatar: 'JS',
-      avatarColor: 'bg-purple-500',
-      role: 'Admin',
-      roleColor: 'bg-red-100 text-red-600',
-      department: 'Information Technology',
-      status: 'Approved',
-      statusColor: 'bg-green-100 text-green-600',
-      statusIcon: true,
-      joinedDate: 'Jan 15, 2024'
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@sync.com',
-      avatar: 'SJ',
-      avatarColor: 'bg-green-500',
-      role: 'HR',
-      roleColor: 'bg-purple-100 text-purple-600',
-      department: 'Human Resources',
-      status: 'Pending',
-      statusColor: 'bg-yellow-100 text-yellow-600',
-      statusIcon: false,
-      joinedDate: 'Jan 20, 2024'
-    },
-    {
-      id: 3,
-      name: 'Mike Chen',
-      email: 'mike.chen@devteam.com',
-      avatar: 'MC',
-      avatarColor: 'bg-orange-500',
-      role: 'Manager',
-      roleColor: 'bg-orange-100 text-orange-600',
-      department: 'Sales',
-      status: 'Reject',
-      statusColor: 'bg-red-100 text-red-600',
-      statusIcon: false,
-      joinedDate: 'Feb 05, 2024'
-    },
-    {
-      id: 4,
-      name: 'John Smith',
-      email: 'john.smith@worksync.com',
-      avatar: 'JS',
-      avatarColor: 'bg-purple-500',
-      role: 'Admin',
-      roleColor: 'bg-red-100 text-red-600',
-      department: 'Information Technology',
-      status: 'Approved',
-      statusColor: 'bg-green-100 text-green-600',
-      statusIcon: true,
-      joinedDate: 'Jan 15, 2024'
-    }
-  ]);
-
+  const [users, setUsers] = useState([]);
   const [notification, setNotification] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('http://localhost:8090/api/v1/userAuth/getAllUsers?limit=100', { withCredentials: true });
+      const data = response.data;
+      if (data.success) {
+        const mappedUsers = data.data.map(user => ({
+          id: user._id,
+          firstName: user.FirstName,
+          lastName: user.LastName,
+          contactNumber: user.ContactNumber,
+          email: user.email,
+          gender: user.Gender,
+          document: user.attachments[0] || '',
+          role: user.role,
+          status: user.status,
+        }));
+        setUsers(mappedUsers);
+      } else {
+        setError(data.message || 'Failed to fetch users');
+      }
+    } catch (error) {
+      setError(error.message || 'Error fetching users');
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const showNotification = (type, message) => {
     setNotification({ type, message });
@@ -74,53 +51,77 @@ const UserRolesPage = () => {
     }, 3000);
   };
 
-  const handleApprove = (userId) => {
-    setUsers(users.map(user => {
-      if (user.id === userId) {
-        showNotification('success', `${user.name} has been approved successfully!`);
-        return {
-          ...user,
-          status: 'Approved',
-          statusColor: 'bg-green-100 text-green-600',
-          statusIcon: true
-        };
+const handleApprove = async (Id) => {
+  try {
+    const response = await axios.post(
+      `http://localhost:8090/api/v1/employee/RejisterEmployee/${Id}`,
+      {}, // 👈 no body needed
+      {
+        withCredentials: true, // 👈 MUST be here
       }
-      return user;
-    }));
-  };
+    );
 
-  const handleReject = (userId) => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      showNotification('error', `${user.name} has been rejected.`);
-      setUsers(users.map(u => {
-        if (u.id === userId) {
-          return {
-            ...u,
-            status: 'Reject',
-            statusColor: 'bg-red-100 text-red-600',
-            statusIcon: false
-          };
+    const data = response.data;
+
+    if (data.success) {
+      setUsers(users.map(user => {
+        if (user.id === Id) {
+          showNotification(
+            'success',
+            `${user.firstName} ${user.lastName} has been approved successfully!`
+          );
+          return { ...user, status: 'Approved' };
         }
-        return u;
+        return user;
       }));
+    }
+  } catch (error) {
+    console.error('Error approving user:', error);
+    showNotification('error', 'Unauthorized or failed to approve user');
+  }
+};
+
+  const handleReject = async (Id) => {
+    try {
+      const response = await axios.delete(`http://localhost:8090/api/v1/userAuth/removeResume/${Id}`, { withCredentials: true });
+      const data = response.data;
+      if (data.success) {
+        setUsers(users.map(user => {
+          if (user.id === Id) {
+            showNotification('error', `${user.firstName} ${user.lastName} has been rejected.`);
+            return {
+              ...user,
+              status: 'Rejected',
+            };
+          }
+          return user;
+        }));
+      }
+    } catch (error) {
+      console.error('Error rejecting user:', error);
+      showNotification('error', 'Failed to reject user');
     }
   };
 
   const isApproveDisabled = (status) => {
-    return status === 'Approved' || status === 'Reject';
+    return status === 'Approved' || status === 'Rejected';
   };
 
   const isRejectDisabled = (status) => {
-    return status === 'Reject';
+    return status === 'Rejected';
   };
+
+  const totalEmployees = users.length;
+  const activeEmployees = users.filter(u => u.status === 'Approved').length;
+  const administrators = users.filter(u => u.role === 3).length;
+  const managers = users.filter(u => u.role === 2).length;
 
   return (
     <div className="flex bg-[#F8FAFC] min-h-screen">
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+       <DashboardHeader/>
 
         {/* Notification Popup */}
         {notification && (
@@ -172,7 +173,7 @@ const UserRolesPage = () => {
                 </div>
               </div>
               <div className="text-gray-600 text-xs mb-1">Total Employees</div>
-              <div className="text-3xl font-bold text-gray-800">248</div>
+              <div className="text-3xl font-bold text-gray-800">{totalEmployees}</div>
             </div>
 
             {/* Active Employees */}
@@ -183,7 +184,7 @@ const UserRolesPage = () => {
                 </div>
               </div>
               <div className="text-gray-600 text-xs mb-1">Active Employees</div>
-              <div className="text-3xl font-bold text-gray-800">235</div>
+              <div className="text-3xl font-bold text-gray-800">{activeEmployees}</div>
             </div>
 
             {/* Administrators */}
@@ -194,7 +195,7 @@ const UserRolesPage = () => {
                 </div>
               </div>
               <div className="text-gray-600 text-xs mb-1">Administrators</div>
-              <div className="text-3xl font-bold text-gray-800">5</div>
+              <div className="text-3xl font-bold text-gray-800">{administrators}</div>
             </div>
 
             {/* Managers */}
@@ -205,7 +206,7 @@ const UserRolesPage = () => {
                 </div>
               </div>
               <div className="text-gray-600 text-xs mb-1">Managers</div>
-              <div className="text-3xl font-bold text-gray-800">18</div>
+              <div className="text-3xl font-bold text-gray-800">{managers}</div>
             </div>
           </div>
 
@@ -228,80 +229,72 @@ const UserRolesPage = () => {
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Employee</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Grant Role</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Department</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Joined Date</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {users.map(user => (
-                    <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`${user.avatarColor} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm`}>
-                            {user.avatar}
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-800 text-sm">{user.name}</div>
-                            <div className="text-xs text-gray-500">{user.email}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-4">
-                        <span className={`${user.roleColor} px-3 py-1 rounded-full text-xs font-medium`}>
-                          {user.role}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-4 text-sm text-gray-700">{user.department}</td>
-
-                      <td className="py-4 px-4">
-                        <span className={`${user.statusColor} px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1`}>
-                          {user.statusIcon && <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>}
-                          {user.status}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-4 text-sm text-gray-700">{user.joinedDate}</td>
-
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => handleApprove(user.id)}
-                            disabled={isApproveDisabled(user.status)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              isApproveDisabled(user.status)
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'bg-green-100 text-green-600 hover:bg-green-200'
-                            }`}
-                          >
-                            <Check size={16} />
-                          </button>
-                          <button 
-                            onClick={() => handleReject(user.id)}
-                            disabled={isRejectDisabled(user.status)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              isRejectDisabled(user.status)
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'bg-red-100 text-red-600 hover:bg-red-200'
-                            }`}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
+              {loading ? (
+                <div className="text-center py-4">Loading users...</div>
+              ) : error ? (
+                <div className="text-center py-4 text-red-600">{error}</div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-4">No users found</div>
+              ) : (
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Employee First Name</th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Employee Last Name</th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Contact Number</th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Email</th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Gender</th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Document</th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+
+                  <tbody>
+                    {users.map(user => (
+                      <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="py-4 px-4 text-sm text-gray-700">{user.firstName}</td>
+                        <td className="py-4 px-4 text-sm text-gray-700">{user.lastName}</td>
+                        <td className="py-4 px-4 text-sm text-gray-700">{user.contactNumber}</td>
+                        <td className="py-4 px-4 text-sm text-gray-700">{user.email}</td>
+                        <td className="py-4 px-4 text-sm text-gray-700">{user.gender}</td>
+                        <td className="py-4 px-4 text-sm text-gray-700">
+                          {user.document ? (
+                            <a href={`/${user.document}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View Document</a>
+                          ) : (
+                            'No Document'
+                          )}
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => handleApprove(user.id)}
+                              disabled={isApproveDisabled(user.status)}
+                              className={`p-2 rounded-lg transition-colors ${
+                                isApproveDisabled(user.status)
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'bg-green-100 text-green-600 hover:bg-green-200'
+                              }`}
+                            >
+                              <Check size={16} />
+                            </button>
+                            <button 
+                              onClick={() => handleReject(user.id)}
+                              disabled={isRejectDisabled(user.status)}
+                              className={`p-2 rounded-lg transition-colors ${
+                                isRejectDisabled(user.status)
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'bg-red-100 text-red-600 hover:bg-red-200'
+                              }`}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
           </div>

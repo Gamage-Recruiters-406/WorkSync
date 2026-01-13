@@ -40,7 +40,7 @@ const app = express();
 app.use(cors({
   origin: "http://localhost:5173", // FRONTEND URL
   credentials: true,              // REQUIRED because you use withCredentials
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
@@ -65,7 +65,6 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/announcement", announcementRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
 app.use("/api/v1/millestone", milestoneRoutes);
-app.use("/api/v1/AnnouncemetAttachmet", AnnouncemetAttachmetRoutes);
 app.use("/api/v1/employee", EmployeeRoute);
 
 

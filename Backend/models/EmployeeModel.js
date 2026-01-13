@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const EmployeeSchema = new mongoose.Schema({
+    EmployeeID: {
+        type: String,
+        default: null,
+    },
     FirstName: { 
         type: String, 
         required: true,
