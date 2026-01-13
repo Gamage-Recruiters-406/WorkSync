@@ -61,6 +61,8 @@ const ManageLeaves = () => {
   const [actionType, setActionType] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
 
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
+
   const [alert, setAlert] = useState({
     open: false,
     message: "",
@@ -69,7 +71,7 @@ const ManageLeaves = () => {
 
   const fetchLeaves = async () => {
     try {
-      const res = await api.get("/getAllLeaves", { withCredentials: true });
+      const res = await api.get(`${API_URL}/api/v1/leave-request/getAllLeaves`, { withCredentials: true });
       setLeaves(res.data.data);
     } catch (err) {
       setAlert({
@@ -92,7 +94,7 @@ const ManageLeaves = () => {
     if (!selectedLeave) return;
 
     try {
-      await api.patch(`/updateLeaveStatus/${selectedLeave._id}`, {
+      await api.patch(`${API_URL}/api/v1/leave-request/updateLeaveStatus/${selectedLeave._id}`, {
         sts: actionType,
         message: emailMessage,
       });
