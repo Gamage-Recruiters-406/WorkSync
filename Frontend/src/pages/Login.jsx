@@ -12,6 +12,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
+
   const handleSubmit = async () => {
     // Reset messages
     setError("");
@@ -35,7 +37,7 @@ export default function Login() {
       //     body: JSON.stringify({ email, password }),
       //   });
       const res = await axios.post(
-        "http://localhost:8090/api/v1/employee/userLogin",
+        `${API_URL}/api/v1/employee/userLogin`,
         { email, password },
         { withCredentials: true }
       );
