@@ -103,6 +103,8 @@ const LeaveRequest = () => {
   const [alert, setAlert] = useState({ open: false, message: "", type: "success" });
   const [confirmDelete, setConfirmDelete] = useState({ open: false, leaveId: null });
 
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
+
   // -------------------- Form change --------------------
   const handleChange = (e) => {
     setFormData({
@@ -123,7 +125,7 @@ const LeaveRequest = () => {
         return;
       }
 
-      const res = await api.get(`/getLeave/${userId}`);
+      const res = await api.get(`${API_URL}/api/v1/leave-request/getLeave/${userId}`);
       const leaves = res.data?.data || [];
       setLeaveHistory(leaves);
       // compute counts
@@ -198,11 +200,11 @@ const LeaveRequest = () => {
 
     try {
       if (editingLeaveId) {
-        const res = await api.put(`/updateLeave/${editingLeaveId}`, formData);
+        const res = await api.put(`${API_URL}/api/v1/leave-request/updateLeave/${editingLeaveId}`, formData);
         setAlert({ open: true, message: res.data?.message || "Leave updated successfully", type: "success" });
         setEditingLeaveId(null);
       } else {
-        const res = await api.post("/addLeave", formData);
+        const res = await api.post(`${API_URL}/api/v1/leave-request/addLeave`, formData);
         setAlert({ open: true, message: res.data?.message || "Leave request submitted successfully", type: "success" });
       }
 
@@ -246,7 +248,7 @@ const LeaveRequest = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await api.delete(`/deleteLeave/${confirmDelete.leaveId}`);
+      await api.delete(`${API_URL}/api/v1/leave-request/deleteLeave/${confirmDelete.leaveId}`);
       // optimistic UI update
       setLeaveHistory((prev) => prev.filter((l) => l._id !== confirmDelete.leaveId));
       setAlert({ open: true, message: "Leave deleted successfully", type: "success" });
