@@ -15,11 +15,13 @@ const UserProfileEdit = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:8090/api/v1/employee/getSingleEmployee', { withCredentials: true });
+        const response = await axios.get(`${API_URL}/api/v1/employee/getSingleEmployee`, { withCredentials: true });
         
         if (response.data?.success && response.data?.user) {
           const user = response.data.user;
@@ -99,7 +101,7 @@ const UserProfileEdit = () => {
       };
 
       const response = await axios.patch(
-        `http://localhost:8090/api/v1/employee/updateEmployee/${profile._id}`,
+        `${API_URL}/api/v1/employee/updateEmployee/${profile._id}`,
         payload,
         { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
       );

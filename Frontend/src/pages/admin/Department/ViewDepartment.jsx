@@ -19,7 +19,8 @@ const DepartmentDetails = () => {
   const [departmentData, setDepartmentData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const API_BASE_URL = 'http://localhost:8090/api/v1/department';
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const colors = [
     'bg-purple-500', 'bg-green-600', 'bg-orange-500', 'bg-red-500',
@@ -32,7 +33,7 @@ const DepartmentDetails = () => {
       setLoading(true);
       setError('');
       try {
-        const response = await axios.get(`${API_BASE_URL}/getDepartment/${id}`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/department/getDepartment/${id}`, {
           withCredentials: true
         });
         
@@ -58,7 +59,7 @@ const DepartmentDetails = () => {
     }
 
     try {
-      const response = await axios.delete(`${API_BASE_URL}/deleteDepartment/${id}`, {
+      const response = await axios.delete(`${API_BASE_URL}/api/v1/department/deleteDepartment/${id}`, {
         withCredentials: true
       });
       

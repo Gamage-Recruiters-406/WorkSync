@@ -4,8 +4,8 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import { Search, Bell } from "lucide-react";
 import axios from "axios";
 
-const EMPLOYEE_API = "http://localhost:8090/api/v1/employee/getSingleEmployee";
-const DEPARTMENT_API_BASE = "http://localhost:8090/api/v1/department/getDepartment"; // /:id
+const EMPLOYEE_API = import.meta.env.VITE_API_BASE_URL;
+const DEPARTMENT_API_BASE = import.meta.env.VITE_API_BASE_URL; // /:id
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -22,7 +22,7 @@ const UserProfile = () => {
       if (!deptId || deptId === "N/A") return null;
 
       try {
-        const depRes = await axios.get(`${DEPARTMENT_API_BASE}/${deptId}`, {
+        const depRes = await axios.get(`${DEPARTMENT_API_BASE}/api/v1/department/getDepartment/${deptId}`, {
           withCredentials: true,
           signal: controller.signal,
         });
@@ -55,7 +55,7 @@ const UserProfile = () => {
         setLoading(true);
         setError(null);
 
-        const response = await axios.get(EMPLOYEE_API, {
+        const response = await axios.get(`${EMPLOYEE_API}/api/v1/employee/getSingleEmployee`, {
           withCredentials: true,
           signal: controller.signal,
         });
@@ -129,7 +129,7 @@ const UserProfile = () => {
         }
 
         const response = await axios.delete(
-          `http://localhost:8090/api/v1/employee/RemoveEmployee/${profile.userId}`,
+          `${EMPLOYEE_API}/api/v1/employee/RemoveEmployee/${profile.userId}`,
           { withCredentials: true }
         );
 

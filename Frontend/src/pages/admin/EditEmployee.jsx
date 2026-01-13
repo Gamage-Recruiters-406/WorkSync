@@ -20,6 +20,8 @@ const EditEmployee = () => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
+
   // Roles and Departments
   const roles = [
     { value: '1', label: 'Employee' },
@@ -34,7 +36,7 @@ const EditEmployee = () => {
       try {
         setFetching(true);
         // Employee details
-        const empRes = await axios.get(`http://localhost:8090/api/v1/employee/getSingleEmployeeByID/${id}`, { withCredentials: true });
+        const empRes = await axios.get(`${API_URL}/api/v1/employee/getSingleEmployeeByID/${id}`, { withCredentials: true });
         if (empRes.data?.success && empRes.data?.user) {
           const user = empRes.data.user;
           const departmentID = user.departmentID ? String(user.departmentID) : '';
@@ -50,7 +52,7 @@ const EditEmployee = () => {
         }
 
         // Departments list
-        const deptRes = await axios.get('http://localhost:8090/api/v1/department/getAllDepartments', { withCredentials: true });
+        const deptRes = await axios.get(`${API_URL}/api/v1/department/getAllDepartments`, { withCredentials: true });
         const list =
           deptRes.data?.data ||
           deptRes.data?.Departments ||
@@ -123,7 +125,7 @@ const EditEmployee = () => {
       };
 
       const res = await axios.patch(
-        `http://localhost:8090/api/v1/employee/updateEmployee/${id}`,
+        `${API_URL}/api/v1/employee/updateEmployee/${id}`,
         payload,
         { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
       );

@@ -10,6 +10,8 @@ const UserRolesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -18,7 +20,7 @@ const UserRolesPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('http://localhost:8090/api/v1/userAuth/getAllUsers?limit=100', { withCredentials: true });
+      const response = await axios.get(`${API_URL}/api/v1/userAuth/getAllUsers?limit=100`, { withCredentials: true });
       const data = response.data;
       if (data.success) {
         const mappedUsers = data.data.map(user => ({
@@ -54,7 +56,7 @@ const UserRolesPage = () => {
 const handleApprove = async (Id) => {
   try {
     const response = await axios.post(
-      `http://localhost:8090/api/v1/employee/RejisterEmployee/${Id}`,
+      `${API_URL}/api/v1/employee/RejisterEmployee/${Id}`,
       {}, // 👈 no body needed
       {
         withCredentials: true, // 👈 MUST be here
@@ -83,7 +85,7 @@ const handleApprove = async (Id) => {
 
   const handleReject = async (Id) => {
     try {
-      const response = await axios.delete(`http://localhost:8090/api/v1/userAuth/removeResume/${Id}`, { withCredentials: true });
+      const response = await axios.delete(`${API_URL}/api/v1/userAuth/removeResume/${Id}`, { withCredentials: true });
       const data = response.data;
       if (data.success) {
         setUsers(users.map(user => {

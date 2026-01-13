@@ -32,7 +32,7 @@ const ProjectTeam = () => {
     const [loading, setLoading] = useState(true);
     
 
-    const URL_API = "http://localhost:8090";
+    const URL_API = import.meta.env.VITE_API_BASE_URL;
 
     useEffect(()=>{
 

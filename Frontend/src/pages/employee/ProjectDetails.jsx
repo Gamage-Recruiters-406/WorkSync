@@ -24,7 +24,7 @@ const ProjectDetails = () => {
   const projectId = projectData?._id || id;
   const {isTeamLeader, loading, currentUserId} = useIsTeamLeader(projectId);
 
-  const URL_API = "http://localhost:8090";
+  const URL_API = import.meta.env.VITE_API_BASE_URL;
 
   // dummy data – replace with real project data (fetched by id)
   useEffect(()=>{

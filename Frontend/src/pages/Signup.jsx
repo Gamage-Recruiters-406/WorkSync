@@ -20,6 +20,8 @@ export default function SignUp() {
   const [success, setSuccess] = useState("");
   const [fileName, setFileName] = useState("");
 
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
+
   // NIC VALIDATION 
   const isValidNIC = (nic) => {
     const oldNIC = /^[0-9]{9}[vVxX]$/;
@@ -96,7 +98,7 @@ export default function SignUp() {
       }
 
       const response = await axios.post(
-        "http://localhost:8090/api/v1/userAuth/userRegistration",
+        `${API_URL}/api/v1/userAuth/userRegistration`,
         submitData,
         {
           headers: {
