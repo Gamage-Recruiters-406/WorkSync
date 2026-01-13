@@ -26,6 +26,8 @@ const AnnouncementsPage = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
+
   const [openNotification, setOpenNotification] = useState<Notification | null>(
     null
   );
@@ -49,7 +51,7 @@ const AnnouncementsPage = () => {
     try {
       setLoading(true);
       const res = await api.get(
-        "http://localhost:8090/api/v1/announcement/getEmployeeAnnouncements"
+        `${API_URL}/api/v1/announcement/getEmployeeAnnouncements`
       );
       setAnnouncements(res?.data?.data || []);
     } catch (err) {
@@ -64,7 +66,7 @@ const AnnouncementsPage = () => {
   const fetchNotifications = async () => {
     try {
       const res = await api.get(
-        "http://localhost:8090/api/v1/announcement/my-notifications"
+        `${API_URL}/api/v1/announcement/my-notifications`
       );
       setNotifications(res?.data?.data || []);
     } catch (err) {
@@ -92,7 +94,7 @@ const AnnouncementsPage = () => {
   const handleMarkNotificationRead = async (id: string) => {
     try {
       await api.put(
-        `http://localhost:8090/api/v1/announcement/markAsRead/${id}`
+        `${API_URL}/api/v1/announcement/markAsRead/${id}`
       );
       fetchNotifications();
     } catch (err) {
