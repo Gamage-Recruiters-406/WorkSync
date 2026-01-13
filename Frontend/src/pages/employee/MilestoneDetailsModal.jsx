@@ -13,7 +13,7 @@ const MilestoneDetailsModal = ({ milestone, onClose, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
-  const URL_API = "http://localhost:8090";
+  const URL_API = import.meta.env.VITE_API_BASE_URL;
 
   const handleStatusChange = async (e)=>{
     const newStatus = e.target.value;
