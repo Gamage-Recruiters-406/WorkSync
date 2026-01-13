@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import jwtDecode from "jwt-decode";
 
-const URL_API = "http://localhost:8090";
+const URL_API = import.meta.env.VITE_API_BASE_URL;
 
 // const getToken = () =>
 //   document.cookie
