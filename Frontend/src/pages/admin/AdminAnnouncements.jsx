@@ -358,13 +358,15 @@ const AdminAnnouncements = () => {
                 >
                   <Plus size={18} />
                 </button>
-                <button
-                  onClick={() => alert("View All Announcements clicked!")}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#C9CED6] bg-white shadow-sm hover:bg-[#E5F6F7]"
-                  title="View all"
-                >
-                  <ListChecks size={18} />
-                </button>
+                <a href="/user/announcements" title="View all">
+                  <button
+                    // onClick={() => alert("View All Announcements clicked!")}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#C9CED6] bg-white shadow-sm hover:bg-[#E5F6F7]"
+                    title="View all"
+                    >
+                    <ListChecks size={18} />
+                  </button>
+                  </a>
               </div>
             </div>
 
