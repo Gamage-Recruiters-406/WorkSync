@@ -37,12 +37,15 @@ const app = express();
 //Data sanitizations
 // app.use(MongoSanitize());
 // app.use(xss());
-app.use(cors({
-  origin: "https://work-sync-j3bx.vercel.app", // FRONTEND URL
-  credentials: true,              // REQUIRED because you use withCredentials
+const corsOptions = {
+  origin: "https://work-sync-j3bx.vercel.app",
+  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"]
-}));
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 
 // Middlewares
@@ -78,10 +81,4 @@ app.get("/", (req, res) => {
 // For Auto-Checkout Timer
 startAutoCheckoutJob(); 
 
-const PORT = process.env.PORT || 8090;
-
-app.listen(PORT, () => {
-    console.log(`Server Running on ${process.env.DEV_MODE} mode`.bgCyan.white);
-    console.log(`Server is running on port ${PORT}`.bgCyan.white)
-});
 
