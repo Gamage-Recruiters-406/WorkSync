@@ -38,7 +38,7 @@ const app = express();
 // app.use(MongoSanitize());
 // app.use(xss());
 app.use(cors({
-  origin: "https://work-sync-j3bx.vercel.app/login", // FRONTEND URL
+  origin: "https://work-sync-j3bx.vercel.app", // FRONTEND URL
   credentials: true,              // REQUIRED because you use withCredentials
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"]
