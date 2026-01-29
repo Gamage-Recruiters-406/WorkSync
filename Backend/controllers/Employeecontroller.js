@@ -188,7 +188,10 @@ export const loginUser = async (req, res) => {
         );
 
         res.cookie('access_token', token, {
-            httpOnly: true
+            httpOnly: true,
+            secure: true,          // ✅ required in HTTPS (Render + Vercel)
+            sameSite: "none",      // ✅ required for cross-site cookies
+            maxAge: 7 * 24 * 60 * 60 * 1000, // ✅ 7 days
         }).status(200).json({
             success: true,
             message: "Login successful",
